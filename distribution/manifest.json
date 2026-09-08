@@ -1,0 +1,13 @@
+{
+  "schema": "blade.distribution.v1",
+  "airport": "DFW",
+  "runtimeMin": "0.1.0",
+  "modules": [
+    { "id": "roster", "version": "0.1.0", "enabled": true },
+    { "id": "rotation", "version": "0.1.0", "enabled": true },
+    { "id": "capacity", "version": "0.1.0", "enabled": true },
+    { "id": "reports.coverage", "version": "0.1.0", "enabled": true },
+    { "id": "generic-force", "version": "0.1.0", "enabled": false },
+    { "id": "predictive", "version": "0.1.0", "enabled": false }
+  ]
+}

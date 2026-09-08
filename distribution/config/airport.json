@@ -1,0 +1,7 @@
+{
+  "code": "DFW",
+  "name": "Dallas/Fort Worth International",
+  "timezone": "America/Chicago",
+  "scheduleWeeks": 1,
+  "slotMinutes": 30
+}

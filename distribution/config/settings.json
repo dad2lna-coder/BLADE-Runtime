@@ -1,0 +1,12 @@
+{
+  "modules": {
+    "roster": true,
+    "generic-force": false,
+    "rotation": true,
+    "capacity": true,
+    "predictive": false,
+    "reports": true
+  },
+  "theme": "console",
+  "cacheHours": 24
+}

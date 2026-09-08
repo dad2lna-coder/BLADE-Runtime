@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.svelte-kit/
+build/
+src-tauri/target/
+*.exe
+*.dmg
+*.app
+.DS_Store
+.env
+.env.*
+.vscode/
+.idea/
+distribution/data/*.local.json

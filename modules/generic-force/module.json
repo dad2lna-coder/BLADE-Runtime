@@ -1,0 +1,8 @@
+{
+  "id": "generic-force",
+  "name": "Generic Force",
+  "version": "0.1.0",
+  "entry": "index.ts",
+  "capabilities": ["read:config", "write:exports"],
+  "provides": ["staffing-source"]
+}

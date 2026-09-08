@@ -1,0 +1,11 @@
+{
+  "roles": {
+    "scheduler": {
+      "allow": ["read:roster", "read:config", "read:capacity", "calculate:schedule", "write:exports"]
+    },
+    "viewer": {
+      "allow": ["read:roster", "read:config", "read:capacity"]
+    }
+  },
+  "defaultRole": "scheduler"
+}
