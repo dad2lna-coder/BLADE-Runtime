@@ -1,0 +1,10 @@
+{
+  "id": "airport-builder",
+  "name": "Airport Builder",
+  "version": "0.1.0",
+  "optional": true,
+  "requiredToRun": false,
+  "requiredToPublishAirfield": true,
+  "capabilities": ["read:config", "write:exports"],
+  "provides": ["airfield-payload"]
+}

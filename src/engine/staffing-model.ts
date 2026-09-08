@@ -1,40 +1,13 @@
-export type Role = "TSO" | "LTSO" | "STSO";
-export type Sex = "M" | "F" | "X";
-export type Status = "FT" | "PT";
+import type { Person, RoleKind, Sex, DutyStatus } from "./roles";
+import type { AirfieldPayload } from "./airfield";
 
-export interface Person {
-  id: string;
-  name?: string;
-  role: Role;
-  sex: Sex;
-  status: Status;
-  qualifications?: string[];
-}
+export type { Person, RoleKind, Sex, DutyStatus };
 
 export interface HeadcountCell {
-  role: Role;
+  role: RoleKind;
   sex: Sex;
-  status: Status;
+  status: DutyStatus;
   count: number;
-}
-
-export interface ShiftWindow {
-  id: string;
-  name: string;
-  start: string;
-  end: string;
-  phase?: string;
-  paidHours?: number;
-  hardRdos?: boolean[];
-}
-
-export interface CoverageBand {
-  start: string;
-  end: string;
-  minTso: number;
-  minLtso: number;
-  minStso: number;
-  function?: "DFO" | "BAG" | "PAX" | string;
 }
 
 export interface StaffingModel {
@@ -43,20 +16,8 @@ export interface StaffingModel {
   slotMinutes: number;
   people: Person[];
   genericHeadcount: HeadcountCell[];
-  shifts: ShiftWindow[];
-  coverage: CoverageBand[];
+  shifts: any[];
+  coverage: any[];
+  airfield: AirfieldPayload | null;
   source: "roster" | "generic-force" | "import" | "other";
-}
-
-export function emptyStaffingModel(airport = "DFW"): StaffingModel {
-  return {
-    airport,
-    weeks: 1,
-    slotMinutes: 30,
-    people: [],
-    genericHeadcount: [],
-    shifts: [],
-    coverage: [],
-    source: "other",
-  };
 }

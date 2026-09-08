@@ -1,5 +1,6 @@
 {
   "modules": {
+    "airport-builder": false,
     "roster": true,
     "generic-force": false,
     "rotation": true,

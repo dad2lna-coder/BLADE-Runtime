@@ -1,0 +1,23 @@
+{
+  "schema": "blade.airfield.v2",
+  "airport": "DFW",
+  "open": "03:30",
+  "close": "23:00",
+  "terminals": [
+    { "id": "A", "name": "Terminal A", "open": "03:30", "close": "23:00", "baseTsoCost": { "STD": 6, "PRE": 5, "MIX": 6 } }
+  ],
+  "checkpoints": [
+    {
+      "id": "A-MAIN",
+      "name": "A Main",
+      "terminalId": "A",
+      "open": "03:30",
+      "close": "23:00",
+      "kcm": { "open": "05:00", "close": "19:00" },
+      "mods": [
+        { "open": "03:30", "program": "STD", "ait": 1, "lanes": [{ "n": 1, "ct": 0 }, { "n": 2, "ct": 0 }] },
+        { "open": "05:00", "program": "MIX", "ait": 1, "lanes": [{ "n": 3, "ct": 1 }] }
+      ]
+    }
+  ]
+}
