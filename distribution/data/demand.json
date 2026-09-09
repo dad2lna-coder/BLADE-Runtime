@@ -1,0 +1,22 @@
+{
+  "schema": "blade.demand.v1",
+  "airport": "DFW",
+  "sites": [
+    {
+      "siteId": "A-MAIN",
+      "kind": "checkpoint",
+      "open": [
+        { "start": "03:30", "end": "05:00", "openUnits": 2 },
+        { "start": "05:00", "end": "20:00", "openUnits": 5 },
+        { "start": "20:00", "end": "23:00", "openUnits": 2 }
+      ],
+      "peaks": [{ "start": "05:00", "end": "08:00", "extraFte": 4, "note": "AM bank" }]
+    },
+    {
+      "siteId": "CBRA-A",
+      "kind": "bag",
+      "open": [{ "start": "04:00", "end": "21:00", "openUnits": 3 }],
+      "peaks": [{ "start": "06:00", "end": "09:00", "extraFte": 2, "note": "inbound bank" }]
+    }
+  ]
+}

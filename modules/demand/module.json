@@ -1,0 +1,9 @@
+{
+  "id": "demand",
+  "name": "Demand / peaks",
+  "version": "0.1.0",
+  "optional": true,
+  "requiredToRun": false,
+  "capabilities": ["read:config", "read:capacity", "write:exports"],
+  "dependsOn": ["airfield-payload"]
+}
