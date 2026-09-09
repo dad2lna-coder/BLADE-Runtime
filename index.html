@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BLADE — Airfield Builder</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">BLADE RUNTIME <span>Local platform · airfield builder only</span></div>
+    <div class="meta">AIRPORT <b id="meta-airport">DFW</b></div>
+    <div class="meta">SEATS <b id="meta-seats">—</b></div>
+    <div class="chip" id="status-chip">LOADING</div>
+  </header>
+  <div class="mods">
+    <span class="mod on">airport-builder</span>
+    <span class="mod">roster</span>
+    <span class="mod">rotation</span>
+    <span class="mod">capacity</span>
+    <span class="mod">demand</span>
+    <span class="mod">reports</span>
+  </div>
+  <div class="layout">
+    <aside class="card">
+      <h2>Airfield</h2>
+      <div id="nav"></div>
+    </aside>
+    <section class="card" id="editor"></section>
+    <aside class="card">
+      <h2>Payload</h2>
+      <p class="hint">This is airfield.json. Import / export. Demand peaks stay out of this file.</p>
+      <div class="row" style="margin-bottom:.4rem">
+        <button class="btn btn-amber" data-act="export">Export JSON</button>
+        <label class="btn">Import<input id="file-in" type="file" accept="application/json" hidden></label>
+        <button class="btn" data-act="apply-json">Apply editor JSON</button>
+      </div>
+      <textarea class="payload" id="payload" spellcheck="false"></textarea>
+      <div id="notes" style="margin-top:.45rem"></div>
+    </aside>
+  </div>
+  <footer class="footer">
+    <span>MODULE <b>airport-builder</b></span>
+    <span>SCHEMA <b>blade.airfield.v2</b></span>
+    <span>STATUS <b id="foot-status">READY</b></span>
+  </footer>
+  <script src="js/airfield-model.js"></script>
+  <script src="js/builder.js"></script>
+  <script>Blade.bootBuilder();</script>
+</body>
+</html>

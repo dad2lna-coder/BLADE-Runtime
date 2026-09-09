@@ -1,42 +1,21 @@
 # BLADE Runtime
 
-BLADE is no longer a single application. It is a **local application platform** that loads approved modules and data from a shared folder (OneDrive / SharePoint) and renders only what that user is allowed to use.
+Frontend preview loads **only the airport-builder module**.
 
-**Reference implementation:** [BLADE_Alpha](https://github.com/dad2lna-coder/BLADE_Alpha) (do not destroy it).
+## GitHub Pages
 
-**First objective:** new UI, same scheduling behavior. Then separate the engine from the UI.
+After the Pages workflow on `main` finishes:
 
-## What lives in the executable
+https://dad2lna-coder.github.io/BLADE-Runtime/
 
-Stable runtime only:
+Repo is private. If the site 404s, either make the repo public or enable Pages in Settings → Pages (GitHub Actions source). You can also open `index.html` locally.
 
-- Svelte UI framework
-- Tauri desktop runtime
-- module loader + capability / permission system
-- configuration + local cache
-- filesystem access, import / export
-- validation framework
-- core scheduling engine
-- shared UI components
+## What this build does
 
-Features are **not** hard-coded into the `.exe`.
-
-## Repo layout
-
-See ARCHITECTURE.md and the folders in this commit.
-
-## Three update lanes
-
-| Lane | What changes | Rebuild .exe? |
-| --- | --- | --- |
-| Data | roster.json, capacity.json, predictions | No |
-| Config / modules | airport config, permissions, module packages | No |
-| Runtime | Tauri, Rust, core engine, module API | Yes |
-
-## Security
-
-The shared folder is not a place to execute arbitrary JavaScript with full machine access. Modules declare capabilities. The runtime grants or denies them.
-
-## Status
-
-Scaffold + architecture only. Migration from BLADE_Alpha starts next: new UI, same behavior.
+- Console shell
+- Terminal / checkpoint / modset / bag-site editor
+- Flat checkpoints tagged with `terminalId`
+- Positional modsets, explicit AIT, CT lanes
+- CBRA / OS / OSRA rooms (seats only)
+- Export / import `airfield.json` (`blade.airfield.v2`)
+- Warn-not-block on window mismatches; block only on empty modset/lanes
