@@ -1,0 +1,56 @@
+name: Extract Team Builder Module
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract-team-builder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove existing Team Builder module
+        run: |
+          rm -rf modules/team-builder
+          mkdir -p modules/team-builder
+
+      - name: Extract Team Builder ZIP
+        run: |
+          mkdir -p /tmp/team-builder
+          unzip -q modules/blade-team-builder.zip -d /tmp/team-builder
+
+      - name: Copy module contents
+        run: |
+          if [ -d "/tmp/team-builder/blade-team-builder" ]; then
+            cp -R /tmp/team-builder/blade-team-builder/. modules/team-builder/
+          else
+            cp -R /tmp/team-builder/. modules/team-builder/
+          fi
+
+      - name: Remove unnecessary files
+        run: |
+          find modules/team-builder -type d -name "__MACOSX" -prune -exec rm -rf {} + || true
+          find modules/team-builder -name ".DS_Store" -delete || true
+
+      - name: Remove ZIP
+        run: |
+          rm -f modules/blade-team-builder.zip
+
+      - name: Commit extracted module
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add modules/
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Extract Team Builder module"
+            git push
+          fi
