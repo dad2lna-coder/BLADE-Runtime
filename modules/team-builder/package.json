@@ -1,0 +1,34 @@
+{
+  "name": "@blade/team-builder",
+  "version": "1.0.0",
+  "description": "Standalone Svelte plugin for Blade: team forming, drag-and-drop assignment, auto-form, RDO sex-balance, and staffing-oddity checks. Ships as a self-contained <blade-team-builder> web component plus a plain JS/TS library API.",
+  "type": "module",
+  "main": "./dist/blade-team-builder.js",
+  "module": "./dist/blade-team-builder.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/blade-team-builder.js"
+    },
+    "./element": "./dist/blade-team-builder-element.js",
+    "./style.css": "./dist/blade-team-builder.css"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --config vite.element.config.js",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "peerDependencies": {
+    "svelte": "^4.2.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.0",
+    "svelte": "^4.2.19",
+    "svelte-check": "^3.8.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0"
+  }
+}
