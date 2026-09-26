@@ -194,41 +194,18 @@ export function initReportsMath(S) {
   };
 
   S.computeShiftAnchors = function () {
-    var starts = {};
-    (S.state.lines || []).forEach(function (l) {
-      var sh = S.getShift(l.shiftId);
-      if (!sh) return;
-      var m = S.timeToMin(sh.start);
-      starts[m] = (starts[m] || 0) + 1;
-    });
-    var entries = Object.keys(starts)
-      .map(function (k) {
-        return { min: +k, n: starts[k] };
-      })
-      .sort(function (a, b) {
-        return a.min - b.min;
-      });
-    if (!entries.length) return { am: 8 * 60, pm: 14 * 60 };
-    var am = entries[0].min;
-    var amN = 0;
-    entries.forEach(function (e) {
-      if (e.min < 12 * 60 && e.n > amN) {
-        amN = e.n;
-        am = e.min;
-      }
-    });
-    var pm = entries[entries.length - 1].min;
-    var pmN = 0;
-    entries.forEach(function (e) {
-      if (e.min >= 12 * 60 && e.n > pmN) {
-        pmN = e.n;
-        pm = e.min;
-      }
-    });
-    return { am: am, pm: pm };
+    if (typeof window.Scheduler !== 'undefined' && window.Scheduler.computeShiftAnchors) {
+      return window.Scheduler.computeShiftAnchors();
+    }
+    // Fallback if FC isn't loaded
+    return { am: 8 * 60, pm: 14 * 60 };
   };
 
   S.phaseOfStart = function (startMin, anchors, threshold) {
+    if (typeof window.Scheduler !== 'undefined' && window.Scheduler.phaseOfStart) {
+      return window.Scheduler.phaseOfStart(startMin, anchors, threshold);
+    }
+    // Fallback
     threshold = threshold != null ? threshold : 30;
     if (startMin <= anchors.am - threshold && startMin < 11 * 60) return "Opening";
     if (startMin < anchors.pm - threshold) return "AM";

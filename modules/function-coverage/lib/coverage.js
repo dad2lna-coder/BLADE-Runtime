@@ -41,12 +41,14 @@ export function countAssignedAtSlot(dayIndex, slotMin, opts) {
 export function computeAssignedCoverage(opts) {
   opts = opts || {};
   if (!api || !api.state) return { slots: [], cells: [] };
-  var openMin = api.timeToMin ? api.timeToMin(api.state.open || "03:30") : 0;
-  var closeMin = api.timeToMin ? api.timeToMin(api.state.close || "23:00") : 24 * 60;
-  var start = Math.floor(openMin / 30) * 30;
-  var end = Math.ceil(closeMin / 30) * 30;
-  var slots = [];
-  for (var m = start; m < end; m += 30) slots.push(m);
+  var slots = api.coverageSlots ? api.coverageSlots() : [];
+  if (!slots.length) {
+    var openMin = api.timeToMin ? api.timeToMin(api.state.open || "03:30") : 0;
+    var closeMin = api.timeToMin ? api.timeToMin(api.state.close || "23:00") : 24 * 60;
+    var start = Math.floor(openMin / 30) * 30;
+    var end = Math.ceil(closeMin / 30) * 30;
+    for (var m = start; m < end; m += 30) slots.push(m);
+  }
   var days = opts.days != null ? opts.days : ((api.state.weekCount || 1) * 7);
   var roles = opts.roles || ["STSO", "LTSO", "TSO"];
   var duties = opts.duties || ["BAG", "DFO", "PAX"];

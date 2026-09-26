@@ -169,6 +169,7 @@ export function initCapacityMath(S) {
   };
 
   S.capacitySlots = function () {
+    if (typeof S.coverageSlots === "function") return S.coverageSlots();
     var c = cfg();
     var open = Math.floor(toMin(c.startTime || "03:30") / 30) * 30;
     var close = Math.ceil(toMin(c.endTime || "23:00") / 30) * 30;
