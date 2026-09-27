@@ -127,7 +127,7 @@ export function renderGenderBalanceReports(S) {
       html +=
         "<td class=\"" +
         (skew ? "hc-high" : "") +
-        '\">' +
+        '">' +
         fPct +
         "% F" +
         (skew ? " \u26a0" : "") +
