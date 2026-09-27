@@ -7,22 +7,18 @@ export function bindPoolsApi(scheduler) {
   api = scheduler;
 }
 
-// Local helper (classic equivalent, not exported)
 function num0(v) { return Math.max(0, Math.floor(+v || 0)); }
 
-// Exported: bag pool total from classic
 export function bagPoolTotal(fc) {
   return num0(fc.poolStsoBagM) + num0(fc.poolStsoBagF) + num0(fc.poolLtsoBagM) + num0(fc.poolLtsoBagF) +
     num0(fc.poolTsoBagM) + num0(fc.poolTsoBagF);
 }
 
-// Exported: dfo pool total from classic
 export function dfoPoolTotal(fc) {
   return num0(fc.poolStsoDfoM) + num0(fc.poolStsoDfoF) + num0(fc.poolLtsoDfoM) + num0(fc.poolLtsoDfoF) +
     num0(fc.poolTsoDfoM) + num0(fc.poolTsoDfoF);
 }
 
-// Exported: initialize function coverage state from api.state
 export function ensureFunctionCoverage() {
   if (!api.state.functionCoverage) api.state.functionCoverage = {};
   var fc = api.state.functionCoverage;
@@ -67,12 +63,10 @@ export function ensureFunctionCoverage() {
   return fc;
 }
 
-// Exported: derive mode from ensured coverage
 export function getFunctionMode() {
   return syncDerivedMode(ensureFunctionCoverage());
 }
 
-// Exported: FTE caps by role/sex from scheduler state
 export function fteCapsByRoleSex() {
   var st = api.state || {};
   return {
@@ -82,7 +76,6 @@ export function fteCapsByRoleSex() {
   };
 }
 
-// Exported: cap function pools to FTE from classic
 export function capFunctionPoolsToFte(fc, issues) {
   fc = fc || ensureFunctionCoverage();
   var caps = fteCapsByRoleSex();
@@ -104,7 +97,6 @@ export function capFunctionPoolsToFte(fc, issues) {
   return fc;
 }
 
-// Exported: sync derived mode (used by ensureFunctionCoverage and getFunctionMode)
 function syncDerivedMode(fc) {
   var bag = bagPoolTotal(fc) > 0, dfo = dfoPoolTotal(fc) > 0;
   fc.poolBag = bagPoolTotal(fc);
@@ -122,7 +114,6 @@ function shiftStartMin(shiftId) {
   return 1e9;
 }
 
-// Exported: build certified pools from classic js/functions.js
 export function buildCertifiedPools(fc) {
   fc = fc || ensureFunctionCoverage();
   var lines = api.state.lines || [];
@@ -158,7 +149,55 @@ export function buildCertifiedPools(fc) {
   }
 
   function isPtLine(line) {
-    return !!(line && (line.empClass === "PT" || line.isPt === true));
+    if (!line) return false;
+    if (line.isPt === true) return true;
+    return String(line.empClass || "").trim().toUpperCase() === "PT";
+  }
+
+  function clampTsoPtDfo() {
+    var cap = num0(fc.poolTsoDfoPt);
+    var pts = [];
+    lines.forEach(function (l) {
+      if (!l || l.isExtra || l.extraPositionId) return;
+      if (api.lineRoleKey(l) !== "TSO") return;
+      if (!isPtLine(l)) return;
+      var el = ensureEligible(l);
+      if (el.bag || !el.dfo) return;
+      pts.push(l);
+    });
+    pts.sort(function (a, b) {
+      var d = api.lineStartMin(b) - api.lineStartMin(a);
+      if (d) return d;
+      return String(b.id).localeCompare(String(a.id));
+    });
+    var cleared = 0;
+    while (pts.length > cap) {
+      var drop = pts.shift();
+      ensureEligible(drop).dfo = false;
+      cleared++;
+    }
+    if (cleared && api.state) {
+      if (!api.state.issues) api.state.issues = [];
+      var msg = "PT DFO capped to " + cap;
+      if (api.state.issues.indexOf(msg) < 0) api.state.issues.push(msg);
+    }
+    return cleared;
+  }
+
+  function recountDfoSides(arr) {
+    var am = 0, pm = 0;
+    arr.forEach(function (res) {
+      am += res.am || 0;
+      pm += res.pm || 0;
+    });
+    var total = 0;
+    lines.forEach(function (l) {
+      if (!l || l.isExtra || l.extraPositionId) return;
+      if (api.lineRoleKey(l) !== "TSO") return;
+      var el = l.functionEligible;
+      if (el && el.dfo && !el.bag) total++;
+    });
+    return { total: total, am: am, pm: pm };
   }
 
   function tsoPtDfoRemaining() {
@@ -328,11 +367,13 @@ export function buildCertifiedPools(fc) {
     ltso: markDfo("LTSO", "M", fc.poolLtsoDfoM), ltsoF: markDfo("LTSO", "F", fc.poolLtsoDfoF),
     tso: markDfo("TSO", "M", fc.poolTsoDfoM), tsoF: markDfo("TSO", "F", fc.poolTsoDfoF)
   };
+  clampTsoPtDfo();
+  var tsoSides = recountDfoSides([dfo.tso, dfo.tsoF]);
   return {
     bag: bag,
     stso: { total: dfo.stso.total + dfo.stsoF.total, am: dfo.stso.am + dfo.stsoF.am, pm: dfo.stso.pm + dfo.stsoF.pm },
     ltso: { total: dfo.ltso.total + dfo.ltsoF.total, am: dfo.ltso.am + dfo.ltsoF.am, pm: dfo.ltso.pm + dfo.ltsoF.pm },
-    tso: { total: dfo.tso.total + dfo.tsoF.total, am: dfo.tso.am + dfo.tsoF.am, pm: dfo.tso.pm + dfo.tsoF.pm },
+    tso: tsoSides,
     anchors: anchors
   };
 }
