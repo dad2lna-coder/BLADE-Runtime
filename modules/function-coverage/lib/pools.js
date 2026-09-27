@@ -200,17 +200,61 @@ export function buildCertifiedPools(fc) {
     return { total: total, am: am, pm: pm };
   }
 
-  function tsoPtDfoRemaining() {
-    var cap = num0(fc.poolTsoDfoPt);
+  var ptReserveLeft = num0(fc.poolTsoDfoPt);
+
+  function tsoPtDfoCount() {
     var used = 0;
     lines.forEach(function (l) {
       if (!l || l.isExtra || l.extraPositionId) return;
       if (api.lineRoleKey(l) !== "TSO") return;
       if (!isPtLine(l)) return;
       var el = l.functionEligible;
-      if (el && el.dfo) used++;
+      if (el && el.dfo && !el.bag) used++;
     });
-    return Math.max(0, cap - used);
+    return used;
+  }
+
+  function tsoPtDfoRemaining() {
+    return Math.max(0, num0(fc.poolTsoDfoPt) - tsoPtDfoCount());
+  }
+
+  function tryMarkTsoDfo(cand) {
+    var el = ensureEligible(cand);
+    if (el.bag || el.dfo) return false;
+    if (isPtLine(cand)) {
+      if (ptReserveLeft <= 0) return false;
+      el.dfo = true;
+      ptReserveLeft--;
+      return true;
+    }
+    el.dfo = true;
+    return true;
+  }
+
+  function fillPtReserveBySwap() {
+    var want = num0(fc.poolTsoDfoPt);
+    ["M", "F"].forEach(function (sex) {
+      while (tsoPtDfoCount() < want) {
+        var unusedPt = unused("TSO", sex).filter(isPtLine);
+        var ftDfo = lines.filter(function (l) {
+          if (!l || l.isExtra || l.extraPositionId) return false;
+          if (api.lineRoleKey(l) !== "TSO" || l.sex !== sex) return false;
+          if (isPtLine(l)) return false;
+          var el = ensureEligible(l);
+          return el.dfo && !el.bag;
+        });
+        if (!unusedPt.length || !ftDfo.length) break;
+        unusedPt.sort(preferFtThenStart);
+        ftDfo.sort(function (a, b) {
+          var d = api.lineStartMin(b) - api.lineStartMin(a);
+          if (d) return d;
+          return String(b.id).localeCompare(String(a.id));
+        });
+        ensureEligible(ftDfo[0]).dfo = false;
+        ensureEligible(unusedPt[0]).dfo = true;
+        if (ptReserveLeft > 0) ptReserveLeft--;
+      }
+    });
   }
 
   function preferFtThenStart(a, b) {
@@ -327,8 +371,11 @@ export function buildCertifiedPools(fc) {
         var cand = arr[j];
         var el = ensureEligible(cand);
         if (el.bag || el.dfo) continue;
-        if (role === "TSO" && isPtLine(cand) && tsoPtDfoRemaining() <= 0) continue;
-        el.dfo = true;
+        if (role === "TSO") {
+          if (!tryMarkTsoDfo(cand)) continue;
+        } else {
+          el.dfo = true;
+        }
         tagged.push(cand);
         want--;
       }
@@ -340,8 +387,11 @@ export function buildCertifiedPools(fc) {
         var cand2 = rest[k];
         var el2 = ensureEligible(cand2);
         if (el2.bag || el2.dfo) continue;
-        if (role === "TSO" && isPtLine(cand2) && tsoPtDfoRemaining() <= 0) continue;
-        el2.dfo = true;
+        if (role === "TSO") {
+          if (!tryMarkTsoDfo(cand2)) continue;
+        } else {
+          el2.dfo = true;
+        }
         tagged.push(cand2);
       }
     }
@@ -367,6 +417,7 @@ export function buildCertifiedPools(fc) {
     ltso: markDfo("LTSO", "M", fc.poolLtsoDfoM), ltsoF: markDfo("LTSO", "F", fc.poolLtsoDfoF),
     tso: markDfo("TSO", "M", fc.poolTsoDfoM), tsoF: markDfo("TSO", "F", fc.poolTsoDfoF)
   };
+  fillPtReserveBySwap();
   clampTsoPtDfo();
   var tsoSides = recountDfoSides([dfo.tso, dfo.tsoF]);
   return {

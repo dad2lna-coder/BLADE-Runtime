@@ -263,7 +263,7 @@ export function generateFunctionAssignments(opts) {
     if (ensureEligible(l).dfo) {
       for (var di = 0; di < days; di++) {
         if (!worksDay(l, di)) continue;
-        if (!getDuty(l.id, di)) setDuty(l.id, di, "PAX");
+        if (!getDuty(l.id, di)) setDuty(l.id, di, "DFO");
       }
       return;
     }
