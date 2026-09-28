@@ -1,4 +1,4 @@
-import { teams } from '../stores/teamBuilderStore.js';
+﻿import { teams } from '../stores/teamBuilderStore.js';
 import { teamPhaseInfo } from './phase.js';
 import { memberLine } from './pool.js';
 
@@ -9,15 +9,6 @@ export function sexOf(p) {
 export function roleOf(line) {
     if (line.isStso) return "STSO";
     if (line.isLtso) return "LTSO";
-    var train = line.isTraining || line.trainingClass ||
-      String(line.empClass || "").toUpperCase() === "ESTI" ||
-      String(line.empClass || "").toUpperCase() === "MSTI" ||
-      String(line.extraName || "").toUpperCase() === "ESTI" ||
-      String(line.extraName || "").toUpperCase() === "MSTI";
-    if (train) {
-      var cls = String(line.trainingClass || line.empClass || line.extraName || "").trim().toUpperCase();
-      if (cls === "ESTI" || cls === "MSTI") return cls;
-    }
     return "TSO";
 }
 
@@ -26,10 +17,10 @@ export function rdoKey(line) {
 }
 
 export function rdoLabel(line) {
-    const S = window.Scheduler;
+    const S = window.Scheduler; // Bridge
     const days = S.DAYS || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const k = rdoKey(line);
-    if (!k) return "\u2014";
+    if (!k) return "—";
     return k.split(",").map(i => days[+i] || i).join(",");
 }
 
@@ -72,11 +63,11 @@ export function teamAnchorMeta(team) {
             best = p;
         }
     });
-    if (!best) return { rdo: "\u2014", start: "\u2014", shift: "\u2014" };
+    if (!best) return { rdo: "—", start: "—", shift: "—" };
     return {
-        rdo: best.rdoLabel || "\u2014",
-        start: best.start || "\u2014",
-        shift: best.shiftName || best.shiftId || "\u2014"
+        rdo: best.rdoLabel || "—",
+        start: best.start || "—",
+        shift: best.shiftName || best.shiftId || "—"
     };
 }
 

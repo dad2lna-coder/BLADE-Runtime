@@ -68,6 +68,13 @@ function lineIsDfoFunction(line) {
   return !!(el.dfo || el.DFO);
 }
 
+function lineInOps(S, line) {
+  if (!line) return false;
+  if (S && typeof S.lineInOpsCoverage === "function") return !!S.lineInOpsCoverage(line);
+  if (line.isExtra || line.extraPositionId || line.isTraining) return !!line.opsFte;
+  return true;
+}
+
 export function computeRoleMatrixByDow(S, opts) {
   opts = opts || {};
   var mode = opts.mode || "total"; // passenger | baggage | total | dfoPool
@@ -100,7 +107,9 @@ export function computeRoleMatrixByDow(S, opts) {
 
   (S.state.lines || []).forEach(function (line) {
     if (!S.getShift(line.shiftId)) return;
+    if (!lineInOps(S, line) || line.opsFte === false) return;
     var role = roleOf(S, line);
+    if (role !== "STSO" && role !== "LTSO" && role !== "TSO") return;
     var sex = line.sex === "F" ? "F" : "M";
 
     if (mode === "dfoPool") {

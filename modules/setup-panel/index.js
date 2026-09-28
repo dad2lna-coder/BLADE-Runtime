@@ -3,7 +3,6 @@ import { ensureStyles } from "./utils/sync.js";
 import { bridgeScheduler } from "./actions/bridge.js";
 import { renderAll, bindSetupActions } from "./actions/render.js";
 import { attachExtraPositions } from "./utils/extraPositions.js";
-import { attachTrainingClasses } from "./utils/trainingClasses.js";
 
 let _boundDomContentLoaded = false;
 
@@ -59,7 +58,6 @@ export function initSetupPanel(scheduler) {
   }
   // Setup owns extra-type cards + line build; reclaim if FC rebound the helpers.
   attachExtraPositions(S);
-  attachTrainingClasses(S);
 
   renderAll(S);
 }

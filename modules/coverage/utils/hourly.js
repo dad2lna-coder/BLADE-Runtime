@@ -17,6 +17,12 @@ export function slotLabel(mins) {
 }
 
 export function lineMatchesCoverageFilter(S, line, dayOff) {
+  if (!line) return false;
+  var inOps = S.lineInOpsCoverage
+    ? S.lineInOpsCoverage(line)
+    : (line.isExtra || line.extraPositionId || line.isTraining ? !!line.opsFte : true);
+  if (!inOps || line.opsFte === false) return false;
+
   var cv = S.coverageView || { stso: false, ltso: false, tso: true, funcView: "all" };
 
   var role = S.lineRoleKey ? S.lineRoleKey(line) : "TSO";
