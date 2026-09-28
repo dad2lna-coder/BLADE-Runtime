@@ -12,21 +12,29 @@ function createMockScheduler() {
       weekCount: 1,
       lines: [
         { id: "L1", shiftId: "S1", sex: "M", function: "DFO", functionEligible: { dfo: true } }, // DFO person
-        { id: "L2", shiftId: "S1", sex: "F", function: "TSO", functionEligible: { pax: true } }   // Regular person
+        { id: "L2", shiftId: "S1", sex: "F", function: "TSO", functionEligible: { pax: true } },  // Regular person
+        { id: "L3", shiftId: "S1", sex: "", role: "ESTI", isTraining: true, opsFte: false }     // Non-ops training line
       ],
       shifts: [
         { id: "S1", name: "AM", start: "06:00", end: "14:00" }
       ],
       schedule: {
         "L1": ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"],
-        "L2": ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"]
+        "L2": ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"],
+        "L3": ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"]
       },
       functionRotation: {
         "L1": ["BAG", "PAX", null, "DFO", "BAG", "RDO", "RDO"],
-        "L2": ["BAG", "PAX", null, null, null, "RDO", "RDO"]
+        "L2": ["BAG", "PAX", null, null, null, "RDO", "RDO"],
+        "L3": [null, null, null, null, null, "RDO", "RDO"]
       }
     },
     coverageView: { stso: true, ltso: true, tso: true, funcView: "all" },
+    lineInOpsCoverage(line) {
+      if (!line) return false;
+      if (line.isTraining || line.isExtra || line.extraPositionId) return !!line.opsFte;
+      return true;
+    },
     timeToMin(t) {
       const [h, m] = t.split(":").map(Number);
       return h * 60 + m;
@@ -35,6 +43,7 @@ function createMockScheduler() {
       return S.state.shifts.find(s => s.id === id);
     },
     lineRoleKey(line) {
+      if (line.isTraining || line.role === "ESTI") return "ESTI";
       return "TSO";
     },
     getRotationDuty(lineId, dayOff) {
@@ -53,6 +62,11 @@ console.log("Running Filter Semantics tests...");
 const S = createMockScheduler();
 const lineDfo = S.state.lines[0];
 const lineReg = S.state.lines[1];
+const lineTraining = S.state.lines[2];
+
+// Test Non-Ops / Training Gate
+S.coverageView.funcView = "all";
+assert.strictEqual(lineMatchesCoverageFilter(S, lineTraining, 0), false, "Training / opsFte: false line is excluded from Coverage filter");
 
 // Day 0: L1 is on BAG, L2 is on BAG
 // DFO person on BAG day
@@ -91,9 +105,9 @@ const dfoRpt = computeRoleMatrixByDow(S, { mode: "dfoPool" });
 const bagRpt = computeRoleMatrixByDow(S, { mode: "baggage" });
 const paxRpt = computeRoleMatrixByDow(S, { mode: "passenger" });
 
-// Day offset 0 (Sun): L1 and L2 both working on BAG
+// Day offset 0 (Sun): L1 and L2 both working on BAG. L3 (training) working but excluded.
 // slot 0 (06:00), dow 0 (Sun):
-assert.strictEqual(totalRpt.matrix[0][0].TSO.M + totalRpt.matrix[0][0].TSO.F, 2, "Total report counts both L1(M) and L2(F)");
+assert.strictEqual(totalRpt.matrix[0][0].TSO.M + totalRpt.matrix[0][0].TSO.F, 2, "Total report counts both L1(M) and L2(F) and excludes training L3");
 assert.strictEqual(dfoRpt.matrix[0][0].TSO.M, 1, "DFO report counts L1(M) on BAG day");
 assert.strictEqual(dfoRpt.matrix[0][0].TSO.F, 0, "DFO report excludes L2(F)");
 assert.strictEqual(bagRpt.matrix[0][0].TSO.M + bagRpt.matrix[0][0].TSO.F, 2, "BAG report counts both L1 and L2 on BAG day");
