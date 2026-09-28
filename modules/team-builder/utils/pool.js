@@ -10,14 +10,12 @@ function lineInOps(S, line) {
 }
 
 export function collectTeamPool() {
-    const S = window.Scheduler;
+    const S = window.Scheduler; // Bridge
     const lines = (S.state && S.state.lines) ? S.state.lines : [];
 
-    pool.length = 0;
+    pool.length = 0; // Clear and repopulate
     lines.forEach(l => {
-        var training = !!(l.isTraining || l.trainingClass ||
-          (S && S.isTrainingLine && S.isTrainingLine(l)));
-        if (!training && !lineInOps(S, l)) return;
+        if (!lineInOps(S, l)) return;
         pool.push({
             id: l.id,
             lineCode: l.lineCode || ("L" + l.id),
@@ -26,7 +24,7 @@ export function collectTeamPool() {
             startMin: startOf(l),
             rdo: rdoKey(l),
             rdoLabel: rdoLabel(l),
-            sex: l.sex || "\u2014",
+            sex: l.sex || "—",
             empClass: l.empClass || "",
             shiftId: l.shiftId,
             shiftName: (S.getShift && S.getShift(l.shiftId)) ? S.getShift(l.shiftId).name : l.shiftId,
@@ -34,9 +32,7 @@ export function collectTeamPool() {
             isExtra: !!(l.isExtra || l.extraPositionId),
             extraPositionId: l.extraPositionId || null,
             extraName: l.extraName || "",
-            opsFte: !!l.opsFte,
-            isTraining: training,
-            trainingClass: l.trainingClass || ""
+            opsFte: !!l.opsFte
         });
     });
 
@@ -81,7 +77,6 @@ export function unassignedPool() {
 export function groupPoolByRole(list) {
     const groups = { TSO: [], LTSO: [], STSO: [] };
     list.forEach(p => {
-        if (p.isTraining || p.role === "ESTI" || p.role === "MSTI") return;
         (groups[p.role] || groups.TSO).push(p);
     });
     return groups;
