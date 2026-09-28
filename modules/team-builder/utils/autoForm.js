@@ -54,7 +54,11 @@ export function autoFormTeams() {
     const allowOne = formOpts.allowOneRdo;
 
     const byRole = { STSO: [], LTSO: [], TSO: [] };
-    pool.forEach(p => { (byRole[p.role] || byRole.TSO).push(p); });
+    pool.forEach(p => {
+        const r = p.role;
+        if (r === "ESTI" || r === "MSTI" || p.isTraining) return;
+        if (r === "STSO" || r === "LTSO" || r === "TSO") byRole[r].push(p);
+    });
 
     const nTeams = byRole.STSO.length;
     if (!nTeams) return;
