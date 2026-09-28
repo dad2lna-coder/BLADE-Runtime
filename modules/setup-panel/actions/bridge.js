@@ -4,7 +4,6 @@ import { paintFunctionCoverage } from "./paint.js";
 import { snapshotFte, applyFte, collectSetupInputs, exportStaffingConfig } from "../utils/fte.js";
 import { attachShiftsTable } from "./shiftsTable.js";
 import { attachExtraPositions } from "../utils/extraPositions.js";
-import { attachTrainingClasses } from "../utils/trainingClasses.js";
 import { attachGenerate } from "./generate.js";
 import { attachAllocation } from "./allocation.js";
 import { attachShiftMath } from "../utils/shiftMath.js";
@@ -30,7 +29,6 @@ export function bridgeScheduler(S) {
   safeAttach("attachShiftMath", function () { attachShiftMath(S); });
   safeAttach("attachShiftsTable", function () { attachShiftsTable(S); });
   safeAttach("attachExtraPositions", function () { attachExtraPositions(S); });
-  safeAttach("attachTrainingClasses", function () { attachTrainingClasses(S); });
   safeAttach("attachAllocation", function () { attachAllocation(S); });
   safeAttach("attachAirportStub", function () { attachAirportStub(S); });
   safeAttach("attachExportBoard", function () { attachExportBoard(S); });
