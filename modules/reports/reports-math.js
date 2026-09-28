@@ -1,4 +1,3 @@
-/** Management reports — deviation tables + gender balance analysis + cohesion */
 import { attachDeviation } from "./deviation.js";
 import { attachGenderBalance } from "./gender-balance.js";
 import { attachCohesion } from "./cohesion.js";
