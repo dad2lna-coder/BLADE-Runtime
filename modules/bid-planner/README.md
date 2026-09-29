@@ -1,5 +1,7 @@
 # Bid Planner Module — Architectural & Technical Specification
 
+> **Note:** For canonical system architecture and component map, see **[docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md)**.
+
 ## Overview
 The **Bid Planner** module is a deterministic, config-driven bid scheduling engine integrated into BLADE. It calculates key milestone dates for bid operations (e.g. Leave Bids, Shift Bids) based on structured JSON rule sets and calendar configurations.
 

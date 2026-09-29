@@ -1,5 +1,7 @@
 # BLADE Alpha — Schedule Builder Instructions
 
+> **Note:** For overall system architecture, module relationships, and system data flow, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
 ## Overview
 BLADE Alpha is a browser staffing scheduler for TSO, LTSO, and STSO bid lines. It runs from this repo (or the GitHub Pages build). Schedule data stays in the page until you Export.
 

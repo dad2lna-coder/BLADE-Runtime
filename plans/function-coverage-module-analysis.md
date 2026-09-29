@@ -1,5 +1,7 @@
 # Function Coverage Module Analysis
 
+> **Status Note:** Historical analysis plan for function coverage modularization. For the current vs. desired Function Coverage architecture map, see **[docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)**.
+
 ## 1) S.* exports in `js/functions.js` with line numbers (29 total)
 
 ```

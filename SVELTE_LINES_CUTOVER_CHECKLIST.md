@@ -1,5 +1,7 @@
 # BLADE Alpha — Lines Tab Svelte Cutover Implementation Checklist
 
+> **Status Note:** Historical implementation checklist for the Svelte Lines table cutover. For canonical system architecture and component roles, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
 ## Executive Summary
 Replace the classic vanilla-JS Lines table (`render.js::renderLines()` + `line-colors.js`) with a Svelte 4 island (`modules/lines-table/`) that uses **TanStack Virtual** (`@tanstack/svelte-virtual@3.13.39`, Svelte 4 pinned). Preserve all existing state mutations, event hooks, and classic bypass safety.
 

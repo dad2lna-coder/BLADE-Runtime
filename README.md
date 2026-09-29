@@ -58,42 +58,14 @@ That URL is GitHub Pages from **bright-garden** (see `.github/workflows/pages.ym
 
 ---
 
-## Architecture (Host as Renderer)
+## Architecture
 
-The host shell (`index.html` + thin `js/` runtime) acts purely as a renderer:
-1. Loads `modules/manifest.json`
-2. Mounts each module's Vite-built single-file `dist/*.js` into its tab/panel slot
-3. Owns the single shared `Scheduler` state store and EXP/IMP (`js/io.js`)
-4. Owns shell chrome (intro, console header/footer, instructions modal, theme)
+BLADE Alpha uses a **manifest-driven feature-modular monolith** architecture. The host shell (`index.html` + thin `js/` runtime) acts strictly as a renderer that loads `modules/manifest.json`, mounts DOM panel slots, and dynamically imports single-file ESM bundles into the page. All module features interact with a single shared runtime store (`window.Scheduler`).
 
-Every feature (Setup UI + generate/allocation, Lines grid + row-model + line-colors, Coverage, Reports + capacity math, Teams, Demand) lives in its owning module's source and ships as a Vite-built ESM dist bundle.
+For the canonical architecture map, module inventory, data flow, and current vs. desired specifications, see:
+👉 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
-```
-BLADE_Alpha/
-├── index.html                 # Shell, tab nav, module loader
-├── README.md
-├── INSTRUCTIONS.md            # User guide
-├── DEPENDENCY_MAP.md          # Architecture, boot flow, module contracts
-├── package.json               # Vite module build scripts + dev deps
-│
-├── css/                       # Console chrome, print, intro
-├── js/                        # Host shell scripts (constants, utils, io, main, chrome)
-├── lib/                       # Vendor libs (Sortable, luxon, ExcelJS)
-├── modules/
-│   ├── manifest.json          # Module manifest pointing to dist/*.js entries
-│   ├── setup-panel/           # Setup tab UI, shift math, allocation & generate engine
-│   ├── function-coverage/     # Engine-only function duty assignment (BAG/DFO/PAX)
-│   ├── lines-table/           # Svelte 4 virtualized table island + row model
-│   ├── coverage/              # 30-min heatmap, shift mix, coverage cuts
-│   ├── reports/               # Management reports, capacity math & mod-set board
-│   ├── team-builder/          # Team architecture, auto-form, drag-drop boards
-│   └── demand-capacity/       # Flight volume xlsx parser & pax capacity overlay
-└── .github/workflows/
-    ├── pages.yml              # Pages workflow (runs npm run build:modules)
-    └── rebuild-lines-table.yml
-```
-
-Details: [DEPENDENCY_MAP.md](DEPENDENCY_MAP.md).
+For technical boot contracts and runtime script inventories, see [DEPENDENCY_MAP.md](DEPENDENCY_MAP.md).
 
 ---
 
