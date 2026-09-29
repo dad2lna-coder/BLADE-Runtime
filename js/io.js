@@ -9,8 +9,19 @@ window.Scheduler = window.Scheduler || {};
     var extraName = raw.extraName == null ? "" : String(raw.extraName);
     var isExtra = Boolean(raw.isExtra || extraId);
     var opsRaw = raw.opsFte;
-    var opsFte = opsRaw === true || opsRaw === 1 || String(opsRaw == null ? "" : opsRaw).toLowerCase() === "yes" || String(opsRaw).toLowerCase() === "true";
-    return {
+    var opsFte;
+    if (opsRaw !== undefined && opsRaw !== null) {
+      opsFte = opsRaw === true || opsRaw === 1 || String(opsRaw).toLowerCase() === "yes" || String(opsRaw).toLowerCase() === "true";
+    } else if (isExtra || raw.isTraining) {
+      opsFte = false;
+    } else {
+      opsFte = true;
+    }
+    var fn = raw.function;
+    if (fn !== "DFO" && fn !== "PAX" && fn !== "BAG" && fn !== "TRAINING") {
+      fn = "";
+    }
+    var line = {
       id: raw.id,
       lineCode: raw.lineCode || ("Line " + String(raw.id).padStart(3, "0")),
       shiftId: raw.shiftId || "",
@@ -25,7 +36,7 @@ window.Scheduler = window.Scheduler || {};
       extraName: extraName || (isExtra ? (raw.position || raw.empClass || "") : ""),
       opsFte: opsFte,
       sex: raw.sex === "F" ? "F" : "M",
-      function: raw.function === "DFO" || raw.function === "PAX" || raw.function === "BAG" ? raw.function : "",
+      function: fn,
       certPool: raw.certPool == null ? "" : String(raw.certPool).trim(),
       rdoDays: Array.isArray(raw.rdoDays) ? raw.rdoDays.map(Number).filter(function (x) {
         return Number.isInteger(x) && x >= 0 && x <= 6;
@@ -33,6 +44,17 @@ window.Scheduler = window.Scheduler || {};
       rdoHard: Boolean(raw.rdoHard),
       paid: S.safeNumber(raw.paid, 8, 1, 24)
     };
+    if (raw.isTraining !== undefined) line.isTraining = Boolean(raw.isTraining);
+    if (raw.trainingClass) line.trainingClass = raw.trainingClass;
+    if (raw.functionEligible && typeof raw.functionEligible === "object") {
+      line.functionEligible = Object.assign({}, raw.functionEligible);
+    }
+    if (raw.dayTimes && typeof raw.dayTimes === "object") {
+      line.dayTimes = Object.assign({}, raw.dayTimes);
+    }
+    if (raw.startTime) line.startTime = raw.startTime;
+    if (raw.endTime) line.endTime = raw.endTime;
+    return line;
   }
 
   function normalizeTeam(raw) {
@@ -200,6 +222,8 @@ window.Scheduler = window.Scheduler || {};
     if (startEl && S.toDateInputValue) startEl.value = S.toDateInputValue(S.state.startDate);
     if (S.renderShiftsTable) S.renderShiftsTable();
     if (S.renderAll) S.renderAll();
+    if (S.renderCoverageBars) S.renderCoverageBars();
+    if (S.renderReports) S.renderReports();
     if (S.updateStatus) {
       S.updateStatus("Imported " + (S.state.lines.length ? "config and results" : "config only") +
         " · " + S.state.lines.length + " line(s).");
