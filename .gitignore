@@ -10,3 +10,4 @@ dist-frontend/
 # Module dist builds (owned by Vite / Actions)
 modules/*/dist/
 !modules/lines-table/dist/
+.aider*
