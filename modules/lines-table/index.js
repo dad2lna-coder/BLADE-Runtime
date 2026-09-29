@@ -46,6 +46,7 @@ export function initLinesTable(scheduler) {
     if (duty === "BAG") return "BAG";
     if (duty === "DFO") return "DFO";
     if (duty === "PAX") return "PAX";
+    if (duty === "TRAINING") return "TRAINING";
     return null;
   }
 
@@ -240,6 +241,7 @@ export function initLinesTable(scheduler) {
       S.state.schedule[key][dayIndex] = "WORK";
       if (duty === "BAG") setRotationDuty(key, dayIndex, "BAG");
       else if (duty === "DFO") setRotationDuty(key, dayIndex, "DFO");
+      else if (duty === "TRAINING") setRotationDuty(key, dayIndex, "TRAINING");
       else setRotationDuty(key, dayIndex, "PAX");
     }
 

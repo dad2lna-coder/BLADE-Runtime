@@ -4,6 +4,7 @@ export function defaultExportStyle() {
     bag: "#F4B4B4",
     dfo: "#FFF3A8",
     pax: "#A0C4FF",
+    training: "#D8B4F8",
     header: "#1F4E79"
   };
 }
@@ -42,6 +43,7 @@ export function getExportStyle(S) {
     bag: normalizeHex(cur.bag, d.bag),
     dfo: normalizeHex(cur.dfo, d.dfo),
     pax: normalizeHex(cur.pax, d.pax),
+    training: normalizeHex(cur.training, d.training),
     header: normalizeHex(cur.header, d.header)
   };
 }
@@ -50,7 +52,7 @@ export function dutyFillHex(style, duty) {
   var st = style || defaultExportStyle();
   var key = String(duty || "").toLowerCase();
   if (key === "bags") key = "bag";
-  if (key === "rdo" || key === "bag" || key === "dfo" || key === "pax" || key === "header") {
+  if (key === "rdo" || key === "bag" || key === "dfo" || key === "pax" || key === "training" || key === "header") {
     return st[key] || defaultExportStyle()[key];
   }
   return null;
@@ -70,7 +72,7 @@ export function applyExportCssVars(S) {
     document.getElementById("lines-toolbar"),
     document.querySelector(".lines-table-root")
   ];
-  ["rdo", "bag", "dfo", "pax", "header"].forEach(function (key) {
+  ["rdo", "bag", "dfo", "pax", "training", "header"].forEach(function (key) {
     var hex = st[key];
     var fg = readableTextHex(hex);
     roots.forEach(function (el) {
@@ -130,6 +132,7 @@ export function attachExportStyle(S) {
     S.state.exportStyle.bag = merged.bag;
     S.state.exportStyle.dfo = merged.dfo;
     S.state.exportStyle.pax = merged.pax;
+    S.state.exportStyle.training = merged.training;
     S.state.exportStyle.header = merged.header;
   }
   S.getExportStyle = function () { return getExportStyle(S); };

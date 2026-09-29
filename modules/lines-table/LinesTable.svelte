@@ -53,6 +53,7 @@
     if (t === 'BAG' || t === 'BAGS') return 'bag';
     if (t === 'DFO') return 'dfo';
     if (t === 'PAX') return 'pax';
+    if (t === 'TRAINING') return 'training';
     return null;
   }
 
@@ -62,6 +63,7 @@
     if (key === 'bag') return 'cell-day-col cell-function-duty cell-bag';
     if (key === 'dfo') return 'cell-day-col cell-function-duty cell-dfo';
     if (key === 'pax') return 'cell-day-col cell-function-duty cell-pax';
+    if (key === 'training') return 'cell-day-col cell-function-duty cell-training';
     return 'cell-day-col cell-work';
   }
 
@@ -192,6 +194,7 @@
             <option value="BAG">BAG</option>
             <option value="PAX">PAX</option>
             <option value="DFO">DFO</option>
+            <option value="TRAINING">TRAINING</option>
             <option value="OFF">OFF / RDO</option>
           </select>
         </label>
@@ -330,6 +333,7 @@
                       <option value="PAX">PAX</option>
                       <option value="BAG">BAG</option>
                       <option value="DFO">DFO</option>
+                      <option value="TRAINING">Training</option>
                       <option value="OFF">OFF</option>
                     </select>
 
@@ -578,6 +582,10 @@
   .lines-virtual-root .cell-function-duty.cell-pax {
     background: var(--export-pax, #a0c4ff);
     color: var(--export-pax-fg, #000);
+  }
+  .lines-virtual-root .cell-function-duty.cell-training {
+    background: var(--export-training, #d8b4f8);
+    color: var(--export-training-fg, #000);
   }
 
   .lines-virtual-root .line-rdo-cell {
