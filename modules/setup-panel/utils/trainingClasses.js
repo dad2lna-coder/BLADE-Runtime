@@ -105,7 +105,7 @@ export function buildTrainingClassLines(S) {
         extraName: cls,
         opsFte: false,
         sex: "",
-        function: "",
+        function: "TRAINING",
         rdoDays: rdo.rdoDays,
         rdoHard: rdo.hard,
         paid: def.paid || 8

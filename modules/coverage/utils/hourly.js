@@ -38,6 +38,11 @@ export function lineMatchesCoverageFilter(S, line, dayOff) {
   var duty = rawDuty ? String(rawDuty).toUpperCase() : null;
   if (duty === "BAGGAGE") duty = "BAG";
   if (duty === "PASSENGER") duty = "PAX";
+  if (!duty) {
+    duty = line.function === "BAG" ? "BAG" : (line.function === "DFO" || line.function === "PAX" ? "PAX" : (line.isTraining || line.trainingClass || line.empClass === "ESTI" || line.empClass === "MSTI" ? "TRAINING" : "PAX"));
+  }
+
+  if (duty === "TRAINING") return false;
 
   if (fv === "dfo") {
     return line.function === "DFO" || !!(line.functionEligible && (line.functionEligible.dfo || line.functionEligible.DFO));

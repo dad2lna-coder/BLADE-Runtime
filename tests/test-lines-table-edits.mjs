@@ -120,4 +120,9 @@ assert.strictEqual(dayFiltered.length, 0, "No lines are BAG on Friday");
 Scheduler.linesView.filterDuty = "";
 Scheduler.linesView.filterDay = "";
 
+// Test TRAINING Duty for ESTI Line
+const estiLine = { id: "201", lineCode: "ESTI 01", shiftId: "S1", empClass: "ESTI", position: "ESTI", isTraining: true, opsFte: false };
+const estiRow = Scheduler.lineToRowModel(estiLine, ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"], {});
+assert.strictEqual(estiRow.dayDuties[0], "TRAINING", "ESTI line work day defaults to TRAINING duty");
+
 console.log("ALL LINES TABLE EDIT & FILTER TESTS PASSED SUCCESSFULLY!");
