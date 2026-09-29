@@ -143,7 +143,8 @@ export function attachLineHelpers(S) {
           if (isRdo) return false;
           var dDuty = rot[dIdx];
           if (!dDuty) {
-            dDuty = line.function === "BAG" ? "BAG" : (line.function === "DFO" || line.function === "PAX" ? "PAX" : "PAX");
+            var isTrain = line.isTraining || line.trainingClass || line.empClass === "ESTI" || line.empClass === "MSTI" || line.extraName === "ESTI" || line.extraName === "MSTI";
+            dDuty = line.function === "BAG" ? "BAG" : (line.function === "DFO" ? "DFO" : (line.function === "PAX" ? "PAX" : (line.function === "TRAINING" || isTrain ? "TRAINING" : "PAX")));
           }
           return dDuty === fd;
         });

@@ -67,11 +67,12 @@ export function initRowModel(S) {
     var hours = 0;
 
     for (var day = 0; day < 7; day++) {
+      var dayCustom = line.dayTimes && line.dayTimes[String(day)];
       var times = typeof options.effectiveTimesResolver === "function"
         ? options.effectiveTimesResolver(line.shiftId, day)
         : null;
-      var effStart = line.startTime || (times && times.start) || start;
-      var effEnd = line.endTime || (times && times.end) || end;
+      var effStart = (dayCustom && dayCustom.start) || line.startTime || (times && times.start) || start;
+      var effEnd = (dayCustom && dayCustom.end) || line.endTime || (times && times.end) || end;
       dayStarts.push(effStart);
       dayEnds.push(effEnd);
 

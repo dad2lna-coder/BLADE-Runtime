@@ -125,4 +125,24 @@ const estiLine = { id: "201", lineCode: "ESTI 01", shiftId: "S1", empClass: "EST
 const estiRow = Scheduler.lineToRowModel(estiLine, ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"], {});
 assert.strictEqual(estiRow.dayDuties[0], "TRAINING", "ESTI line work day defaults to TRAINING duty");
 
+// Test TRAINING Filter Fallback Without Rotation Entries
+Scheduler.state.lines.push(estiLine);
+Scheduler.state.schedule["201"] = ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"];
+Scheduler.linesView.filterDuty = "TRAINING";
+Scheduler.linesView.filterDay = "0";
+let trainingFiltered = Scheduler.filterLinesForView(Scheduler.state.lines);
+assert.strictEqual(trainingFiltered.length, 1, "TRAINING filter matches ESTI line on Sunday");
+assert.strictEqual(trainingFiltered[0].id, "201");
+
+// Test Per-Day Line Time Isolation
+line101.dayTimes = { "0": { start: "04:00", end: "12:30" } };
+const updatedRows = Scheduler.getLineRowModels();
+const row101Day = updatedRows.find(r => r.id === "101");
+const row103Day = updatedRows.find(r => r.id === "103");
+assert.strictEqual(row101Day.dayStarts[0], "04:00", "Line 101 day 0 start time updated");
+assert.strictEqual(row103Day.dayStarts[0], "05:30", "Sibling line 103 day 0 start time unaffected");
+
+Scheduler.linesView.filterDuty = "";
+Scheduler.linesView.filterDay = "";
+
 console.log("ALL LINES TABLE EDIT & FILTER TESTS PASSED SUCCESSFULLY!");
