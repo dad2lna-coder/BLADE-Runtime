@@ -29,6 +29,15 @@ const Scheduler = {
   getShift(id) {
     return (Scheduler.state.shifts || []).find(s => s.id === id);
   },
+  getEffectiveShiftTimes(shiftId, dow) {
+    var s = Scheduler.getShift(shiftId);
+    if (!s) return { start: "00:00", end: "00:00" };
+    var key = String(dow);
+    if (s.dayTimes && s.dayTimes[key] && s.dayTimes[key].start && s.dayTimes[key].end) {
+      return { start: s.dayTimes[key].start, end: s.dayTimes[key].end };
+    }
+    return { start: s.start, end: s.end };
+  },
   timeToMin(t) {
     if (!t) return 0;
     const parts = String(t).split(":").map(Number);
@@ -81,5 +90,14 @@ const rowModels = Scheduler.getLineRowModels();
 const row1 = rowModels.find(r => r.id === "101");
 assert.strictEqual(row1.start, "05:30", "Row model should reflect updated shift start time");
 assert.strictEqual(row1.end, "14:00", "Row model should reflect updated shift end time");
+
+// Test Per-Day Shift Time Overrides
+if (!shiftS1.dayTimes) shiftS1.dayTimes = {};
+shiftS1.dayTimes["0"] = { start: "07:00", end: "15:30" };
+
+const updatedRowModels = Scheduler.getLineRowModels();
+const updatedRow1 = updatedRowModels.find(r => r.id === "101");
+assert.strictEqual(updatedRow1.dayStarts[0], "07:00", "Row model should reflect per-day start time override");
+assert.strictEqual(updatedRow1.dayEnds[0], "15:30", "Row model should reflect per-day end time override");
 
 console.log("ALL LINES TABLE EDIT & FILTER TESTS PASSED SUCCESSFULLY!");

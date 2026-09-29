@@ -8,6 +8,12 @@
   export let exportStyle = defaultExportStyle();
   export let onInlineEdit = null;
   export let onDayToggle = null;
+  export let onDayDutyEdit = null;
+  export let onDayTimeEdit = null;
+
+  function handleDayToggle(lineId, dayIndex) {
+    onDayToggle?.({ lineId, dayIndex });
+  }
   export let onSort = null;
   export let onFilter = null;
 
@@ -50,11 +56,11 @@
 
   function dayClass(text) {
     const key = dutyKey(text);
-    if (key === 'rdo') return 'cell-toggle cell-rdo';
-    if (key === 'bag') return 'cell-toggle cell-function-duty cell-bag';
-    if (key === 'dfo') return 'cell-toggle cell-function-duty cell-dfo';
-    if (key === 'pax') return 'cell-toggle cell-function-duty cell-pax';
-    return 'cell-toggle cell-work';
+    if (key === 'rdo') return 'cell-day-col cell-rdo';
+    if (key === 'bag') return 'cell-day-col cell-function-duty cell-bag';
+    if (key === 'dfo') return 'cell-day-col cell-function-duty cell-dfo';
+    if (key === 'pax') return 'cell-day-col cell-function-duty cell-pax';
+    return 'cell-day-col cell-work';
   }
 
   function dayStyle(text) {
@@ -70,8 +76,12 @@
     onInlineEdit?.({ lineId, field, value });
   }
 
-  function emitDay(lineId, dayIndex) {
-    onDayToggle?.({ lineId, dayIndex });
+  function emitDayDuty(lineId, dayIndex, duty) {
+    onDayDutyEdit?.({ lineId, dayIndex, duty });
+  }
+
+  function emitDayTime(lineId, dayIndex, field, value) {
+    onDayTimeEdit?.({ lineId, dayIndex, field, value });
   }
 
   function handleSort(col) {
@@ -263,12 +273,37 @@
                 <td
                   class={dayClass(row?.dayDuties?.[i] ?? row?.days?.[i])}
                   style={dayStyle(row?.dayDuties?.[i] ?? row?.days?.[i])}
-                  data-line-id={row?.id}
-                  data-day-index={i}
-                  title="Click to cycle duty (PAX -> BAG -> DFO -> OFF)"
-                  on:click={() => emitDay(row?.id, i)}
                 >
-                  {row?.days?.[i] ?? ''}
+                  <div class="day-cell-inner">
+                    <select
+                      class="day-duty-select"
+                      value={row?.dayDuties?.[i] === 'OFF' || row?.days?.[i] === 'RDO' ? 'OFF' : (row?.dayDuties?.[i] || 'PAX')}
+                      on:change={(e) => emitDayDuty(row?.id, i, e.target.value)}
+                    >
+                      <option value="PAX">PAX</option>
+                      <option value="BAG">BAG</option>
+                      <option value="DFO">DFO</option>
+                      <option value="OFF">OFF</option>
+                    </select>
+
+                    {#if row?.dayDuties?.[i] !== 'OFF' && row?.days?.[i] !== 'RDO'}
+                      <div class="day-times-wrap">
+                        <input
+                          type="time"
+                          class="day-time-input"
+                          value={row?.dayStarts?.[i] || row?.start || ''}
+                          on:change={(e) => emitDayTime(row?.id, i, 'start', e.target.value)}
+                        />
+                        <span class="day-time-sep">–</span>
+                        <input
+                          type="time"
+                          class="day-time-input"
+                          value={row?.dayEnds?.[i] || row?.end || ''}
+                          on:change={(e) => emitDayTime(row?.id, i, 'end', e.target.value)}
+                        />
+                      </div>
+                    {/if}
+                  </div>
                 </td>
               {/each}
               <td class="line-hours">{row?.hours ?? ''}</td>
@@ -335,7 +370,7 @@
   }
   .lines-virtual-root table {
     width: 100%;
-    min-width: 1100px;
+    min-width: 1250px;
     border-collapse: collapse;
     font-size: 0.8rem;
     color: var(--fg, #e4e4e7);
@@ -369,7 +404,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    height: 34px;
+    height: 42px;
     text-align: center;
     font-size: 0.8rem;
   }
@@ -420,32 +455,67 @@
     height: 100%;
   }
 
-  /* Day duty cells */
-  .lines-virtual-root .cell-toggle {
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.12s ease;
+  /* Day duty and per-day time cells */
+  .day-cell-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding: 2px 0;
+    box-sizing: border-box;
+  }
+  .day-duty-select {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font-size: 0.75rem;
+    font-weight: bold;
     text-align: center;
-    line-height: 34px;
-    font-size: 0.78rem;
+    cursor: pointer;
+    width: 100%;
+    padding: 0;
   }
-  .lines-virtual-root .cell-toggle:hover {
-    filter: brightness(1.15);
+  .day-duty-select option {
+    background: #18181b;
+    color: #e4e4e7;
   }
-  .lines-virtual-root .cell-toggle:active {
-    filter: brightness(1.3);
+  .day-times-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    font-size: 0.68rem;
+    width: 100%;
+    margin-top: 1px;
   }
-  .lines-virtual-root .cell-work {
-    color: var(--green, #22c55e);
-    font-weight: 600;
+  .day-time-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font-size: 0.68rem;
+    width: 2.8rem;
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+  }
+  .day-time-input::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+  .day-time-sep {
+    opacity: 0.6;
+    font-size: 0.65rem;
+  }
+
+  .lines-virtual-root .cell-day-col {
+    vertical-align: middle;
   }
   .lines-virtual-root .cell-rdo {
     background: var(--export-rdo, #000);
     color: var(--export-rdo-fg, #888);
-    font-weight: bold;
-  }
-  .lines-virtual-root .cell-function-duty {
-    font-weight: 600;
   }
   .lines-virtual-root .cell-function-duty.cell-bag {
     background: var(--export-bag, #f4b4b4);
@@ -475,12 +545,12 @@
 
   /* Column Sizing */
   .col-team { min-width: 4rem; }
-  .col-line { min-width: 6rem; }
-  .col-shift { min-width: 7rem; }
-  .col-time { min-width: 5.5rem; }
-  .col-pos { min-width: 5rem; }
-  .col-duty { min-width: 5rem; }
-  .col-sm { min-width: 3.5rem; }
-  .col-rdos { min-width: 6rem; }
-  .col-day { min-width: 4.5rem; }
+  .col-line { min-width: 5.5rem; }
+  .col-shift { min-width: 6.5rem; }
+  .col-time { min-width: 5rem; }
+  .col-pos { min-width: 4.5rem; }
+  .col-duty { min-width: 4.5rem; }
+  .col-sm { min-width: 3.2rem; }
+  .col-rdos { min-width: 5.5rem; }
+  .col-day { min-width: 6.5rem; }
 </style>

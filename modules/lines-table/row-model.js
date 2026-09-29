@@ -58,9 +58,17 @@ export function initRowModel(S) {
       schedule[line.id] || (schedule[String(line.id)] || []);
     var days = [];
     var dayDuties = [];
+    var dayStarts = [];
+    var dayEnds = [];
     var hours = 0;
 
     for (var day = 0; day < 7; day++) {
+      var times = typeof options.effectiveTimesResolver === "function"
+        ? options.effectiveTimesResolver(line.shiftId, day)
+        : (shift ? { start: shift.start, end: shift.end } : { start: "", end: "" });
+      dayStarts.push(times ? times.start || start : start);
+      dayEnds.push(times ? times.end || end : end);
+
       var value = rowSchedule[day];
       if (value === "WORK") {
         hours += paid;
@@ -69,10 +77,10 @@ export function initRowModel(S) {
           : null;
         var text = resolveWorkDayText(line, duty, workLabel);
         days.push(text);
-        dayDuties.push(resolveWorkDayDuty(line, duty));
+        dayDuties.push(resolveWorkDayDuty(line, duty) || "PAX");
       } else {
         days.push("RDO");
-        dayDuties.push("RDO");
+        dayDuties.push("OFF");
       }
     }
 
@@ -94,6 +102,8 @@ export function initRowModel(S) {
       paid: paid,
       days: days,
       dayDuties: dayDuties,
+      dayStarts: dayStarts,
+      dayEnds: dayEnds,
       hours: hours
     };
   };
@@ -117,6 +127,9 @@ export function initRowModel(S) {
     }
     if (!merged.rotationDutyResolver && typeof S.getRotationDuty === "function") {
       merged.rotationDutyResolver = S.getRotationDuty;
+    }
+    if (!merged.effectiveTimesResolver && typeof S.getEffectiveShiftTimes === "function") {
+      merged.effectiveTimesResolver = S.getEffectiveShiftTimes;
     }
     return S.getRowModels(lines, schedule, merged);
   };
