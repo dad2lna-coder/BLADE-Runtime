@@ -60,12 +60,12 @@ That URL is GitHub Pages from **bright-garden** (see `.github/workflows/pages.ym
 
 ## Architecture
 
-BLADE Alpha uses a **manifest-driven feature-modular monolith** architecture. The host shell (`index.html` + thin `js/` runtime) acts strictly as a renderer that loads `modules/manifest.json`, mounts DOM panel slots, and dynamically imports single-file ESM bundles into the page. All module features interact with a single shared runtime store (`window.Scheduler`).
+The host shell (`index.html` + thin `js/` runtime) acts as a renderer that fetches `modules/manifest.json`, mounts DOM panel slots, and dynamically imports Vite ESM bundles into the page. Feature modules interact with a single shared runtime state object (`window.Scheduler`).
 
-For the canonical architecture map, module inventory, data flow, and current vs. desired specifications, see:
+For the canonical system architecture map, module inventory, data flow, and runtime contracts, see:
 👉 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
-For technical boot contracts and runtime script inventories, see [DEPENDENCY_MAP.md](DEPENDENCY_MAP.md).
+For technical runtime script inventories and test procedures, see [DEPENDENCY_MAP.md](DEPENDENCY_MAP.md).
 
 ---
 

@@ -1,4 +1,4 @@
-# BLADE Alpha — Schedule Builder Instructions
+# BLADE Alpha — User Instructions
 
 > **Note:** For overall system architecture, module relationships, and system data flow, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 

@@ -1,6 +1,6 @@
 # BLADE Alpha — Technical Dependency & Runtime Map
 
-> **Note:** For the primary, canonical system architecture map, module roles (Brains / Action / Report), end-to-end data flow, and current vs. desired specifications, please see:
+> **Note:** For the primary, canonical system architecture map, module inventories, end-to-end data flow, and codebase file structures, please see:
 > 👉 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
 This document details low-level boot flow contracts, DOM mounting protocols, module manifest bindings, host script inventories, and verification procedures for **BLADE Alpha** on **bright-garden**.

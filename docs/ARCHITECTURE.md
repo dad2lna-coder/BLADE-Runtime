@@ -1,161 +1,110 @@
-# BLADE Alpha — System Architecture & Component Map
+# BLADE Alpha — System Architecture & Repository Map
 
-BLADE (Browser-based Local Airport Duty Engine) Alpha is an offline-first browser and desktop application designed for airport security staffing scheduling (TSO, LTSO, STSO bid lines). Running entirely client-side without external server dependencies, BLADE generates balanced work shift schedules, assigns operational function duties (Baggage, Passenger, DFO), builds RDO-matched team structures, and provides demand-versus-capacity analytics while keeping session data strictly local.
-
----
-
-## 1. Locked Architecture Paradigm
-
-BLADE uses a **manifest-driven feature-modular monolith** architecture based on vertical slices:
-
-*   **App Style:** Manifest-driven feature-modular monolith with vertical feature slices (not microfrontends).
-*   **Host Shell:** A thin host (`index.html` + `js/` shell runtime) that acts as a renderer/loader. It mounts DOM panels defined in `modules/manifest.json` and dynamically imports Vite-compiled single-file ESM bundles into tab slots.
-*   **Modular Storage:** Feature code resides in isolated feature folders under `modules/<feature>/`.
-*   **Shared State:** A single runtime store (`window.Scheduler`) holds active schedule state, state mutation methods, event hooks, and session import/export capabilities (`js/io.js`).
+This document is the canonical map of BLADE Alpha as implemented in code on the `bright-garden` branch. It documents existing file structures, runtime contracts, module inventories, data flow, and build pipelines.
 
 ---
 
-## 2. Core Functional Relationships (Brains · Action · Report)
+## 1. System Overview
 
-BLADE's features fall into three functional roles:
-
-```
-                  ┌─────────────────────────────────────────┐
-                  │                 BRAINS                  │
-                  │   Schedule Builder (Setup & FC Engine)  │
-                  │   - FTE, Certs, Shifts, Allocation      │
-                  │   - Function Duty Coverage Engine       │
-                  └────────────────────┬────────────────────┘
-                                       │
-                                       ▼ (Generates state)
-                  ┌─────────────────────────────────────────┐
-                  │                 ACTION                  │
-                  │              Lines Surface              │
-                  │   - Virtualized Bid Lines               │
-                  │   - Schedule Edits & Excel Export       │
-                  └────────────────────┬────────────────────┘
-                                       │
-                                       ▼ (Reads state)
-                  ┌─────────────────────────────────────────┐
-                  │                 REPORT                  │
-                  │           Coverage & Reports            │
-                  │   - Headcount Heatmaps & Shift Mix      │
-                  │   - Management & Team Dashboards        │
-                  │   - Flight Demand vs Capacity           │
-                  └─────────────────────────────────────────┘
-```
-
-*   **Brains (Schedule Builder & Engine):** Today represented by `setup-panel` (Setup tab) and `function-coverage`. Computes staffing allocation, classed FTE, function duty coverage (BAG / DFO / PAX), shift forces, and certifications.
-*   **Action (Lines):** Represented by `lines-table`. Functions as the interactive, editable schedule surface displaying lines, duty assignments, and RDO patterns.
-*   **Report (Visualization & Analytics):** Represented by `coverage`, `reports`, `team-builder`, and `demand-capacity`. Renders 30-minute headcount heatmaps, management dashboards, team cohesion metrics, and flight volume overlays.
+BLADE (Browser-based Local Airport Duty Engine) Alpha is an offline-first browser application for airport security staffing scheduling (TSO, LTSO, STSO bid lines). Core scheduling runs client-side in the browser. Feature tab panels load as ES modules from `modules/manifest.json`, interacting with a single shared runtime state object (`window.Scheduler`).
 
 ---
 
-## 3. High-Level Architecture & Boot Flow
+## 2. Host Shell & Module Loader (`index.html`)
 
-```
-+-------------------------------------------------------------------------------+
-|                               HOST SHELL                                      |
-|  index.html  +  js/main.js  +  js/io.js  +  js/constants.js  +  js/utils.js    |
-+--------------------------------------┬----------------------------------------+
-                                       |
-                   Reads Manifest      v
-                       +-------------------------------+
-                       |    modules/manifest.json      |
-                       +---------------+---------------+
-                                       |
-                   Mounts HTML &       v
-                Imports ESM Bundles    |
-      +--------------------------------+--------------------------------+
-      |                                |                                |
-      v                                v                                v
-+--------------------------+ +--------------------------+ +--------------------------+
-|  modules/setup-panel/    | |  modules/lines-table/    | |    modules/coverage/     |
-|   dist/setup-panel.js    | |   dist/lines-table.js    | |     dist/coverage.js     |
-+------------+-------------+ +------------+-------------+ +------------+-------------+
-             |                            |                            |
-             +----------------------------+----------------------------+
-                                          |
-                               Mutates & Reads State
-                                          v
-                         +---------------------------------+
-                         |     SHARED RUNTIME STATE        |
-                         |       window.Scheduler          |
-                         +---------------------------------+
-```
+The host shell consists of `index.html` and supporting host scripts in `js/`. `index.html` acts as the runtime host and module renderer:
 
-### System Boot Lifecycle
-
-1. **Shell Initialization:** `index.html` loads vendor libraries (`Sortable`, `luxon`, `ExcelJS`) and thin host shell scripts (`js/constants.js`, `js/utils.js`, `js/io.js`, `js/main.js`).
-2. **Manifest Loading:** Host shell fetches `modules/manifest.json`.
-3. **DOM Mounting:** Host injects panel HTML templates into target `#tab-*` and `#report-sub-*` DOM elements.
-4. **Module Bundle Execution:** Host dynamically imports each module's Vite-built ESM entry point (`modules/<name>/dist/<name>.js`).
-5. **Runtime Registration:** Each module calls its initializer (`init*(Scheduler)`), connecting event hooks to the single shared `window.Scheduler` state store.
+1. **Host Script Loading:** `index.html` (lines 56–66) loads vendor libraries (`lib/luxon.min.js`, `lib/Sortable.min.js`, `lib/exceljs.min.js`) and host runtime scripts (`js/constants.js`, `js/utils.js`, `js/utils/theme.js`, `js/io.js`, `js/instructions.js`, `js/main.js`, `js/console-chrome.js`, `js/intro.js`).
+2. **Manifest Fetching:** In the inline `<script type="module">` block (lines 68–258), the shell fetches `modules/manifest.json`.
+3. **Tab & Panel Mounting:**
+   - `tabModules()` and `buildNav()` parse top-level `tab` definitions in `modules/manifest.json` and generate `<button class="tab-btn">` navigation items inside `#blade-tabs` and `<section class="panel">` elements inside `#blade-panels`.
+   - `reportSubModules()` and `buildReportHost()` parse `reportsSubTab` definitions and construct sub-tab buttons and `#report-sub-*` containers inside `#tab-reports`.
+4. **Module Bundle Execution:** For each entry in `modules/manifest.json`:
+   - Injects stylesheets listed in `cfg.css` into `<head>`.
+   - Fetches HTML templates (`cfg.panel`, `cfg.reportsPanel`, `cfg.docks`) and mounts them into target selectors (`cfg.mount`, `cfg.reportsMount`).
+   - Dynamically imports the compiled Vite ESM bundle (`import(cfg.entry)`).
+   - Executes the module's initializer function (`mod[cfg.init](Scheduler)`).
 
 ---
 
-## 4. Complete Module Inventory
+## 3. Complete Module Inventory
 
-Every feature module lives under `modules/<feature>/` and is listed in `modules/manifest.json`:
+Every module directory in `modules/` is registered in `modules/manifest.json`:
 
-| Module Folder | Tab / Mount Target | Role | One-Line Purpose |
-| :--- | :--- | :--- | :--- |
-| `modules/shared/` | Shared host infrastructure | Other (Shared Utilities) | Provides shared date, DOM, line row model helpers, and shell chrome utilities. |
-| `modules/setup-panel/` | `#tab-setup`<br>`[F1] SETUP` | **Brains** (Schedule Builder) | Manages staffing FTE, shift forces, function pools, and executes schedule generation. |
-| `modules/function-coverage/` | Engine service (Setup hook) | **Brains** (Setup Submodule) | Engine that assigns operational function duties (BAG/DFO/PAX) across shifts during line generation. |
-| `modules/lines-table/` | `#tab-lines`<br>`[F2] LINES` | **Action** (Lines) | Renders virtualized bid line table (Svelte 4 island) with filtering, cell toggles, and Excel export. |
-| `modules/coverage/` | `#tab-coverage`<br>`[F3] COVERAGE` | **Report** (Coverage) | Renders 30-minute headcount heatmaps, shift mix distributions, and weekday coverage cuts. |
-| `modules/reports/` | `#tab-reports`<br>`#report-sub-management` | **Report** (Reports) | Displays management dashboards, gender equity ratios, and checkpoint capacity calculations. |
-| `modules/team-builder/` | `#tab-teams`<br>`#report-sub-cohesion` | **Action / Report** (Teams) | Groups bid lines into balanced teams by RDO, with drag-and-drop boards and cohesion analysis. |
-| `modules/demand-capacity/` | `#report-sub-demand` | **Report** (Demand) | Parses flight volume `.xlsx` schedules and overlays passenger demand against staffing capacity. |
-| `modules/bid-planner/` | `#tab-bid-planner`<br>`BID PLANNER` | **Action / Other** (Bid Planning) | Calculates deterministic leave/shift bid milestone date schedules based on rules and calendar constraints. |
+| Manifest Key | Folder Path | Mount Target | Source Entry File | Factual Purpose in Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `shared-utils`<br>`shared-chrome`<br>`shared-lines` | `modules/shared/` | Shared Host Runtime (No Tab Mount) | `modules/shared/index.js`<br>`modules/shared/lib/chrome.js`<br>`modules/shared/lib/lines.js` | Shared date/DOM primitives (`initSharedUtils`), console header status updates (`initSharedChrome`), and line row model extraction (`initLineHelpers`). |
+| `setup-panel` | `modules/setup-panel/` | `#tab-setup`<br>`[F1] SETUP` | `modules/setup-panel/index.js`<br>`modules/setup-panel/panel.html`<br>`modules/setup-panel/lib/generate.js` | Renders Setup tab UI for start date, week count, FTE headcount by role/sex, shifts table, and executes shift generation (`S.generate()`). |
+| `function-coverage` | `modules/function-coverage/` | Engine Service (No Tab Mount) | `modules/function-coverage/index.js`<br>`modules/function-coverage/lib/assign.js`<br>`modules/function-coverage/lib/pools.js` | Standalone engine (`generateFunctionAssignments`) for carving BAG/DFO pools and assigning operational duties during line generation. |
+| `lines-table` | `modules/lines-table/` | `#tab-lines`<br>`[F2] LINES` | `modules/lines-table/index.js`<br>`modules/lines-table/panel.html`<br>`modules/lines-table/src/LinesTable.svelte` | Renders virtualized bid-line table (Svelte 4 island using TanStack Virtual) with filtering, cell toggles, and Excel export. |
+| `coverage` | `modules/coverage/` | `#tab-coverage`<br>`[F3] COVERAGE` | `modules/coverage/index.js`<br>`modules/coverage/panel.html`<br>`modules/coverage/components/cuts.js` | Renders 30-minute headcount heatmap matrix, shift mix summary, and manages weekday coverage cut rules. |
+| `reports` | `modules/reports/` | `#tab-reports`<br>`#report-sub-management` | `modules/reports/index.js`<br>`modules/reports/management.html`<br>`modules/reports/lib/mgmt.js` | Renders Reports tab shell, executive management summary dashboard, gender mix metrics, and checkpoint capacity math. |
+| `team-builder` | `modules/team-builder/` | `#tab-teams`<br>`#report-sub-cohesion` | `modules/team-builder/index.js`<br>`modules/team-builder/panel.html`<br>`modules/team-builder/docks.html` | Groups bid lines into balanced teams by RDO pattern, provides drag-and-drop team boards, and renders Team Cohesion report sub-tab. |
+| `demand-capacity` | `modules/demand-capacity/` | `#report-sub-demand` | `modules/demand-capacity/index.js`<br>`modules/demand-capacity/panel.html`<br>`modules/demand-capacity/parse.js` | Parses flight volume `.xlsx` schedules and renders passenger demand vs TSO/LTSO staffing capacity chart. |
+| `bid-planner` | `modules/bid-planner/` | `#tab-bid-planner`<br>`BID PLANNER` | `modules/bid-planner/index.js`<br>`modules/bid-planner/panel.html`<br>`modules/bid-planner/js/engine.js` | Calculates deterministic bid milestone date schedules (Leave Bids / Shift Bids) based on rules and calendar constraints. |
 
 ---
 
-## 5. End-to-End Data Flow
+## 4. Host Script Inventory (`js/`)
+
+Host scripts in `js/` provide core runtime primitives and chrome functionality:
+
+| File Path | Active Status | Code Purpose |
+| :--- | :--- | :--- |
+| `js/constants.js` | **Active** | Defines global enums (`window.Scheduler.ROLES`, `DAYS`, `SEXES`, `SLOT_MINUTES`). |
+| `js/utils.js` | **Active** | Provides cross-module utility functions (`S.$`, `S.timeToMin`, `S.slotLabel`). |
+| `js/utils/theme.js` | **Active** | Handles theme switching (Dark / Presentation mode). |
+| `js/io.js` | **Active** | Implements session JSON import/export (`S.exportState`, `S.importState`) and Excel export (`S.exportExcel`). |
+| `js/instructions.js` | **Active** | Contains Markdown text content for user help modal. |
+| `js/main.js` | **Active** | Initializes `window.Scheduler` runtime state object, manages tab switching (`S.switchTab`), and attaches help modal listeners. |
+| `js/console-chrome.js` | **Active** | Updates console status bar headers and footers. |
+| `js/intro.js` | **Active** | Controls retro splash overlay animation on initial boot. |
+
+**Absorbed / Removed Legacy Feature Scripts:** Legacy feature scripts (`allocation.js`, `capacity.js`, `export-board.js`, `line-colors.js`, `lines-row-model.js`, `modset-board.js`, `reports.js`, `rotation-join.js`, `schedule.js`, `shifts.js`, `functions.js`) were removed from `js/` and absorbed into their respective owner modules under `modules/`.
+
+---
+
+## 5. End-to-End Implemented Data Flow
 
 ```
-[ Setup / Schedule Builder ]
-        │
-        │ 1. Configure FTE, shifts, BAG/DFO function pools
-        ▼
-[ [GEN] GENERATE Pass ] ──► Calls Function Coverage Engine
-        │
-        │ 2. Populates window.Scheduler.state (lines, schedule, duties)
-        ▼
-[ Shared State: window.Scheduler ]
-        │
-        ├───────────────────────┼───────────────────────┐
-        │ 3. Fetch Row Models   │ 4. Read Schedule      │ 5. Read Lines & RDOs
-        ▼                       ▼                       ▼
-[ Lines Table (Action) ]  [ Coverage Heatmap ]    [ Team Builder ]
-  - Virtualized view        - 30-min headcount      - RDO auto-form
-  - Inline edits / toggles  - Shift mix & cuts      - Drag-drop boards
-  - Export Excel (.xlsx)    - Demand overlay        - Cohesion report
+[ Setup Panel UI ] ──► Click [GEN] GENERATE ──► S.generate() (setup-panel/lib/generate.js)
+                                                      │
+                                                      ▼
+                              S.generateFunctionAssignments() (function-coverage/lib/assign.js)
+                                                      │
+                                                      ▼
+                                   window.Scheduler.state (Shared Store)
+                                                      │
+         ┌────────────────────────────────────────────┼────────────────────────────────────────────┐
+         ▼                                            ▼                                            ▼
+S.getLineRowModels()                       S.renderCoverageBars()                        Team Builder
+(shared/lib/lines.js)                      (coverage/index.js)                          (team-builder/index.js)
+         │                                            │                                            │
+         ▼                                            ▼                                            ▼
+LinesTable.svelte                          30-min Heatmap Matrix                       RDO Auto-Formation &
+(lines-table/src/LinesTable.svelte)        & Shift Mix                                 Drag-Drop Boards
 ```
 
-1. **Setup Configuration:** User configures operating period, staffing FTE by role/sex, BAG/DFO function pools, and shift definitions in `setup-panel`.
-2. **Generation Pass:** Clicking `[GEN] GENERATE` invokes the schedule generation engine and `function-coverage` module, carving BAG and DFO duties while assigning remaining operational shifts to PAX. Resulting lines and schedule grids are written directly to `window.Scheduler.state`.
-3. **Action Surface:** `lines-table` calls `S.getLineRowModels()` to obtain filtered/sorted rows and renders the virtualized bid grid. Edits and cell toggles update `window.Scheduler.state` and trigger refresh events.
-4. **Reports & Analytics:** `coverage`, `reports`, `team-builder`, and `demand-capacity` read updated state from `window.Scheduler.state` to render headcount heatmaps, executive metrics, team structures, and flight capacity charts.
-5. **Session Persistence:** Full session state is exported/imported as JSON via `js/io.js`.
+1. **Schedule Generation:** User triggers generation in Setup panel (`modules/setup-panel/panel.html`). `modules/setup-panel/lib/generate.js` executes `S.generate()`, populating `window.Scheduler.state.lines` and `window.Scheduler.state.schedule`.
+2. **Function Duty Pass:** `S.generate()` calls `S.generateFunctionAssignments()` (`modules/function-coverage/lib/assign.js`), populating `window.Scheduler.state.functionRotation` with BAG/DFO/PAX duty assignments.
+3. **Row Model Extraction:** `modules/lines-table/row-model.js` calls `S.getLineRowModels()` (`modules/shared/lib/lines.js`) to produce sorted and filtered line row models from `window.Scheduler.state`.
+4. **Lines Grid Rendering:** `modules/lines-table/index.js` listens for `lines:request-render` CustomEvents and updates the Svelte virtual table (`modules/lines-table/src/LinesTable.svelte`). Day toggles dispatch `lines:day-toggle`, mutating `window.Scheduler.state.schedule`.
+5. **Coverage & Analytics:**
+   - `modules/coverage/index.js` calls `S.renderCoverageBars()` to render the 30-minute headcount heatmap matrix from `window.Scheduler.state`.
+   - `modules/reports/lib/mgmt.js` reads `window.Scheduler.state` to render management metrics and gender mix charts.
+   - `modules/team-builder/index.js` reads `window.Scheduler.state` lines to group schedule lines by RDO pattern into team boards.
+6. **Session File I/O:** `js/io.js` serializes `window.Scheduler.state` into JSON for export (`S.exportState`) or imports state (`S.importState`).
 
 ---
 
 ## 6. Build & Deployment Pipeline
 
-*   **Vite Module Builds:** Each module possesses a dedicated Vite configuration (`vite.<module-name>.config.mjs`). Executing `npm run build:modules` compiles each module source into a standalone, single-file ESM dist bundle (`modules/<module-name>/dist/<module-name>.js`).
-*   **Git Tracking:** Built distribution artifacts (`dist/*.js`) are git-ignored to keep commits clean.
-*   **GitHub Pages Deployment:** The deployment workflow (`.github/workflows/pages.yml`) runs on pushes to `bright-garden`. It executes `npm install` and `npm run build:modules` to compile all Vite bundles before deploying the site to GitHub Pages.
+*   **Vite Module Build Script:** `package.json` defines `"build:modules"`, which executes per-module Vite configurations (`vite.<module-name>.config.mjs`) for all 9 modules (`shared`, `setup-panel`, `coverage`, `team-builder`, `reports`, `demand-capacity`, `lines-table`, `function-coverage`, `bid-planner`).
+*   **Distribution Output:** Each build produces a single-file ESM bundle in `modules/<module-name>/dist/<module-name>.js`. Compiled `dist/` directories are git-ignored (`.gitignore`).
+*   **GitHub Actions Workflow:** `.github/workflows/pages.yml` triggers on pushes to `bright-garden`. It executes `npm install` and `npm run build:modules`, assembling and deploying the site artifact to GitHub Pages.
 
 ---
 
-## 7. Current vs. Desired Architecture Summary
+## 7. Documentation Cleanup Note
 
-| Architectural Area | Current State (BLADE v0.2) | Desired Target State |
-| :--- | :--- | :--- |
-| **Schedule Builder Title** | Module directory and UI tab named **Setup** (`setup-panel`). | Rename UI tab and module concept to **Schedule Builder**. |
-| **Function Coverage Position** | Lives in a top-level folder (`modules/function-coverage/`). | Integrate directly as a **Setup submodule** inside Schedule Builder (`modules/setup-panel/submodules/function-coverage/`). |
-| **Staffing & FTE Modeling** | Basic headcount by FT/PT TSO, LTSO, and STSO. | Full **classed FTE** modeling with position-based certifications and skills tracking. |
-| **Lines Interface** | Virtualized table (Svelte island) with basic cell toggles. | Fully **editable schedule surface** with rich inline editing, bulk cell operations, and real-time validation. |
-| **Coverage View Alignment** | Operates as a top-level tab (`[F3] COVERAGE`). | Re-align Coverage visualization as a dedicated **Report sub-tab** within the Reports dashboard. |
+All speculative architecture terminology ("Schedule Builder" tab rename, "brains / action / report" categorization, "classed FTE framework", "FC as Setup submodule", "desired Lines editable table", "manifest-driven feature-modular monolith") has been removed or quarantined. This document reflects **only** current file paths, actual code structures, and implemented behaviors on `bright-garden`.

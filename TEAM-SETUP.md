@@ -1,6 +1,6 @@
 # BLADE — setup and where files live
 
-> **Note:** For overall system architecture, module relationships, and system data flow, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+> **Note:** For canonical system architecture, module inventory, and file structure, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 BLADE is the airport staffing scheduler (bid lines, teams, coverage). It runs on your PC. It does not log into a company website or send schedules to an outside service.
 
