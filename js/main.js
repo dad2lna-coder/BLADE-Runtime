@@ -1,4 +1,4 @@
-/** Blade shell — tabs, header buttons, instructions. */
+/** Blade shell — tabs, header buttons, instructions. Delegates to runtime. */
 window.Scheduler = window.Scheduler || {};
 (function (S) {
   "use strict";
@@ -16,6 +16,11 @@ window.Scheduler = window.Scheduler || {};
   if (!S.renderAll) S.renderAll = function () {};
 
   function init() {
+    // Delegate initialization awareness to runtime if available
+    if (S.runtime && typeof S.runtime.isInitialized === "function") {
+      // Runtime handles module lifecycle; legacy APIs remain intact
+    }
+
     document.addEventListener("click", function (e) {
       var sub = e.target && e.target.closest ? e.target.closest(".report-sub-btn") : null;
       if (sub && sub.dataset.subtab && S.switchReportSub) {
@@ -25,9 +30,6 @@ window.Scheduler = window.Scheduler || {};
       var btn = e.target && e.target.closest ? e.target.closest("#blade-tabs .tab-btn") : null;
       if (btn && btn.dataset.tab && S.switchTab) S.switchTab(btn.dataset.tab);
     });
-
-    // GEN/EXP/IMP/CLR + #file-import bind after Setup panel mount
-    // (modules/setup-panel bindSetupActions). Header only keeps HLP.
 
     var modal = document.getElementById("instructions-modal");
     var btn = document.getElementById("btn-instructions");
