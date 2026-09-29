@@ -1,14 +1,122 @@
 /** Lines Table module -- Svelte island inside the classic Lines tab.
  * Rows come from filtered/sorted getRowModels. Edits write Scheduler.state.
+ * Integrated with BLADE Runtime shell for generic module lifecycle.
  */
 import LinesTable from './LinesTable.svelte';
 import { initRowModel } from './row-model.js';
 import { initLineColors } from './line-colors.js';
 
-export function initLinesTable(scheduler) {
-  const S = scheduler || window.Scheduler;
-  if (!S) return;
+/**
+ * Create a Scheduler-compatible adapter from runtime context.
+ * @param {Object} context - Runtime context { contracts, eventBus, state, registerTab, registerFKey }
+ * @param {Object} [legacyS] - Optional legacy Scheduler for fallback
+ * @returns {Object} Scheduler-like object
+ */
+function createSchedulerAdapter(context, legacyS) {
+  const contracts = context.contracts || {};
+  const eventBus = context.eventBus;
+  const S = legacyS || window.Scheduler || {};
+  window.Scheduler = window.Scheduler || S;
 
+  const scheduleState = contracts.ScheduleState || {};
+
+  const adapter = {
+    get state() {
+      return {
+        lines: scheduleState.lines || S.state?.lines || [],
+        schedule: scheduleState.schedule || S.state?.schedule || {},
+        shifts: scheduleState.shifts || S.state?.shifts || [],
+        startDate: scheduleState.startDate || S.state?.startDate || null,
+        weekCount: S.state?.weekCount || 1,
+        functionCoverage: S.state?.functionCoverage || { mode: "none" },
+        extraPositions: S.state?.extraPositions || [],
+        issues: S.state?.issues || []
+      };
+    },
+    set state(val) {
+      if (S.state) Object.assign(S.state, val);
+      if (scheduleState.setLines && val.lines) scheduleState.setLines(val.lines);
+    },
+    timeToMin: (t) => scheduleState.timeToMin ? scheduleState.timeToMin(t) : S.timeToMin?.(t) || 0,
+    minToTime: (m) => scheduleState.minToTime ? scheduleState.minToTime(m) : S.minToTime?.(m) || "00:00",
+    parseStartDate: S.parseStartDate || ((val) => new Date(val)),
+    toDateInputValue: S.toDateInputValue || ((d) => {
+      var date = adapter.parseStartDate(d);
+      var dd = String(date.getDate()).padStart(2, "0");
+      var mm = String(date.getMonth() + 1).padStart(2, "0");
+      var yyyy = date.getFullYear();
+      return yyyy + "-" + mm + "-" + dd;
+    }),
+    dj: S.dj || ((val) => ({
+      startOf: () => adapter.parseStartDate(val).toISOString().slice(0, 10),
+      format: (fmt) => adapter.parseStartDate(val).toISOString().slice(0, 10),
+      add: (n) => { var d = new Date(adapter.parseStartDate(val)); d.setDate(d.getDate() + n); return d; },
+      day: () => ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][adapter.parseStartDate(val).getDay()],
+      toISODate: () => adapter.parseStartDate(val).toISOString().slice(0, 10),
+      toJSDate: () => adapter.parseStartDate(val)
+    })),
+    $: S.$ || ((id) => document.getElementById(id)),
+    getShift: S.getShift || (() => ({ start: "00:00", end: "00:00" })),
+    getEffectiveShiftTimes: S.getEffectiveShiftTimes || ((shiftId, dow) => {
+      var sh = adapter.getShift(shiftId);
+      return { start: sh.start, end: sh.end };
+    }),
+    lineCoversSlot: S.lineCoversSlot || (() => false),
+    lineRoleKey: S.lineRoleKey || ((line) => line.isStso ? "STSO" : line.isLtso ? "LTSO" : "TSO"),
+    getRotationDuty: S.getRotationDuty || (() => null),
+    shiftBadge: S.shiftBadge || (() => ""),
+    coverageView: S.coverageView || { stso: false, ltso: false, tso: true, funcView: "all" },
+    DAYS: S.DAYS || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    slotLabel: S.slotLabel || ((slot) => {
+      var h = Math.floor(slot / 60);
+      var mm = slot % 60;
+      return String(h).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+    }),
+    renderCoverageBars: S.renderCoverageBars || (() => {}),
+    renderShiftSummary: S.renderShiftSummary || (() => {}),
+    eventBus: eventBus,
+    on: eventBus?.subscribe || (() => () => {}),
+    emit: eventBus?.publish || (() => {}),
+    registerTab: context.registerTab || (() => {}),
+    registerFKey: context.registerFKey || (() => {}),
+    applyCoverageCutsToLines: S.applyCoverageCutsToLines || (() => {}),
+    updateStatus: S.updateStatus || (() => {}),
+    initShiftDayTimes: S.initShiftDayTimes || (() => {}),
+    initFunctionCoverage: S.initFunctionCoverage || (() => {}),
+    fillFunctionCoverageForm: S.fillFunctionCoverageForm || (() => {}),
+    hookConsoleIo: S.hookConsoleIo || (() => {}),
+    renderDemandCapacity: S.renderDemandCapacity || (() => {}),
+    prepareDemandCapacityForPrint: S.prepareDemandCapacityForPrint || (() => {})
+  };
+
+  // Register the lines-table tab if runtime provides registration
+  if (context.registerTab) {
+    context.registerTab({
+      id: "lines",
+      label: "LINES",
+      priority: 1,
+      order: 2
+    });
+  }
+
+  return adapter;
+}
+
+export function initLinesTable(schedulerOrContext) {
+  const isRuntimeContext = schedulerOrContext && (
+    schedulerOrContext.contracts ||
+    schedulerOrContext.eventBus ||
+    schedulerOrContext.registerTab
+  );
+
+  let S;
+  if (isRuntimeContext) {
+    S = createSchedulerAdapter(schedulerOrContext, window.Scheduler);
+  } else {
+    S = schedulerOrContext || window.Scheduler;
+  }
+
+  // Original initialization logic preserved
   initRowModel(S);
   initLineColors(S);
 
@@ -170,19 +278,29 @@ export function initLinesTable(scheduler) {
       if (bagIdentity) {
         setRotationDuty(key, dayIndex, "BAG");
       } else if (dfo) {
-        setRotationDuty(key, dayIndex, "PAX");
+        var rawDuty = (typeof S.getRotationDuty === "function"
+          ? S.getRotationDuty(line.id, dayIndex)
+          : getRotationDutyLocal(line.id, dayIndex));
+        var duty = rawDuty === "DFO" || rawDuty === "PAX" || !rawDuty ? "PAX" : rawDuty;
+        if (duty === "PAX") {
+          setRotationDuty(key, dayIndex, "BAG");
+        } else {
+          S.state.schedule[key][dayIndex] = "RDO";
+          setRotationDuty(key, dayIndex, null);
+        }
       } else {
+        S.state.schedule[key][dayIndex] = "RDO";
         setRotationDuty(key, dayIndex, null);
       }
     } else if (bagIdentity) {
       S.state.schedule[key][dayIndex] = "RDO";
       setRotationDuty(key, dayIndex, null);
     } else if (dfo) {
-      var rawDuty = (typeof S.getRotationDuty === "function"
+      var rawDuty2 = (typeof S.getRotationDuty === "function"
         ? S.getRotationDuty(line.id, dayIndex)
         : getRotationDutyLocal(line.id, dayIndex));
-      var duty = rawDuty === "DFO" || rawDuty === "PAX" || !rawDuty ? "PAX" : rawDuty;
-      if (duty === "PAX") {
+      var duty2 = rawDuty2 === "DFO" || rawDuty2 === "PAX" || !rawDuty2 ? "PAX" : rawDuty2;
+      if (duty2 === "PAX") {
         setRotationDuty(key, dayIndex, "BAG");
       } else {
         S.state.schedule[key][dayIndex] = "RDO";
@@ -236,4 +354,11 @@ export function initLinesTable(scheduler) {
   });
 
   root.refresh = refresh;
+
+  // Publish ready event if event bus available
+  if (S.eventBus) {
+    S.eventBus.publish("lines-table:ready", { module: "lines-table" });
+  }
+
+  return S;
 }
