@@ -308,6 +308,7 @@
                   <option value="DFO">DFO</option>
                   <option value="BAG">BAG</option>
                   <option value="PAX">PAX</option>
+                  <option value="TRAINING">TRAINING</option>
                 </select>
               </td>
               <td>

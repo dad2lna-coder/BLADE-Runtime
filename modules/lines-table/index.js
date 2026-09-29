@@ -125,7 +125,7 @@ export function initLinesTable(scheduler) {
     } else if (field === "sex") {
       line.sex = value === "F" ? "F" : "M";
     } else if (field === "function") {
-      line.function = value === "DFO" || value === "PAX" || value === "BAG" ? value : "";
+      line.function = value === "DFO" || value === "PAX" || value === "BAG" || value === "TRAINING" ? value : "";
     } else if (field === "certPool") {
       var pool = String(value || "").trim().toUpperCase();
       line.certPool = pool === "A" || pool === "B" ? pool : "";
@@ -261,24 +261,17 @@ export function initLinesTable(scheduler) {
     if (S.isValidTimeText && !S.isValidTimeText(timeVal)) return;
 
     var shift = S.getShift ? S.getShift(line.shiftId) : null;
-    if (!shift) {
-      var shiftId = line.shiftId || ("SHIFT_" + line.id);
-      line.shiftId = shiftId;
-      if (!S.state.shifts) S.state.shifts = [];
-      shift = S.getShift ? S.getShift(shiftId) : null;
-      if (!shift) {
-        shift = { id: shiftId, name: shiftId, start: "08:00", end: "16:30", paid: line.paid || 8 };
-        S.state.shifts.push(shift);
-      }
-    }
+    var baseStart = line.startTime || (shift ? shift.start : "08:00");
+    var baseEnd = line.endTime || (shift ? shift.end : "16:30");
 
-    if (!shift.dayTimes) shift.dayTimes = {};
+    if (!line.dayTimes) line.dayTimes = {};
     var dowKey = String(dayIndex);
-    var curTimes = shift.dayTimes[dowKey] || { start: shift.start || "08:00", end: shift.end || "16:30" };
+    var curTimes = line.dayTimes[dowKey] || { start: baseStart, end: baseEnd };
+
     if (field === "start") {
-      shift.dayTimes[dowKey] = { start: timeVal, end: curTimes.end };
+      line.dayTimes[dowKey] = { start: timeVal, end: curTimes.end };
     } else if (field === "end") {
-      shift.dayTimes[dowKey] = { start: curTimes.start, end: timeVal };
+      line.dayTimes[dowKey] = { start: curTimes.start, end: timeVal };
     }
 
     refresh();
