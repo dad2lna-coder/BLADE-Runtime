@@ -8,6 +8,24 @@
   export let exportStyle = defaultExportStyle();
   export let onInlineEdit = null;
   export let onDayToggle = null;
+  export let onDayDutyEdit = null;
+  export let onDayTimeEdit = null;
+
+  function handleDayToggle(lineId, dayIndex) {
+    onDayToggle?.({ lineId, dayIndex });
+  }
+  export let onSort = null;
+  export let onFilter = null;
+
+  export let currentSortBy = 'role';
+  export let currentSortDir = 'asc';
+
+  export let filterRole = 'ALL';
+  export let filterShift = '';
+  export let filterTeam = '';
+  export let filterSex = '';
+  export let filterDuty = '';
+  export let searchCode = '';
 
   const BASE_POSITIONS = ['TSO', 'LTSO', 'STSO'];
   const BASE_EMPS = ['FT', 'PT'];
@@ -29,7 +47,7 @@
 
   function dutyKey(text) {
     const t = String(text || '').toUpperCase();
-    if (t === 'RDO' || t === '—' || t === '-') return 'rdo';
+    if (t === 'RDO' || t === '—' || t === '-' || t === 'OFF') return 'rdo';
     if (t === 'BAG' || t === 'BAGS') return 'bag';
     if (t === 'DFO') return 'dfo';
     if (t === 'PAX') return 'pax';
@@ -38,11 +56,11 @@
 
   function dayClass(text) {
     const key = dutyKey(text);
-    if (key === 'rdo') return 'cell-toggle cell-rdo';
-    if (key === 'bag') return 'cell-toggle cell-function-duty cell-bag';
-    if (key === 'dfo') return 'cell-toggle cell-function-duty cell-dfo';
-    if (key === 'pax') return 'cell-toggle cell-function-duty cell-pax';
-    return 'cell-toggle cell-work';
+    if (key === 'rdo') return 'cell-day-col cell-rdo';
+    if (key === 'bag') return 'cell-day-col cell-function-duty cell-bag';
+    if (key === 'dfo') return 'cell-day-col cell-function-duty cell-dfo';
+    if (key === 'pax') return 'cell-day-col cell-function-duty cell-pax';
+    return 'cell-day-col cell-work';
   }
 
   function dayStyle(text) {
@@ -58,8 +76,36 @@
     onInlineEdit?.({ lineId, field, value });
   }
 
-  function emitDay(lineId, dayIndex) {
-    onDayToggle?.({ lineId, dayIndex });
+  function emitDayDuty(lineId, dayIndex, duty) {
+    onDayDutyEdit?.({ lineId, dayIndex, duty });
+  }
+
+  function emitDayTime(lineId, dayIndex, field, value) {
+    onDayTimeEdit?.({ lineId, dayIndex, field, value });
+  }
+
+  function handleSort(col) {
+    let nextDir = 'asc';
+    if (currentSortBy === col) {
+      nextDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+    }
+    onSort?.({ sortBy: col, sortDir: nextDir });
+  }
+
+  function handleFilterChange() {
+    onFilter?.({
+      filterRole,
+      filterShift,
+      filterTeam,
+      filterSex,
+      filterDuty,
+      searchCode
+    });
+  }
+
+  function sortIndicator(col) {
+    if (currentSortBy !== col) return '';
+    return currentSortDir === 'asc' ? ' ▲' : ' ▼';
   }
 </script>
 
@@ -68,30 +114,91 @@
   style="min-height: min(70vh, 720px); height: min(70vh, 720px); width: 100%; --export-rdo: {exportStyle?.rdo || '#000000'}; --export-bag: {exportStyle?.bag || '#F4B4B4'}; --export-dfo: {exportStyle?.dfo || '#FFF3A8'}; --export-pax: {exportStyle?.pax || '#A0C4FF'}; --export-header: {exportStyle?.header || '#1F4E79'};"
 >
   {#if mode === 'svelte'}
-    <div class="lines-virtual-root" style="height: 100%; overflow: auto; position: relative;">
-      <table class="data-table lines-editable" style="width: max-content; min-width: 1100px;">
+    <div class="lines-table-header-controls">
+      <div class="filter-controls">
+        <label>
+          Search
+          <input
+            type="text"
+            class="filter-input search-input"
+            placeholder="Search line code..."
+            bind:value={searchCode}
+            on:input={handleFilterChange}
+          />
+        </label>
+        <label>
+          Role
+          <select class="filter-select" bind:value={filterRole} on:change={handleFilterChange}>
+            <option value="ALL">All</option>
+            <option value="STSO">STSO</option>
+            <option value="LTSO">LTSO</option>
+            <option value="TSO">TSO (FT/PT)</option>
+          </select>
+        </label>
+        <label>
+          Team
+          <select class="filter-select" bind:value={filterTeam} on:change={handleFilterChange}>
+            <option value="">All</option>
+            <option value="__none__">Unassigned</option>
+            {#each teamOptions as team}
+              <option value={team.id}>{team.name ?? team.id}</option>
+            {/each}
+          </select>
+        </label>
+        <label>
+          Shift
+          <select class="filter-select" bind:value={filterShift} on:change={handleFilterChange}>
+            <option value="">All shifts</option>
+            {#each shiftOptions as shift}
+              <option value={shift.id}>{shiftLabel(shift)}</option>
+            {/each}
+          </select>
+        </label>
+        <label>
+          Duty
+          <select class="filter-select" bind:value={filterDuty} on:change={handleFilterChange}>
+            <option value="">All duties</option>
+            <option value="BAG">BAG</option>
+            <option value="PAX">PAX</option>
+            <option value="DFO">DFO</option>
+            <option value="OFF">OFF / RDO</option>
+          </select>
+        </label>
+        <label>
+          Sex
+          <select class="filter-select" bind:value={filterSex} on:change={handleFilterChange}>
+            <option value="">All</option>
+            <option value="M">M</option>
+            <option value="F">F</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="lines-virtual-root">
+      <table class="data-table lines-editable">
         <thead>
           <tr>
-            <th>Team</th>
-            <th>Line</th>
-            <th>Shift</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Position</th>
-            <th>Emp</th>
-            <th>Sex</th>
-            <th>Function</th>
-            <th>Cert pool</th>
-            <th>RDOs</th>
-            <th>Paid</th>
-            <th>Sun</th>
-            <th>Mon</th>
-            <th>Tue</th>
-            <th>Wed</th>
-            <th>Thu</th>
-            <th>Fri</th>
-            <th>Sat</th>
-            <th>Hours</th>
+            <th class="sortable col-team" on:click={() => handleSort('team')}>Team{sortIndicator('team')}</th>
+            <th class="sortable col-line" on:click={() => handleSort('line')}>Line{sortIndicator('line')}</th>
+            <th class="sortable col-shift" on:click={() => handleSort('shift')}>Shift{sortIndicator('shift')}</th>
+            <th class="sortable col-time" on:click={() => handleSort('start')}>Start{sortIndicator('start')}</th>
+            <th class="col-time">End</th>
+            <th class="sortable col-pos" on:click={() => handleSort('role')}>Position{sortIndicator('role')}</th>
+            <th class="col-sm">Emp</th>
+            <th class="col-sm">Sex</th>
+            <th class="col-duty">Duty</th>
+            <th class="col-sm">Cert</th>
+            <th class="col-rdos">RDOs</th>
+            <th class="col-sm">Paid</th>
+            <th class="col-day">Sun</th>
+            <th class="col-day">Mon</th>
+            <th class="col-day">Tue</th>
+            <th class="col-day">Wed</th>
+            <th class="col-day">Thu</th>
+            <th class="col-day">Fri</th>
+            <th class="col-day">Sat</th>
+            <th class="col-sm">Hrs</th>
           </tr>
         </thead>
         <tbody>
@@ -106,7 +213,7 @@
                 </select>
               </td>
               <td>
-                <input type="text" class="line-edit line-code-input" data-field="lineCode" data-line-id={row?.id} value={row?.line ?? ''} on:input={(e) => emitEdit(row?.id, 'lineCode', e.target.value)} />
+                <input type="text" class="line-edit line-code-input" data-field="lineCode" data-line-id={row?.id} value={row?.line ?? ''} on:change={(e) => emitEdit(row?.id, 'lineCode', e.target.value)} />
               </td>
               <td>
                 <select class="line-edit" data-field="shift" data-line-id={row?.id} value={row?.shiftId ?? ''} on:change={(e) => emitEdit(row?.id, 'shift', e.target.value)}>
@@ -116,8 +223,12 @@
                   {/each}
                 </select>
               </td>
-              <td>{row?.start ?? ''}</td>
-              <td>{row?.end ?? ''}</td>
+              <td>
+                <input type="time" class="line-edit line-time-input" data-field="start" data-line-id={row?.id} value={row?.start ?? ''} on:change={(e) => emitEdit(row?.id, 'start', e.target.value)} />
+              </td>
+              <td>
+                <input type="time" class="line-edit line-time-input" data-field="end" data-line-id={row?.id} value={row?.end ?? ''} on:change={(e) => emitEdit(row?.id, 'end', e.target.value)} />
+              </td>
               <td>
                 <select class="line-edit" data-field="position" data-line-id={row?.id} value={row?.position ?? ''} on:change={(e) => emitEdit(row?.id, 'position', e.target.value)}>
                   <option value="">—</option>
@@ -157,16 +268,48 @@
                 </select>
               </td>
               <td class="line-rdo-cell">{row?.rdos ?? '—'}</td>
-              <td>{row?.paid ?? ''}</td>
+              <td class="line-center">{row?.paid ?? ''}</td>
               {#each [0, 1, 2, 3, 4, 5, 6] as i}
-                <td class={dayClass(row?.dayDuties?.[i] ?? row?.days?.[i])} style={dayStyle(row?.dayDuties?.[i] ?? row?.days?.[i])} data-line-id={row?.id} data-day-index={i} on:click={() => emitDay(row?.id, i)}>
-                  {row?.days?.[i] ?? ''}
+                <td
+                  class={dayClass(row?.dayDuties?.[i] ?? row?.days?.[i])}
+                  style={dayStyle(row?.dayDuties?.[i] ?? row?.days?.[i])}
+                >
+                  <div class="day-cell-inner">
+                    <select
+                      class="day-duty-select"
+                      value={row?.dayDuties?.[i] === 'OFF' || row?.days?.[i] === 'RDO' ? 'OFF' : (row?.dayDuties?.[i] || 'PAX')}
+                      on:change={(e) => emitDayDuty(row?.id, i, e.target.value)}
+                    >
+                      <option value="PAX">PAX</option>
+                      <option value="BAG">BAG</option>
+                      <option value="DFO">DFO</option>
+                      <option value="OFF">OFF</option>
+                    </select>
+
+                    {#if row?.dayDuties?.[i] !== 'OFF' && row?.days?.[i] !== 'RDO'}
+                      <div class="day-times-wrap">
+                        <input
+                          type="time"
+                          class="day-time-input"
+                          value={row?.dayStarts?.[i] || row?.start || ''}
+                          on:change={(e) => emitDayTime(row?.id, i, 'start', e.target.value)}
+                        />
+                        <span class="day-time-sep">–</span>
+                        <input
+                          type="time"
+                          class="day-time-input"
+                          value={row?.dayEnds?.[i] || row?.end || ''}
+                          on:change={(e) => emitDayTime(row?.id, i, 'end', e.target.value)}
+                        />
+                      </div>
+                    {/if}
+                  </div>
                 </td>
               {/each}
               <td class="line-hours">{row?.hours ?? ''}</td>
             </tr>
           {:else}
-            <tr><td colspan="20" class="muted">No lines — Generate or Import first.</td></tr>
+            <tr><td colspan="20" class="muted" style="padding: 1.5rem; text-align: center;">No matching lines found.</td></tr>
           {/each}
         </tbody>
       </table>
@@ -181,26 +324,233 @@
     width: 100%;
     min-height: min(70vh, 720px);
     height: min(70vh, 720px);
-    overflow-x: auto;
+    overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-dark, #09090b);
+    border: 1px solid var(--border, #27272a);
+    border-radius: 6px;
   }
-  .lines-virtual-root { position: relative; overflow: auto; height: 100%; width: 100%; }
-  .lines-virtual-root table { width: max-content; min-width: 1100px; border-collapse: collapse; font-size: 0.78rem; table-layout: fixed; }
-  .lines-virtual-root th { position: sticky; top: 0; background: var(--console-bg, #0c0c0c); color: var(--console-fg, #e8e8e8); font-weight: 600; text-align: left; padding: 0.35rem 0.5rem; border-bottom: 2px solid #333; white-space: nowrap; z-index: 1; }
-  .lines-virtual-root td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 3.5rem; height: 42px; line-height: 1.2; }
-  .lines-virtual-root .line-edit { max-width: none; min-width: 5.5rem; height: 2.25rem; font-size: 0.85rem; }
-  .lines-virtual-root .line-code-input { min-width: 6.5rem; max-width: 12rem; }
-  .lines-virtual-root .cell-toggle { cursor: pointer; user-select: none; transition: all 0.15s ease; }
-  .lines-virtual-root .cell-toggle:hover { filter: brightness(1.08); transform: scale(1.02); }
-  .lines-virtual-root .cell-toggle:active { filter: brightness(1.25); outline: 2px solid var(--amber); }
-  .lines-virtual-root .cell-work { color: var(--green); font-family: var(--mono); font-weight: 600; }
-  .lines-virtual-root .cell-rdo { background: var(--export-rdo); color: var(--export-rdo-fg); font-weight: bold; cursor: pointer; }
-  .lines-virtual-root .cell-function-duty { font-weight: 600; }
-  .lines-virtual-root .cell-function-duty.cell-bag { background: var(--export-bag); color: var(--export-bag-fg); }
-  .lines-virtual-root .cell-function-duty.cell-dfo { background: var(--export-dfo); color: var(--export-dfo-fg); }
-  .lines-virtual-root .cell-function-duty.cell-pax { background: var(--export-pax); color: var(--export-pax-fg); }
-  .lines-virtual-root .line-rdo-cell { white-space: nowrap; font-size: 0.8rem; cursor: pointer; }
-  .lines-virtual-root .line-hours { font-weight: bold; color: var(--amber); }
-  .lines-virtual-root .lines-group-row td { background: var(--panel2); color: var(--amber); font-weight: 600; border-top: 2px solid var(--border); }
-  .lines-virtual-root .muted { color: var(--muted, #888); font-style: italic; }
+  .lines-table-header-controls {
+    padding: 0.5rem 0.75rem;
+    background: var(--panel, #18181b);
+    border-bottom: 1px solid var(--border, #27272a);
+  }
+  .filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+  .filter-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--console-fg, #d4d4d8);
+    font-weight: 500;
+  }
+  .filter-input, .filter-select {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    background: var(--bg-dark, #09090b);
+    color: var(--fg, #f4f4f5);
+    border: 1px solid var(--border, #3f3f46);
+    border-radius: 4px;
+  }
+  .search-input {
+    width: 9rem;
+  }
+  .lines-virtual-root {
+    position: relative;
+    overflow: auto;
+    flex: 1;
+    width: 100%;
+  }
+  .lines-virtual-root table {
+    width: 100%;
+    min-width: 1250px;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    color: var(--fg, #e4e4e7);
+    table-layout: auto;
+  }
+  .lines-virtual-root th {
+    position: sticky;
+    top: 0;
+    background: #121215;
+    color: var(--amber, #f59e0b);
+    font-weight: 600;
+    text-align: center;
+    padding: 0.5rem 0.4rem;
+    border: 1px solid var(--border, #27272a);
+    white-space: nowrap;
+    z-index: 2;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+  .lines-virtual-root th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+  .lines-virtual-root th.sortable:hover {
+    background: #1c1c20;
+    color: #facc15;
+  }
+  .lines-virtual-root td {
+    padding: 0;
+    border: 1px solid var(--border, #27272a);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 42px;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+  .lines-virtual-root tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  /* Seamless inline editable cells */
+  .lines-virtual-root .line-edit {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font-size: inherit;
+    font-family: inherit;
+    width: 100%;
+    height: 100%;
+    padding: 0 0.3rem;
+    text-align: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    margin: 0;
+    border-radius: 0;
+  }
+  .lines-virtual-root .line-edit:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .lines-virtual-root .line-edit:focus {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px var(--amber, #f59e0b);
+  }
+  .lines-virtual-root select.line-edit option {
+    background: #18181b;
+    color: #e4e4e7;
+  }
+  .lines-virtual-root .line-time-input::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
+  }
+
+  .lines-virtual-root .line-code-input {
+    font-weight: 600;
+  }
+  .lines-virtual-root .line-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  /* Day duty and per-day time cells */
+  .day-cell-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding: 2px 0;
+    box-sizing: border-box;
+  }
+  .day-duty-select {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    width: 100%;
+    padding: 0;
+  }
+  .day-duty-select option {
+    background: #18181b;
+    color: #e4e4e7;
+  }
+  .day-times-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    font-size: 0.68rem;
+    width: 100%;
+    margin-top: 1px;
+  }
+  .day-time-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font-size: 0.68rem;
+    width: 2.8rem;
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+  }
+  .day-time-input::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+  .day-time-sep {
+    opacity: 0.6;
+    font-size: 0.65rem;
+  }
+
+  .lines-virtual-root .cell-day-col {
+    vertical-align: middle;
+  }
+  .lines-virtual-root .cell-rdo {
+    background: var(--export-rdo, #000);
+    color: var(--export-rdo-fg, #888);
+  }
+  .lines-virtual-root .cell-function-duty.cell-bag {
+    background: var(--export-bag, #f4b4b4);
+    color: var(--export-bag-fg, #000);
+  }
+  .lines-virtual-root .cell-function-duty.cell-dfo {
+    background: var(--export-dfo, #fff3a8);
+    color: var(--export-dfo-fg, #000);
+  }
+  .lines-virtual-root .cell-function-duty.cell-pax {
+    background: var(--export-pax, #a0c4ff);
+    color: var(--export-pax-fg, #000);
+  }
+
+  .lines-virtual-root .line-rdo-cell {
+    padding: 0 0.4rem;
+    font-size: 0.78rem;
+  }
+  .lines-virtual-root .line-hours {
+    font-weight: bold;
+    color: var(--amber, #f59e0b);
+  }
+  .lines-virtual-root .muted {
+    color: var(--muted, #888);
+    font-style: italic;
+  }
+
+  /* Column Sizing */
+  .col-team { min-width: 4rem; }
+  .col-line { min-width: 5.5rem; }
+  .col-shift { min-width: 6.5rem; }
+  .col-time { min-width: 5rem; }
+  .col-pos { min-width: 4.5rem; }
+  .col-duty { min-width: 4.5rem; }
+  .col-sm { min-width: 3.2rem; }
+  .col-rdos { min-width: 5.5rem; }
+  .col-day { min-width: 6.5rem; }
 </style>

@@ -32,7 +32,8 @@ export function initLinesTable(scheduler) {
     return {
       teamResolver: typeof S.teamMetaForLine === "function" ? S.teamMetaForLine : null,
       shiftResolver: typeof S.getShift === "function" ? S.getShift : null,
-      rotationDutyResolver: typeof S.getRotationDuty === "function" ? S.getRotationDuty : getRotationDutyLocal
+      rotationDutyResolver: typeof S.getRotationDuty === "function" ? S.getRotationDuty : getRotationDutyLocal,
+      effectiveTimesResolver: typeof S.getEffectiveShiftTimes === "function" ? S.getEffectiveShiftTimes : null
     };
   }
 
@@ -43,7 +44,8 @@ export function initLinesTable(scheduler) {
     if (!Array.isArray(arr)) return null;
     const duty = arr[dayIndex];
     if (duty === "BAG") return "BAG";
-    if (duty === "PAX" || duty === "DFO") return "PAX";
+    if (duty === "DFO") return "DFO";
+    if (duty === "PAX") return "PAX";
     return null;
   }
 
@@ -52,7 +54,7 @@ export function initLinesTable(scheduler) {
     if (!S.state.functionRotation) S.state.functionRotation = {};
     if (!S.state.functionRotation[key]) S.state.functionRotation[key] = [];
     while (S.state.functionRotation[key].length <= dayIndex) S.state.functionRotation[key].push(null);
-    S.state.functionRotation[key][dayIndex] = duty; // "BAG" | "PAX" | null
+    S.state.functionRotation[key][dayIndex] = duty; // "BAG" | "PAX" | "DFO" | null
   }
 
   function isDfoCapable(line) {
@@ -98,7 +100,15 @@ export function initLinesTable(scheduler) {
       rows: Array.isArray(nextRows) ? nextRows : [],
       shiftOptions: shiftOptions(),
       teamOptions: teamOptions(),
-      exportStyle: currentExportStyle()
+      exportStyle: currentExportStyle(),
+      currentSortBy: (S.linesView && S.linesView.sortBy) || 'role',
+      currentSortDir: (S.linesView && S.linesView.sortDir) || 'asc',
+      filterRole: (S.linesView && S.linesView.filterRole) || 'ALL',
+      filterShift: (S.linesView && S.linesView.filterShift) || '',
+      filterTeam: (S.linesView && S.linesView.filterTeam) || '',
+      filterSex: (S.linesView && S.linesView.filterSex) || '',
+      filterDuty: (S.linesView && S.linesView.filterDuty) || '',
+      searchCode: (S.linesView && S.linesView.searchCode) || ''
     });
   }
 
@@ -136,13 +146,31 @@ export function initLinesTable(scheduler) {
       if (S.applyLineShift) S.applyLineShift(line, value);
     } else if (field === "team") {
       if (S.setLineTeam) S.setLineTeam(detail.lineId, value);
+    } else if (field === "start" || field === "end") {
+      var timeVal = String(value || "").trim();
+      if (S.isValidTimeText && !S.isValidTimeText(timeVal)) return;
+      var shift = S.getShift ? S.getShift(line.shiftId) : null;
+      if (!shift) {
+        var shiftId = line.shiftId || ("SHIFT_" + line.id);
+        line.shiftId = shiftId;
+        if (!S.state.shifts) S.state.shifts = [];
+        shift = S.getShift ? S.getShift(shiftId) : null;
+        if (!shift) {
+          shift = { id: shiftId, name: shiftId, start: "08:00", end: "16:30", paid: line.paid || 8 };
+          S.state.shifts.push(shift);
+        }
+      }
+      if (field === "start") shift.start = timeVal;
+      if (field === "end") shift.end = timeVal;
+      line.shiftLabel = (shift.start || "") + "-" + (shift.end || "");
     }
     if (S.updateStatus) S.updateStatus("Updated " + (line.lineCode || detail.lineId));
     refresh();
-    if ((field === "emp" || field === "position" || field === "shift") && S.renderCoverageBars) {
+    if ((field === "emp" || field === "position" || field === "shift" || field === "start" || field === "end") && S.renderCoverageBars) {
       S.renderCoverageBars();
     }
     if (field === "team" && S.renderTeams) S.renderTeams();
+    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
   }
 
   function writeDayToggle(detail) {
@@ -196,6 +224,91 @@ export function initLinesTable(scheduler) {
     if (S.syncRdoDaysFromSchedule) S.syncRdoDaysFromSchedule(line);
     refresh();
     if (S.renderCoverageBars) S.renderCoverageBars();
+    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+  }
+
+  function writeDayDutyEdit(detail) {
+    if (!detail) return;
+    const line = S.findLineById ? S.findLineById(detail.lineId) : null;
+    const dayIndex = Number(detail.dayIndex);
+    const duty = String(detail.duty || "").toUpperCase();
+    if (!line || !Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex > 6) return;
+
+    const key = String(line.id);
+    if (!S.state.schedule) S.state.schedule = {};
+    if (!Array.isArray(S.state.schedule[key])) {
+      S.state.schedule[key] = Array(7).fill("RDO");
+    }
+
+    if (duty === "OFF" || duty === "RDO" || duty === "") {
+      S.state.schedule[key][dayIndex] = "RDO";
+      setRotationDuty(key, dayIndex, null);
+    } else {
+      S.state.schedule[key][dayIndex] = "WORK";
+      if (duty === "BAG") setRotationDuty(key, dayIndex, "BAG");
+      else if (duty === "DFO") setRotationDuty(key, dayIndex, "DFO");
+      else setRotationDuty(key, dayIndex, "PAX");
+    }
+
+    if (S.syncRdoDaysFromSchedule) S.syncRdoDaysFromSchedule(line);
+    refresh();
+    if (S.renderCoverageBars) S.renderCoverageBars();
+    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+  }
+
+  function writeDayTimeEdit(detail) {
+    if (!detail) return;
+    const line = S.findLineById ? S.findLineById(detail.lineId) : null;
+    const dayIndex = Number(detail.dayIndex);
+    const field = detail.field;
+    const timeVal = String(detail.value || "").trim();
+    if (!line || !Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex > 6) return;
+    if (S.isValidTimeText && !S.isValidTimeText(timeVal)) return;
+
+    var shift = S.getShift ? S.getShift(line.shiftId) : null;
+    if (!shift) {
+      var shiftId = line.shiftId || ("SHIFT_" + line.id);
+      line.shiftId = shiftId;
+      if (!S.state.shifts) S.state.shifts = [];
+      shift = S.getShift ? S.getShift(shiftId) : null;
+      if (!shift) {
+        shift = { id: shiftId, name: shiftId, start: "08:00", end: "16:30", paid: line.paid || 8 };
+        S.state.shifts.push(shift);
+      }
+    }
+
+    if (!shift.dayTimes) shift.dayTimes = {};
+    var dowKey = String(dayIndex);
+    var curTimes = shift.dayTimes[dowKey] || { start: shift.start || "08:00", end: shift.end || "16:30" };
+    if (field === "start") {
+      shift.dayTimes[dowKey] = { start: timeVal, end: curTimes.end };
+    } else if (field === "end") {
+      shift.dayTimes[dowKey] = { start: curTimes.start, end: timeVal };
+    }
+
+    refresh();
+    if (S.renderCoverageBars) S.renderCoverageBars();
+    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+  }
+
+  function handleSort(detail) {
+    if (!detail) return;
+    if (!S.linesView) S.linesView = {};
+    if (detail.sortBy) S.linesView.sortBy = detail.sortBy;
+    if (detail.sortDir) S.linesView.sortDir = detail.sortDir;
+    refresh();
+  }
+
+  function handleFilter(detail) {
+    if (!detail) return;
+    if (!S.linesView) S.linesView = {};
+    if (detail.filterRole !== undefined) S.linesView.filterRole = detail.filterRole;
+    if (detail.filterShift !== undefined) S.linesView.filterShift = detail.filterShift;
+    if (detail.filterTeam !== undefined) S.linesView.filterTeam = detail.filterTeam;
+    if (detail.filterSex !== undefined) S.linesView.filterSex = detail.filterSex;
+    if (detail.filterDuty !== undefined) S.linesView.filterDuty = detail.filterDuty;
+    if (detail.searchCode !== undefined) S.linesView.searchCode = detail.searchCode;
+    refresh();
   }
 
   const refresh = () => {
@@ -214,8 +327,20 @@ export function initLinesTable(scheduler) {
             shiftOptions: shiftOptions(),
             teamOptions: teamOptions(),
             exportStyle: currentExportStyle(),
+            currentSortBy: (S.linesView && S.linesView.sortBy) || 'role',
+            currentSortDir: (S.linesView && S.linesView.sortDir) || 'asc',
+            filterRole: (S.linesView && S.linesView.filterRole) || 'ALL',
+            filterShift: (S.linesView && S.linesView.filterShift) || '',
+            filterTeam: (S.linesView && S.linesView.filterTeam) || '',
+            filterSex: (S.linesView && S.linesView.filterSex) || '',
+            filterDuty: (S.linesView && S.linesView.filterDuty) || '',
+            searchCode: (S.linesView && S.linesView.searchCode) || '',
             onInlineEdit: writeInlineEdit,
-            onDayToggle: writeDayToggle
+            onDayToggle: writeDayToggle,
+            onDayDutyEdit: writeDayDutyEdit,
+            onDayTimeEdit: writeDayTimeEdit,
+            onSort: handleSort,
+            onFilter: handleFilter
           }
         });
       }
@@ -225,6 +350,8 @@ export function initLinesTable(scheduler) {
   };
 
   refresh();
+
+  if (S.bindLinesUI) S.bindLinesUI();
 
   document.addEventListener("click", (e) => {
     const btn = e.target.closest?.(".tab-btn");

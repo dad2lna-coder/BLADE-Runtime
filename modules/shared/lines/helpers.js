@@ -10,7 +10,8 @@ export function attachLineHelpers(S) {
   S.dayLabel = function (offset) { return dayLabel(S, offset); };
   S.linesView = S.linesView || {
     groupBy: "team", sortBy: "role", sortDir: "asc",
-    filterRole: "ALL", filterShift: "", filterSex: "", filterTeam: ""
+    filterRole: "ALL", filterShift: "", filterSex: "", filterTeam: "",
+    filterDuty: "", searchCode: ""
   };
   S.teamMetaForLine = function (lineId) {
     if (!S.teams || !S.teams.teams) return { order: 9999, name: "", id: "" };
@@ -119,6 +120,8 @@ export function attachLineHelpers(S) {
     var fs = S.linesView.filterShift || "";
     var fsex = S.linesView.filterSex || "";
     var ft = S.linesView.filterTeam || "";
+    var fd = S.linesView.filterDuty || "";
+    var q = (S.linesView.searchCode || "").toLowerCase().trim();
     return (list || []).filter(function (line) {
       if (fr === "STSO" && !(line.isStso || line.empClass === "STSO")) return false;
       if (fr === "LTSO" && !(line.isLtso || line.empClass === "LTSO")) return false;
@@ -127,6 +130,18 @@ export function attachLineHelpers(S) {
       if (fsex && line.sex !== fsex) return false;
       if (ft === "__none__") { if (S.teamMetaForLine(line.id).id) return false; }
       else if (ft && S.teamMetaForLine(line.id).id !== ft) return false;
+      if (q && !(line.lineCode || "").toLowerCase().includes(q)) return false;
+      if (fd) {
+        var rot = (S.state && S.state.functionRotation && (S.state.functionRotation[String(line.id)] || S.state.functionRotation[line.id])) || [];
+        var sched = (S.state && S.state.schedule && (S.state.schedule[line.id] || S.state.schedule[String(line.id)])) || [];
+        var hasDuty = false;
+        if (fd === "OFF" || fd === "RDO") {
+          hasDuty = sched.some(function (val) { return val === "RDO"; });
+        } else {
+          hasDuty = (line.function === fd) || rot.some(function (d) { return d === fd; });
+        }
+        if (!hasDuty) return false;
+      }
       return true;
     });
   };
@@ -152,7 +167,11 @@ export function attachLineHelpers(S) {
       if (sortBy === "role") return S.lineRoleRank(line);
       if (sortBy === "shift") {
         var sh = S.getShift && S.getShift(line.shiftId);
-        return sh ? S.timeToMin(sh.start) : 0;
+        return sh ? (S.timeToMin ? S.timeToMin(sh.start) : sh.start) : 0;
+      }
+      if (sortBy === "start") {
+        var sh2 = S.getShift && S.getShift(line.shiftId);
+        return sh2 ? (S.timeToMin ? S.timeToMin(sh2.start) : sh2.start) : 0;
       }
       if (sortBy === "line") return (line.lineCode || "").toLowerCase();
       if (sortBy === "sex") return line.sex === "M" ? 0 : 1;
@@ -190,7 +209,9 @@ export function attachLineHelpers(S) {
         "lines-filter-role": "filterRole",
         "lines-filter-shift": "filterShift",
         "lines-filter-sex": "filterSex",
-        "lines-filter-team": "filterTeam"
+        "lines-filter-team": "filterTeam",
+        "lines-filter-duty": "filterDuty",
+        "lines-search": "searchCode"
       };
       if (map[t.id]) {
         S.linesView[map[t.id]] = t.value;
