@@ -1,15 +1,10 @@
-/**
- * BLADE Runtime Shell
- * Generic application shell for module discovery, loading, and lifecycle management.
- */
+// BLADE Runtime Shell — Phase 1 + Phase 2 contract fix
 (function () {
   "use strict";
 
-  // Ensure Scheduler exists as global singleton
   window.Scheduler = window.Scheduler || {};
   var S = window.Scheduler;
 
-  // Runtime state
   var runtime = {
     modules: {},
     contracts: {},
@@ -18,7 +13,6 @@
     initialized: false
   };
 
-  // Simple event bus implementation
   function createEventBus() {
     var listeners = {};
     return {
@@ -44,7 +38,6 @@
     };
   }
 
-  // Shared contracts
   function createContracts() {
     return {
       ScheduleState: {
@@ -58,6 +51,17 @@
         setLines: function (lines) {
           this.lines = lines;
           runtime.eventBus.publish("schedule:lines:updated", lines);
+        },
+        timeToMin: function (t) {
+          if (!t || typeof t !== "string") return 0;
+          var p = t.split(":");
+          return (+p[0] || 0) * 60 + (+p[1] || 0);
+        },
+        minToTime: function (m) {
+          var normalized = ((m % 1440) + 1440) % 1440;
+          var h = Math.floor(normalized / 60);
+          var mm = normalized % 60;
+          return String(h).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
         }
       },
       CoverageState: {
@@ -82,7 +86,6 @@
     };
   }
 
-  // Module lifecycle
   function loadModule(name, descriptor) {
     return new Promise(function (resolve, reject) {
       if (runtime.modules[name]) {
@@ -196,7 +199,6 @@
     return Promise.all(promises);
   }
 
-  // Public runtime API
   S.runtime = {
     getContracts: function () {
       return runtime.contracts;
@@ -212,12 +214,10 @@
     }
   };
 
-  // Initialize runtime
   function init() {
     runtime.eventBus = createEventBus();
     runtime.contracts = createContracts();
 
-    // Load manifest
     fetch("modules/manifest.json")
       .then(function (resp) {
         if (!resp.ok) throw new Error("Manifest fetch failed: " + resp.status);
@@ -236,7 +236,6 @@
       });
   }
 
-  // Start runtime when DOM is ready
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
