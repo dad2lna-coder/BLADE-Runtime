@@ -1,5 +1,7 @@
 # BLADE — setup and where files live
 
+> **Note:** For canonical system architecture, module inventory, and file structure, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
 BLADE is the airport staffing scheduler (bid lines, teams, coverage). It runs on your PC. It does not log into a company website or send schedules to an outside service.
 
 Work files live in the shared **Schedule Builder** library. OneDrive keeps that folder in sync for the team.

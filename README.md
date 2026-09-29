@@ -58,42 +58,14 @@ That URL is GitHub Pages from **bright-garden** (see `.github/workflows/pages.ym
 
 ---
 
-## Architecture (Host as Renderer)
+## Architecture
 
-The host shell (`index.html` + thin `js/` runtime) acts purely as a renderer:
-1. Loads `modules/manifest.json`
-2. Mounts each module's Vite-built single-file `dist/*.js` into its tab/panel slot
-3. Owns the single shared `Scheduler` state store and EXP/IMP (`js/io.js`)
-4. Owns shell chrome (intro, console header/footer, instructions modal, theme)
+The host shell (`index.html` + thin `js/` runtime) acts as a renderer that fetches `modules/manifest.json`, mounts DOM panel slots, and dynamically imports Vite ESM bundles into the page. Feature modules interact with a single shared runtime state object (`window.Scheduler`).
 
-Every feature (Setup UI + generate/allocation, Lines grid + row-model + line-colors, Coverage, Reports + capacity math, Teams, Demand) lives in its owning module's source and ships as a Vite-built ESM dist bundle.
+For the canonical system architecture map, module inventory, data flow, and runtime contracts, see:
+👉 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
-```
-BLADE_Alpha/
-├── index.html                 # Shell, tab nav, module loader
-├── README.md
-├── INSTRUCTIONS.md            # User guide
-├── DEPENDENCY_MAP.md          # Architecture, boot flow, module contracts
-├── package.json               # Vite module build scripts + dev deps
-│
-├── css/                       # Console chrome, print, intro
-├── js/                        # Host shell scripts (constants, utils, io, main, chrome)
-├── lib/                       # Vendor libs (Sortable, luxon, ExcelJS)
-├── modules/
-│   ├── manifest.json          # Module manifest pointing to dist/*.js entries
-│   ├── setup-panel/           # Setup tab UI, shift math, allocation & generate engine
-│   ├── function-coverage/     # Engine-only function duty assignment (BAG/DFO/PAX)
-│   ├── lines-table/           # Svelte 4 virtualized table island + row model
-│   ├── coverage/              # 30-min heatmap, shift mix, coverage cuts
-│   ├── reports/               # Management reports, capacity math & mod-set board
-│   ├── team-builder/          # Team architecture, auto-form, drag-drop boards
-│   └── demand-capacity/       # Flight volume xlsx parser & pax capacity overlay
-└── .github/workflows/
-    ├── pages.yml              # Pages workflow (runs npm run build:modules)
-    └── rebuild-lines-table.yml
-```
-
-Details: [DEPENDENCY_MAP.md](DEPENDENCY_MAP.md).
+For technical runtime script inventories and test procedures, see [DEPENDENCY_MAP.md](DEPENDENCY_MAP.md).
 
 ---
 
