@@ -52,7 +52,7 @@ export function initLinesTable(scheduler) {
     if (!S.state.functionRotation) S.state.functionRotation = {};
     if (!S.state.functionRotation[key]) S.state.functionRotation[key] = [];
     while (S.state.functionRotation[key].length <= dayIndex) S.state.functionRotation[key].push(null);
-    S.state.functionRotation[key][dayIndex] = duty; // "BAG" | "PAX" | null
+    S.state.functionRotation[key][dayIndex] = duty; // "BAG" | "PAX" | "DFO" | null
   }
 
   function isDfoCapable(line) {
@@ -98,7 +98,15 @@ export function initLinesTable(scheduler) {
       rows: Array.isArray(nextRows) ? nextRows : [],
       shiftOptions: shiftOptions(),
       teamOptions: teamOptions(),
-      exportStyle: currentExportStyle()
+      exportStyle: currentExportStyle(),
+      currentSortBy: (S.linesView && S.linesView.sortBy) || 'role',
+      currentSortDir: (S.linesView && S.linesView.sortDir) || 'asc',
+      filterRole: (S.linesView && S.linesView.filterRole) || 'ALL',
+      filterShift: (S.linesView && S.linesView.filterShift) || '',
+      filterTeam: (S.linesView && S.linesView.filterTeam) || '',
+      filterSex: (S.linesView && S.linesView.filterSex) || '',
+      filterDuty: (S.linesView && S.linesView.filterDuty) || '',
+      searchCode: (S.linesView && S.linesView.searchCode) || ''
     });
   }
 
@@ -136,13 +144,31 @@ export function initLinesTable(scheduler) {
       if (S.applyLineShift) S.applyLineShift(line, value);
     } else if (field === "team") {
       if (S.setLineTeam) S.setLineTeam(detail.lineId, value);
+    } else if (field === "start" || field === "end") {
+      var timeVal = String(value || "").trim();
+      if (S.isValidTimeText && !S.isValidTimeText(timeVal)) return;
+      var shift = S.getShift ? S.getShift(line.shiftId) : null;
+      if (!shift) {
+        var shiftId = line.shiftId || ("SHIFT_" + line.id);
+        line.shiftId = shiftId;
+        if (!S.state.shifts) S.state.shifts = [];
+        shift = S.getShift ? S.getShift(shiftId) : null;
+        if (!shift) {
+          shift = { id: shiftId, name: shiftId, start: "08:00", end: "16:30", paid: line.paid || 8 };
+          S.state.shifts.push(shift);
+        }
+      }
+      if (field === "start") shift.start = timeVal;
+      if (field === "end") shift.end = timeVal;
+      line.shiftLabel = (shift.start || "") + "-" + (shift.end || "");
     }
     if (S.updateStatus) S.updateStatus("Updated " + (line.lineCode || detail.lineId));
     refresh();
-    if ((field === "emp" || field === "position" || field === "shift") && S.renderCoverageBars) {
+    if ((field === "emp" || field === "position" || field === "shift" || field === "start" || field === "end") && S.renderCoverageBars) {
       S.renderCoverageBars();
     }
     if (field === "team" && S.renderTeams) S.renderTeams();
+    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
   }
 
   function writeDayToggle(detail) {
@@ -196,6 +222,27 @@ export function initLinesTable(scheduler) {
     if (S.syncRdoDaysFromSchedule) S.syncRdoDaysFromSchedule(line);
     refresh();
     if (S.renderCoverageBars) S.renderCoverageBars();
+    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+  }
+
+  function handleSort(detail) {
+    if (!detail) return;
+    if (!S.linesView) S.linesView = {};
+    if (detail.sortBy) S.linesView.sortBy = detail.sortBy;
+    if (detail.sortDir) S.linesView.sortDir = detail.sortDir;
+    refresh();
+  }
+
+  function handleFilter(detail) {
+    if (!detail) return;
+    if (!S.linesView) S.linesView = {};
+    if (detail.filterRole !== undefined) S.linesView.filterRole = detail.filterRole;
+    if (detail.filterShift !== undefined) S.linesView.filterShift = detail.filterShift;
+    if (detail.filterTeam !== undefined) S.linesView.filterTeam = detail.filterTeam;
+    if (detail.filterSex !== undefined) S.linesView.filterSex = detail.filterSex;
+    if (detail.filterDuty !== undefined) S.linesView.filterDuty = detail.filterDuty;
+    if (detail.searchCode !== undefined) S.linesView.searchCode = detail.searchCode;
+    refresh();
   }
 
   const refresh = () => {
@@ -214,8 +261,18 @@ export function initLinesTable(scheduler) {
             shiftOptions: shiftOptions(),
             teamOptions: teamOptions(),
             exportStyle: currentExportStyle(),
+            currentSortBy: (S.linesView && S.linesView.sortBy) || 'role',
+            currentSortDir: (S.linesView && S.linesView.sortDir) || 'asc',
+            filterRole: (S.linesView && S.linesView.filterRole) || 'ALL',
+            filterShift: (S.linesView && S.linesView.filterShift) || '',
+            filterTeam: (S.linesView && S.linesView.filterTeam) || '',
+            filterSex: (S.linesView && S.linesView.filterSex) || '',
+            filterDuty: (S.linesView && S.linesView.filterDuty) || '',
+            searchCode: (S.linesView && S.linesView.searchCode) || '',
             onInlineEdit: writeInlineEdit,
-            onDayToggle: writeDayToggle
+            onDayToggle: writeDayToggle,
+            onSort: handleSort,
+            onFilter: handleFilter
           }
         });
       }
@@ -225,6 +282,8 @@ export function initLinesTable(scheduler) {
   };
 
   refresh();
+
+  if (S.bindLinesUI) S.bindLinesUI();
 
   document.addEventListener("click", (e) => {
     const btn = e.target.closest?.(".tab-btn");

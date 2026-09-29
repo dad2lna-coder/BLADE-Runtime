@@ -61,6 +61,7 @@ export function dutyFillArgb(style, duty) {
 }
 
 export function applyExportCssVars(S) {
+  if (typeof document === "undefined") return;
   var st = getExportStyle(S);
   var roots = [
     document.documentElement,
@@ -81,13 +82,15 @@ export function applyExportCssVars(S) {
 }
 
 function refreshLinesGrid(S) {
+  if (typeof document === "undefined") return;
   var root = document.getElementById("lines-table-root");
   if (root && typeof root.refresh === "function") root.refresh();
   else if (S && typeof S.renderLines === "function") S.renderLines();
-  else window.dispatchEvent(new CustomEvent("lines:request-render", { detail: { source: "export-style" } }));
+  else if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("lines:request-render", { detail: { source: "export-style" } }));
 }
 
 function syncPickers(S) {
+  if (typeof document === "undefined") return;
   var st = getExportStyle(S);
   ["rdo", "bag", "dfo", "pax", "header"].forEach(function (key) {
     var el = document.getElementById("export-color-" + key);
@@ -96,6 +99,7 @@ function syncPickers(S) {
 }
 
 function ensureToolbar(S) {
+  if (typeof document === "undefined") return false;
   var bar = document.getElementById("lines-toolbar");
   if (!bar) return false;
   if (!document.getElementById("export-style-row")) {
@@ -133,26 +137,29 @@ export function attachExportStyle(S) {
 
   ensureToolbar(S);
 
-  if (!S._exportStyleRetryBound) {
-    S._exportStyleRetryBound = true;
-    window.addEventListener("lines:request-render", function () { ensureToolbar(S); });
-    document.addEventListener("click", function (e) {
-      var btn = e.target && e.target.closest && e.target.closest(".tab-btn");
-      if (btn && btn.dataset.tab === "lines") ensureToolbar(S);
-    });
-  }
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    if (!S._exportStyleRetryBound) {
+      S._exportStyleRetryBound = true;
+      window.addEventListener("lines:request-render", function () { ensureToolbar(S); });
+      document.addEventListener("click", function (e) {
+        var btn = e.target && e.target.closest && e.target.closest(".tab-btn");
+        if (btn && btn.dataset.tab === "lines") ensureToolbar(S);
+      });
+    }
 
-  if (S._exportStyleBound) return;
-  S._exportStyleBound = true;
-  document.addEventListener("input", function (e) {
-    var t = e.target;
-    if (!t || !t.id || t.id.indexOf("export-color-") !== 0) return;
-    var key = t.id.replace("export-color-", "");
-    if (!S.state.exportStyle) S.state.exportStyle = defaultExportStyle();
-    var next = normalizeHex(t.value, defaultExportStyle()[key]);
-    if (!next) return;
-    S.state.exportStyle[key] = next;
-    applyExportCssVars(S);
-    refreshLinesGrid(S);
-  });
+    if (!S._exportStyleBound) {
+      S._exportStyleBound = true;
+      document.addEventListener("input", function (e) {
+        var t = e.target;
+        if (!t || !t.id || t.id.indexOf("export-color-") !== 0) return;
+        var key = t.id.replace("export-color-", "");
+        if (!S.state.exportStyle) S.state.exportStyle = defaultExportStyle();
+        var next = normalizeHex(t.value, defaultExportStyle()[key]);
+        if (!next) return;
+        S.state.exportStyle[key] = next;
+        applyExportCssVars(S);
+        refreshLinesGrid(S);
+      });
+    }
+  }
 }
