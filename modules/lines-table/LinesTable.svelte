@@ -165,30 +165,30 @@
       </div>
     </div>
 
-    <div class="lines-virtual-root" style="height: calc(100% - 46px); overflow: auto; position: relative;">
-      <table class="data-table lines-editable" style="width: max-content; min-width: 1100px;">
+    <div class="lines-virtual-root">
+      <table class="data-table lines-editable">
         <thead>
           <tr>
-            <th class="sortable" on:click={() => handleSort('team')}>Team{sortIndicator('team')}</th>
-            <th class="sortable" on:click={() => handleSort('line')}>Line{sortIndicator('line')}</th>
-            <th class="sortable" on:click={() => handleSort('shift')}>Shift{sortIndicator('shift')}</th>
-            <th class="sortable" on:click={() => handleSort('start')}>Start{sortIndicator('start')}</th>
-            <th>End</th>
-            <th class="sortable" on:click={() => handleSort('role')}>Position{sortIndicator('role')}</th>
-            <th>Emp</th>
-            <th>Sex</th>
-            <th>Duty / Func</th>
-            <th>Cert pool</th>
-            <th>RDOs</th>
-            <th>Paid</th>
-            <th>Sun</th>
-            <th>Mon</th>
-            <th>Tue</th>
-            <th>Wed</th>
-            <th>Thu</th>
-            <th>Fri</th>
-            <th>Sat</th>
-            <th>Hours</th>
+            <th class="sortable col-team" on:click={() => handleSort('team')}>Team{sortIndicator('team')}</th>
+            <th class="sortable col-line" on:click={() => handleSort('line')}>Line{sortIndicator('line')}</th>
+            <th class="sortable col-shift" on:click={() => handleSort('shift')}>Shift{sortIndicator('shift')}</th>
+            <th class="sortable col-time" on:click={() => handleSort('start')}>Start{sortIndicator('start')}</th>
+            <th class="col-time">End</th>
+            <th class="sortable col-pos" on:click={() => handleSort('role')}>Position{sortIndicator('role')}</th>
+            <th class="col-sm">Emp</th>
+            <th class="col-sm">Sex</th>
+            <th class="col-duty">Duty</th>
+            <th class="col-sm">Cert</th>
+            <th class="col-rdos">RDOs</th>
+            <th class="col-sm">Paid</th>
+            <th class="col-day">Sun</th>
+            <th class="col-day">Mon</th>
+            <th class="col-day">Tue</th>
+            <th class="col-day">Wed</th>
+            <th class="col-day">Thu</th>
+            <th class="col-day">Fri</th>
+            <th class="col-day">Sat</th>
+            <th class="col-sm">Hrs</th>
           </tr>
         </thead>
         <tbody>
@@ -258,7 +258,7 @@
                 </select>
               </td>
               <td class="line-rdo-cell">{row?.rdos ?? '—'}</td>
-              <td>{row?.paid ?? ''}</td>
+              <td class="line-center">{row?.paid ?? ''}</td>
               {#each [0, 1, 2, 3, 4, 5, 6] as i}
                 <td
                   class={dayClass(row?.dayDuties?.[i] ?? row?.days?.[i])}
@@ -293,16 +293,19 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    background: var(--bg-dark, #09090b);
+    border: 1px solid var(--border, #27272a);
+    border-radius: 6px;
   }
   .lines-table-header-controls {
-    padding: 0.4rem 0.5rem;
+    padding: 0.5rem 0.75rem;
     background: var(--panel, #18181b);
-    border-bottom: 1px solid var(--border, #333);
+    border-bottom: 1px solid var(--border, #27272a);
   }
   .filter-controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: 0.75rem;
     align-items: center;
     font-size: 0.8rem;
   }
@@ -311,37 +314,173 @@
     align-items: center;
     gap: 0.35rem;
     color: var(--console-fg, #d4d4d8);
+    font-weight: 500;
   }
   .filter-input, .filter-select {
-    padding: 0.2rem 0.4rem;
+    padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
     background: var(--bg-dark, #09090b);
     color: var(--fg, #f4f4f5);
-    border: 1px solid var(--border, #3a3a3c);
+    border: 1px solid var(--border, #3f3f46);
     border-radius: 4px;
   }
   .search-input {
-    width: 8.5rem;
+    width: 9rem;
   }
-  .lines-virtual-root { position: relative; overflow: auto; height: 100%; width: 100%; }
-  .lines-virtual-root table { width: max-content; min-width: 1100px; border-collapse: collapse; font-size: 0.78rem; table-layout: fixed; }
-  .lines-virtual-root th { position: sticky; top: 0; background: var(--console-bg, #0c0c0c); color: var(--console-fg, #e8e8e8); font-weight: 600; text-align: left; padding: 0.35rem 0.5rem; border-bottom: 2px solid #333; white-space: nowrap; z-index: 1; }
-  .lines-virtual-root th.sortable { cursor: pointer; user-select: none; }
-  .lines-virtual-root th.sortable:hover { background: #1a1a1e; color: var(--amber, #f59e0b); }
-  .lines-virtual-root td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 3.5rem; height: 42px; line-height: 1.2; }
-  .lines-virtual-root .line-edit { max-width: none; min-width: 4.5rem; height: 2.25rem; font-size: 0.82rem; }
-  .lines-virtual-root .line-code-input { min-width: 5.5rem; max-width: 10rem; }
-  .lines-virtual-root .line-time-input { min-width: 5.5rem; max-width: 6.5rem; }
-  .lines-virtual-root .cell-toggle { cursor: pointer; user-select: none; transition: all 0.15s ease; text-align: center; }
-  .lines-virtual-root .cell-toggle:hover { filter: brightness(1.08); transform: scale(1.02); }
-  .lines-virtual-root .cell-toggle:active { filter: brightness(1.25); outline: 2px solid var(--amber); }
-  .lines-virtual-root .cell-work { color: var(--green, #22c55e); font-family: var(--mono); font-weight: 600; }
-  .lines-virtual-root .cell-rdo { background: var(--export-rdo); color: var(--export-rdo-fg, #aaa); font-weight: bold; cursor: pointer; }
-  .lines-virtual-root .cell-function-duty { font-weight: 600; }
-  .lines-virtual-root .cell-function-duty.cell-bag { background: var(--export-bag); color: var(--export-bag-fg, #000); }
-  .lines-virtual-root .cell-function-duty.cell-dfo { background: var(--export-dfo); color: var(--export-dfo-fg, #000); }
-  .lines-virtual-root .cell-function-duty.cell-pax { background: var(--export-pax); color: var(--export-pax-fg, #000); }
-  .lines-virtual-root .line-rdo-cell { white-space: nowrap; font-size: 0.8rem; }
-  .lines-virtual-root .line-hours { font-weight: bold; color: var(--amber, #f59e0b); }
-  .lines-virtual-root .muted { color: var(--muted, #888); font-style: italic; }
+  .lines-virtual-root {
+    position: relative;
+    overflow: auto;
+    flex: 1;
+    width: 100%;
+  }
+  .lines-virtual-root table {
+    width: 100%;
+    min-width: 1100px;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    color: var(--fg, #e4e4e7);
+    table-layout: auto;
+  }
+  .lines-virtual-root th {
+    position: sticky;
+    top: 0;
+    background: #121215;
+    color: var(--amber, #f59e0b);
+    font-weight: 600;
+    text-align: center;
+    padding: 0.5rem 0.4rem;
+    border: 1px solid var(--border, #27272a);
+    white-space: nowrap;
+    z-index: 2;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+  .lines-virtual-root th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+  .lines-virtual-root th.sortable:hover {
+    background: #1c1c20;
+    color: #facc15;
+  }
+  .lines-virtual-root td {
+    padding: 0;
+    border: 1px solid var(--border, #27272a);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 34px;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+  .lines-virtual-root tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  /* Seamless inline editable cells */
+  .lines-virtual-root .line-edit {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font-size: inherit;
+    font-family: inherit;
+    width: 100%;
+    height: 100%;
+    padding: 0 0.3rem;
+    text-align: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    margin: 0;
+    border-radius: 0;
+  }
+  .lines-virtual-root .line-edit:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .lines-virtual-root .line-edit:focus {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px var(--amber, #f59e0b);
+  }
+  .lines-virtual-root select.line-edit option {
+    background: #18181b;
+    color: #e4e4e7;
+  }
+  .lines-virtual-root .line-time-input::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
+  }
+
+  .lines-virtual-root .line-code-input {
+    font-weight: 600;
+  }
+  .lines-virtual-root .line-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  /* Day duty cells */
+  .lines-virtual-root .cell-toggle {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.12s ease;
+    text-align: center;
+    line-height: 34px;
+    font-size: 0.78rem;
+  }
+  .lines-virtual-root .cell-toggle:hover {
+    filter: brightness(1.15);
+  }
+  .lines-virtual-root .cell-toggle:active {
+    filter: brightness(1.3);
+  }
+  .lines-virtual-root .cell-work {
+    color: var(--green, #22c55e);
+    font-weight: 600;
+  }
+  .lines-virtual-root .cell-rdo {
+    background: var(--export-rdo, #000);
+    color: var(--export-rdo-fg, #888);
+    font-weight: bold;
+  }
+  .lines-virtual-root .cell-function-duty {
+    font-weight: 600;
+  }
+  .lines-virtual-root .cell-function-duty.cell-bag {
+    background: var(--export-bag, #f4b4b4);
+    color: var(--export-bag-fg, #000);
+  }
+  .lines-virtual-root .cell-function-duty.cell-dfo {
+    background: var(--export-dfo, #fff3a8);
+    color: var(--export-dfo-fg, #000);
+  }
+  .lines-virtual-root .cell-function-duty.cell-pax {
+    background: var(--export-pax, #a0c4ff);
+    color: var(--export-pax-fg, #000);
+  }
+
+  .lines-virtual-root .line-rdo-cell {
+    padding: 0 0.4rem;
+    font-size: 0.78rem;
+  }
+  .lines-virtual-root .line-hours {
+    font-weight: bold;
+    color: var(--amber, #f59e0b);
+  }
+  .lines-virtual-root .muted {
+    color: var(--muted, #888);
+    font-style: italic;
+  }
+
+  /* Column Sizing */
+  .col-team { min-width: 4rem; }
+  .col-line { min-width: 6rem; }
+  .col-shift { min-width: 7rem; }
+  .col-time { min-width: 5.5rem; }
+  .col-pos { min-width: 5rem; }
+  .col-duty { min-width: 5rem; }
+  .col-sm { min-width: 3.5rem; }
+  .col-rdos { min-width: 6rem; }
+  .col-day { min-width: 4.5rem; }
 </style>
