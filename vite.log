@@ -1,0 +1,25 @@
+
+  VITE v5.4.21  ready in 243 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+4:57:53 PM [vite] warning:
+/app/index.html
+184|
+185|        if (!cfg.entry) continue;
+186|        const mod = await import(new URL(cfg.entry, window.location.href).href);
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+187|        const initFn = mod[cfg.init] || mod.init || mod.initTeamBuilder;
+188|        if (typeof initFn === "function") initFn(Scheduler);
+The above dynamic import cannot be analyzed by Vite.
+See https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations for supported dynamic import formats. If this is intended to be left as-is, you can use the /* @vite-ignore */ comment inside the import() call to suppress this warning.
+
+  Plugin: vite:import-analysis
+  File: /app/index.html?html-proxy&index=0.js
+4:57:53 PM [vite] Failed to load source map for /app/lib/exceljs.min.js.
+Error: An error occurred while trying to read the map file at exceljs.min.js.map
+Error: ENOENT: no such file or directory, open '/app/lib/exceljs.min.js.map'
+    at async open (node:internal/fs/promises:636:25)
+    at async Object.readFile (node:internal/fs/promises:1235:14)
+    at async extractSourcemapFromFile (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:21002:53)
+    at async loadAndTransform (file:///app/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51941:27)

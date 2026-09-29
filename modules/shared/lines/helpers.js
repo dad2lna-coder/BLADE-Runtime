@@ -11,7 +11,7 @@ export function attachLineHelpers(S) {
   S.linesView = S.linesView || {
     groupBy: "team", sortBy: "role", sortDir: "asc",
     filterRole: "ALL", filterShift: "", filterSex: "", filterTeam: "",
-    filterDuty: "", searchCode: ""
+    filterDuty: "", filterDay: "", searchCode: ""
   };
   S.teamMetaForLine = function (lineId) {
     if (!S.teams || !S.teams.teams) return { order: 9999, name: "", id: "" };
@@ -132,14 +132,21 @@ export function attachLineHelpers(S) {
       else if (ft && S.teamMetaForLine(line.id).id !== ft) return false;
       if (q && !(line.lineCode || "").toLowerCase().includes(q)) return false;
       if (fd) {
+        var fday = S.linesView.filterDay; // "", "0", "1", "2", "3", "4", "5", "6"
         var rot = (S.state && S.state.functionRotation && (S.state.functionRotation[String(line.id)] || S.state.functionRotation[line.id])) || [];
         var sched = (S.state && S.state.schedule && (S.state.schedule[line.id] || S.state.schedule[String(line.id)])) || [];
-        var hasDuty = false;
-        if (fd === "OFF" || fd === "RDO") {
-          hasDuty = sched.some(function (val) { return val === "RDO"; });
-        } else {
-          hasDuty = (line.function === fd) || rot.some(function (d) { return d === fd; });
-        }
+        var checkDays = (fday !== "" && fday != null) ? [Number(fday)] : [0, 1, 2, 3, 4, 5, 6];
+
+        var hasDuty = checkDays.some(function (dIdx) {
+          var isRdo = sched[dIdx] === "RDO" || sched[dIdx] === "OFF";
+          if (fd === "OFF" || fd === "RDO") return isRdo;
+          if (isRdo) return false;
+          var dDuty = rot[dIdx];
+          if (!dDuty) {
+            dDuty = line.function === "BAG" ? "BAG" : (line.function === "DFO" || line.function === "PAX" ? "PAX" : "PAX");
+          }
+          return dDuty === fd;
+        });
         if (!hasDuty) return false;
       }
       return true;
