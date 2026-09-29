@@ -1,5 +1,6 @@
 //js/utils.js - BLADE Runtime Core Utilities
 //Provides the S (Scheduler) singleton and core helper functions used throughout the application.
+//Adapted to delegate to runtime contracts where available.
 
 (function () {
   "use strict";
@@ -131,5 +132,30 @@
 
   // Shift sequence counter
   S.shiftSeq = S.shiftSeq || 1;
+
+  // Compatibility: delegate to runtime contracts if available
+  if (typeof S.runtime !== "undefined" && S.runtime.getContracts) {
+    var contracts = S.runtime.getContracts();
+
+    // Override time helpers to use contracts where possible
+    S.timeToMin = function (t) {
+      if (contracts.ScheduleState && typeof contracts.ScheduleState.timeToMin === "function") {
+        return contracts.ScheduleState.timeToMin(t);
+      }
+      if (!t || typeof t !== "string") return 0;
+      var p = t.split(":");
+      return (+p[0] || 0) * 60 + (+p[1] || 0);
+    };
+
+    S.minToTime = function (m) {
+      if (contracts.ScheduleState && typeof contracts.ScheduleState.minToTime === "function") {
+        return contracts.ScheduleState.minToTime(m);
+      }
+      var normalized = ((m % 1440) + 1440) % 1440;
+      var h = Math.floor(normalized / 60);
+      var mm = normalized % 60;
+      return String(h).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+    };
+  }
 
 })();

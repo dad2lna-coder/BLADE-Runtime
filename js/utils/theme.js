@@ -1,4 +1,6 @@
-/** Presentation / dark theme — conference TV vs console skin. */
+/** Presentation / dark theme — conference TV vs console skin.
+ * Adapted to delegate to runtime ThemeState contract where available.
+ */
 window.Scheduler = window.Scheduler || {};
 (function (S) {
   "use strict";
@@ -67,7 +69,16 @@ window.Scheduler = window.Scheduler || {};
     }
   }
 
+  // Get theme from runtime contract if available, otherwise fall back to DOM/localStorage
   S.getTheme = function () {
+    // Try runtime contract first
+    if (typeof S.runtime !== "undefined" && S.runtime.getContracts) {
+      var contracts = S.runtime.getContracts();
+      if (contracts.ThemeState && typeof contracts.ThemeState.get === "function") {
+        return contracts.ThemeState.get();
+      }
+    }
+    // Fallback to DOM/localStorage
     var fromDom = document.documentElement && document.documentElement.dataset
       ? document.documentElement.dataset.theme
       : "";
@@ -75,8 +86,21 @@ window.Scheduler = window.Scheduler || {};
     return normalize(readStored());
   };
 
+  // Apply theme via runtime contract if available, otherwise direct DOM manipulation
   S.applyTheme = function (name) {
     var theme = normalize(name);
+
+    // Try runtime contract first
+    if (typeof S.runtime !== "undefined" && S.runtime.getContracts) {
+      var contracts = S.runtime.getContracts();
+      if (contracts.ThemeState && typeof contracts.ThemeState.set === "function") {
+        contracts.ThemeState.set(theme);
+        updateToggle(theme);
+        return theme;
+      }
+    }
+
+    // Fallback to direct DOM manipulation
     document.documentElement.dataset.theme = theme;
     writeStored(theme);
     updateToggle(theme);
