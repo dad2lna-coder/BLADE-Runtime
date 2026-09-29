@@ -41,8 +41,8 @@ export function initRowModel(S) {
     var teamMeta = typeof options.teamResolver === "function" ? options.teamResolver(line.id) : null;
     var shift = typeof options.shiftResolver === "function" ? options.shiftResolver(line.shiftId) : null;
     var shiftName = line.shiftName || (shift && shift.name) || "";
-    var start = shift && shift.start ? shift.start : "";
-    var end = shift && shift.end ? shift.end : "";
+    var start = line.startTime || (shift && shift.start ? shift.start : "");
+    var end = line.endTime || (shift && shift.end ? shift.end : "");
     var workLabel = line.shiftLabel || (start && end ? start + "\u2013" + end : start || "WORK");
     var extra = !!(line.isExtra || line.extraPositionId);
     var position = extra
@@ -65,9 +65,11 @@ export function initRowModel(S) {
     for (var day = 0; day < 7; day++) {
       var times = typeof options.effectiveTimesResolver === "function"
         ? options.effectiveTimesResolver(line.shiftId, day)
-        : (shift ? { start: shift.start, end: shift.end } : { start: "", end: "" });
-      dayStarts.push(times ? times.start || start : start);
-      dayEnds.push(times ? times.end || end : end);
+        : null;
+      var effStart = line.startTime || (times && times.start) || start;
+      var effEnd = line.endTime || (times && times.end) || end;
+      dayStarts.push(effStart);
+      dayEnds.push(effEnd);
 
       var value = rowSchedule[day];
       if (value === "WORK") {

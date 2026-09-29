@@ -1,224 +1,231 @@
-var nn = Object.defineProperty;
-var ln = (t, e, n) => e in t ? nn(t, e, { enumerable: !0, configurable: !0, writable: !0, value: n }) : t[e] = n;
-var Dt = (t, e, n) => ln(t, typeof e != "symbol" ? e + "" : e, n);
-function Je() {
+var yn = Object.defineProperty;
+var mn = (t, e, n) => e in t ? yn(t, e, { enumerable: !0, configurable: !0, writable: !0, value: n }) : t[e] = n;
+var It = (t, e, n) => mn(t, typeof e != "symbol" ? e + "" : e, n);
+function lt() {
 }
-function Zt(t) {
+function hn(t) {
   return t();
 }
-function Rt() {
+function Gt() {
   return /* @__PURE__ */ Object.create(null);
 }
-function Qe(t) {
-  t.forEach(Zt);
+function it(t) {
+  t.forEach(hn);
 }
-function xt(t) {
+function _n(t) {
   return typeof t == "function";
 }
-function sn(t, e) {
+function kn(t, e) {
   return t != t ? e == e : t !== e || t && typeof t == "object" || typeof t == "function";
 }
-function an(t) {
+function wn(t) {
   return Object.keys(t).length === 0;
 }
-function At(t) {
+function Xt(t) {
   return t ?? "";
 }
-function i(t, e) {
+function l(t, e) {
   t.appendChild(e);
 }
-function ce(t, e, n) {
+function re(t, e, n) {
   t.insertBefore(e, n || null);
 }
-function fe(t) {
+function oe(t) {
   t.parentNode && t.parentNode.removeChild(t);
 }
-function at(t, e) {
+function dt(t, e) {
   for (let n = 0; n < t.length; n += 1)
     t[n] && t[n].d(e);
 }
-function o(t) {
+function a(t) {
   return document.createElement(t);
 }
-function re(t) {
+function ae(t) {
   return document.createTextNode(t);
 }
-function B() {
-  return re(" ");
+function E() {
+  return ae(" ");
 }
-function K(t, e, n, a) {
-  return t.addEventListener(e, n, a), () => t.removeEventListener(e, n, a);
+function G(t, e, n, s) {
+  return t.addEventListener(e, n, s), () => t.removeEventListener(e, n, s);
 }
-function s(t, e, n) {
+function o(t, e, n) {
   n == null ? t.removeAttribute(e) : t.getAttribute(e) !== n && t.setAttribute(e, n);
 }
-function on(t) {
+function Dn(t) {
   return Array.from(t.childNodes);
 }
-function ze(t, e) {
+function nt(t, e) {
   e = "" + e, t.data !== e && (t.data = /** @type {string} */
   e);
 }
-function E(t, e) {
+function b(t, e) {
   t.value = e ?? "";
 }
-function De(t, e, n, a) {
+function J(t, e, n, s) {
   n == null ? t.style.removeProperty(e) : t.style.setProperty(e, n, "");
 }
-function j(t, e, n) {
-  for (let a = 0; a < t.options.length; a += 1) {
-    const u = t.options[a];
-    if (u.__value === e) {
-      u.selected = !0;
+function U(t, e, n) {
+  for (let s = 0; s < t.options.length; s += 1) {
+    const f = t.options[s];
+    if (f.__value === e) {
+      f.selected = !0;
       return;
     }
   }
   (!n || e !== void 0) && (t.selectedIndex = -1);
 }
-function yt(t) {
+function mt(t) {
   const e = t.querySelector(":checked");
   return e && e.__value;
 }
-let Ct;
-function pt(t) {
-  Ct = t;
+let At;
+function Rt(t) {
+  At = t;
 }
-const ct = [], Tt = [];
-let ht = [];
-const St = [], rn = /* @__PURE__ */ Promise.resolve();
-let bt = !1;
-function fn() {
-  bt || (bt = !0, rn.then($t));
+function bn() {
+  if (!At) throw new Error("Function called outside component initialization");
+  return At;
 }
-function qe(t) {
-  ht.push(t);
+function Fn(t) {
+  bn().$$.on_mount.push(t);
 }
-const Ft = /* @__PURE__ */ new Set();
-let dt = 0;
-function $t() {
-  if (dt !== 0)
+const wt = [], Pt = [];
+let bt = [];
+const Wt = [], Cn = /* @__PURE__ */ Promise.resolve();
+let Mt = !1;
+function Tn() {
+  Mt || (Mt = !0, Cn.then(vn));
+}
+function xe(t) {
+  bt.push(t);
+}
+const Vt = /* @__PURE__ */ new Set();
+let kt = 0;
+function vn() {
+  if (kt !== 0)
     return;
-  const t = Ct;
+  const t = At;
   do {
     try {
-      for (; dt < ct.length; ) {
-        const e = ct[dt];
-        dt++, pt(e), un(e.$$);
+      for (; kt < wt.length; ) {
+        const e = wt[kt];
+        kt++, Rt(e), Rn(e.$$);
       }
     } catch (e) {
-      throw ct.length = 0, dt = 0, e;
+      throw wt.length = 0, kt = 0, e;
     }
-    for (pt(null), ct.length = 0, dt = 0; Tt.length; ) Tt.pop()();
-    for (let e = 0; e < ht.length; e += 1) {
-      const n = ht[e];
-      Ft.has(n) || (Ft.add(n), n());
+    for (Rt(null), wt.length = 0, kt = 0; Pt.length; ) Pt.pop()();
+    for (let e = 0; e < bt.length; e += 1) {
+      const n = bt[e];
+      Vt.has(n) || (Vt.add(n), n());
     }
-    ht.length = 0;
-  } while (ct.length);
-  for (; St.length; )
-    St.pop()();
-  bt = !1, Ft.clear(), pt(t);
+    bt.length = 0;
+  } while (wt.length);
+  for (; Wt.length; )
+    Wt.pop()();
+  Mt = !1, Vt.clear(), Rt(t);
 }
-function un(t) {
+function Rn(t) {
   if (t.fragment !== null) {
-    t.update(), Qe(t.before_update);
+    t.update(), it(t.before_update);
     const e = t.dirty;
-    t.dirty = [-1], t.fragment && t.fragment.p(t.ctx, e), t.after_update.forEach(qe);
+    t.dirty = [-1], t.fragment && t.fragment.p(t.ctx, e), t.after_update.forEach(xe);
   }
 }
-function dn(t) {
+function An(t) {
   const e = [], n = [];
-  ht.forEach((a) => t.indexOf(a) === -1 ? e.push(a) : n.push(a)), n.forEach((a) => a()), ht = e;
+  bt.forEach((s) => t.indexOf(s) === -1 ? e.push(s) : n.push(s)), n.forEach((s) => s()), bt = e;
 }
-const cn = /* @__PURE__ */ new Set();
-function en(t, e) {
-  t && t.i && (cn.delete(t), t.i(e));
+const On = /* @__PURE__ */ new Set();
+function gn(t, e) {
+  t && t.i && (On.delete(t), t.i(e));
 }
-function oe(t) {
+function ye(t) {
   return t?.length !== void 0 ? t : Array.from(t);
 }
-function hn(t, e) {
+function Sn(t, e) {
   t.d(1), e.delete(t.key);
 }
-function _n(t, e, n, a, u, l, r, _, v, f, w, D) {
-  let S = t.length, C = l.length, M = S;
+function En(t, e, n, s, f, i, r, v, g, u, w, F) {
+  let O = t.length, T = i.length, P = O;
   const R = {};
-  for (; M--; ) R[t[M].key] = M;
-  const V = [], P = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), g = [];
-  for (M = C; M--; ) {
-    const m = D(u, l, M), O = n(m);
-    let A = r.get(O);
-    A ? g.push(() => A.p(m, e)) : (A = f(O, m), A.c()), P.set(O, V[M] = A), O in R && X.set(O, Math.abs(M - R[O]));
+  for (; P--; ) R[t[P].key] = P;
+  const M = [], N = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), h = [];
+  for (P = T; P--; ) {
+    const k = F(f, i, P), C = n(k);
+    let B = r.get(C);
+    B ? h.push(() => B.p(k, e)) : (B = u(C, k), B.c()), N.set(C, M[P] = B), C in R && X.set(C, Math.abs(P - R[C]));
   }
-  const y = /* @__PURE__ */ new Set(), c = /* @__PURE__ */ new Set();
-  function k(m) {
-    en(m, 1), m.m(_, w), r.set(m.key, m), w = m.first, C--;
+  const p = /* @__PURE__ */ new Set(), _ = /* @__PURE__ */ new Set();
+  function m(k) {
+    gn(k, 1), k.m(v, w), r.set(k.key, k), w = k.first, T--;
   }
-  for (; S && C; ) {
-    const m = V[C - 1], O = t[S - 1], A = m.key, I = O.key;
-    m === O ? (w = m.first, S--, C--) : P.has(I) ? !r.has(A) || y.has(A) ? k(m) : c.has(I) ? S-- : X.get(A) > X.get(I) ? (c.add(A), k(m)) : (y.add(I), S--) : (v(O, r), S--);
+  for (; O && T; ) {
+    const k = M[T - 1], C = t[O - 1], B = k.key, L = C.key;
+    k === C ? (w = k.first, O--, T--) : N.has(L) ? !r.has(B) || p.has(B) ? m(k) : _.has(L) ? O-- : X.get(B) > X.get(L) ? (_.add(B), m(k)) : (p.add(L), O--) : (g(C, r), O--);
   }
-  for (; S--; ) {
-    const m = t[S];
-    P.has(m.key) || v(m, r);
+  for (; O--; ) {
+    const k = t[O];
+    N.has(k.key) || g(k, r);
   }
-  for (; C; ) k(V[C - 1]);
-  return Qe(g), V;
+  for (; T; ) m(M[T - 1]);
+  return it(h), M;
 }
-function vn(t, e, n) {
-  const { fragment: a, after_update: u } = t.$$;
-  a && a.m(e, n), qe(() => {
-    const l = t.$$.on_mount.map(Zt).filter(xt);
-    t.$$.on_destroy ? t.$$.on_destroy.push(...l) : Qe(l), t.$$.on_mount = [];
-  }), u.forEach(qe);
+function Ln(t, e, n) {
+  const { fragment: s, after_update: f } = t.$$;
+  s && s.m(e, n), xe(() => {
+    const i = t.$$.on_mount.map(hn).filter(_n);
+    t.$$.on_destroy ? t.$$.on_destroy.push(...i) : it(i), t.$$.on_mount = [];
+  }), f.forEach(xe);
 }
-function gn(t, e) {
+function Bn(t, e) {
   const n = t.$$;
-  n.fragment !== null && (dn(n.after_update), Qe(n.on_destroy), n.fragment && n.fragment.d(e), n.on_destroy = n.fragment = null, n.ctx = []);
+  n.fragment !== null && (An(n.after_update), it(n.on_destroy), n.fragment && n.fragment.d(e), n.on_destroy = n.fragment = null, n.ctx = []);
 }
-function yn(t, e) {
-  t.$$.dirty[0] === -1 && (ct.push(t), fn(), t.$$.dirty.fill(0)), t.$$.dirty[e / 31 | 0] |= 1 << e % 31;
+function In(t, e) {
+  t.$$.dirty[0] === -1 && (wt.push(t), Tn(), t.$$.dirty.fill(0)), t.$$.dirty[e / 31 | 0] |= 1 << e % 31;
 }
-function pn(t, e, n, a, u, l, r = null, _ = [-1]) {
-  const v = Ct;
-  pt(t);
-  const f = t.$$ = {
+function Vn(t, e, n, s, f, i, r = null, v = [-1]) {
+  const g = At;
+  Rt(t);
+  const u = t.$$ = {
     fragment: null,
     ctx: [],
     // state
-    props: l,
-    update: Je,
-    not_equal: u,
-    bound: Rt(),
+    props: i,
+    update: lt,
+    not_equal: f,
+    bound: Gt(),
     // lifecycle
     on_mount: [],
     on_destroy: [],
     on_disconnect: [],
     before_update: [],
     after_update: [],
-    context: new Map(e.context || (v ? v.$$.context : [])),
+    context: new Map(e.context || (g ? g.$$.context : [])),
     // everything else
-    callbacks: Rt(),
-    dirty: _,
+    callbacks: Gt(),
+    dirty: v,
     skip_bound: !1,
-    root: e.target || v.$$.root
+    root: e.target || g.$$.root
   };
-  r && r(f.root);
+  r && r(u.root);
   let w = !1;
-  if (f.ctx = n ? n(t, e.props || {}, (D, S, ...C) => {
-    const M = C.length ? C[0] : S;
-    return f.ctx && u(f.ctx[D], f.ctx[D] = M) && (!f.skip_bound && f.bound[D] && f.bound[D](M), w && yn(t, D)), S;
-  }) : [], f.update(), w = !0, Qe(f.before_update), f.fragment = a ? a(f.ctx) : !1, e.target) {
+  if (u.ctx = n ? n(t, e.props || {}, (F, O, ...T) => {
+    const P = T.length ? T[0] : O;
+    return u.ctx && f(u.ctx[F], u.ctx[F] = P) && (!u.skip_bound && u.bound[F] && u.bound[F](P), w && In(t, F)), O;
+  }) : [], u.update(), w = !0, it(u.before_update), u.fragment = s ? s(u.ctx) : !1, e.target) {
     if (e.hydrate) {
-      const D = on(e.target);
-      f.fragment && f.fragment.l(D), D.forEach(fe);
+      const F = Dn(e.target);
+      u.fragment && u.fragment.l(F), F.forEach(oe);
     } else
-      f.fragment && f.fragment.c();
-    e.intro && en(t.$$.fragment), vn(t, e.target, e.anchor), $t();
+      u.fragment && u.fragment.c();
+    e.intro && gn(t.$$.fragment), Ln(t, e.target, e.anchor), vn();
   }
-  pt(v);
+  Rt(g);
 }
-class kn {
+class Pn {
   constructor() {
     /**
      * ### PRIVATE API
@@ -227,7 +234,7 @@ class kn {
      *
      * @type {any}
      */
-    Dt(this, "$$");
+    It(this, "$$");
     /**
      * ### PRIVATE API
      *
@@ -235,11 +242,11 @@ class kn {
      *
      * @type {any}
      */
-    Dt(this, "$$set");
+    It(this, "$$set");
   }
   /** @returns {void} */
   $destroy() {
-    gn(this, 1), this.$destroy = Je;
+    Bn(this, 1), this.$destroy = lt;
   }
   /**
    * @template {Extract<keyof Events, string>} K
@@ -248,12 +255,12 @@ class kn {
    * @returns {() => void}
    */
   $on(e, n) {
-    if (!xt(n))
-      return Je;
-    const a = this.$$.callbacks[e] || (this.$$.callbacks[e] = []);
-    return a.push(n), () => {
-      const u = a.indexOf(n);
-      u !== -1 && a.splice(u, 1);
+    if (!_n(n))
+      return lt;
+    const s = this.$$.callbacks[e] || (this.$$.callbacks[e] = []);
+    return s.push(n), () => {
+      const f = s.indexOf(n);
+      f !== -1 && s.splice(f, 1);
     };
   }
   /**
@@ -261,12 +268,12 @@ class kn {
    * @returns {void}
    */
   $set(e) {
-    this.$$set && !an(e) && (this.$$.skip_bound = !0, this.$$set(e), this.$$.skip_bound = !1);
+    this.$$set && !wn(e) && (this.$$.skip_bound = !0, this.$$set(e), this.$$.skip_bound = !1);
   }
 }
-const mn = "4";
-typeof window < "u" && (window.__svelte || (window.__svelte = { v: /* @__PURE__ */ new Set() })).v.add(mn);
-function Ot() {
+const Mn = "4";
+typeof window < "u" && (window.__svelte || (window.__svelte = { v: /* @__PURE__ */ new Set() })).v.add(Mn);
+function Ht() {
   return {
     rdo: "#000000",
     bag: "#F4B4B4",
@@ -275,1497 +282,1638 @@ function Ot() {
     header: "#1F4E79"
   };
 }
-function wn(t, e) {
+function Nn(t, e) {
   if (!t) return e;
   var n = String(t).replace("#", "").trim();
   return n.length === 3 && (n = n[0] + n[0] + n[1] + n[1] + n[2] + n[2]), n.length !== 6 || /[^0-9a-fA-F]/.test(n) ? e : "#" + n.toUpperCase();
 }
-function Dn(t) {
-  var e = wn(t, "#FFFFFF") || "#FFFFFF", n = e.slice(1), a = parseInt(n.slice(0, 2), 16), u = parseInt(n.slice(2, 4), 16), l = parseInt(n.slice(4, 6), 16), r = (0.299 * a + 0.587 * u + 0.114 * l) / 255;
+function Gn(t) {
+  var e = Nn(t, "#FFFFFF") || "#FFFFFF", n = e.slice(1), s = parseInt(n.slice(0, 2), 16), f = parseInt(n.slice(2, 4), 16), i = parseInt(n.slice(4, 6), 16), r = (0.299 * s + 0.587 * f + 0.114 * i) / 255;
   return r < 0.45 ? "#FFFFFF" : "#111111";
 }
-function Et(t, e, n) {
-  const a = t.slice();
-  return a[53] = e[n], a;
+function Kt(t, e, n) {
+  const s = t.slice();
+  return s[67] = e[n], s;
 }
-function Lt(t, e, n) {
-  const a = t.slice();
-  return a[56] = e[n], a;
+function Ut(t, e, n) {
+  const s = t.slice();
+  return s[70] = e[n], s;
 }
-function Bt(t, e, n) {
-  const a = t.slice();
-  return a[59] = e[n], a;
+function jt(t, e, n) {
+  const s = t.slice();
+  return s[73] = e[n], s;
 }
-function It(t, e, n) {
-  const a = t.slice();
-  return a[62] = e[n], a;
+function qt(t, e, n) {
+  const s = t.slice();
+  return s[76] = e[n], s;
 }
-function Vt(t, e, n) {
-  const a = t.slice();
-  return a[65] = e[n], a;
+function zt(t, e, n) {
+  const s = t.slice();
+  return s[79] = e[n], s;
 }
-function Pt(t, e, n) {
-  const a = t.slice();
-  return a[68] = e[n], a;
+function Yt(t, e, n) {
+  const s = t.slice();
+  return s[82] = e[n], s;
 }
-function Mt(t, e, n) {
-  const a = t.slice();
-  return a[65] = e[n], a;
+function Jt(t, e, n) {
+  const s = t.slice();
+  return s[79] = e[n], s;
 }
-function Nt(t, e, n) {
-  const a = t.slice();
-  return a[68] = e[n], a;
+function Qt(t, e, n) {
+  const s = t.slice();
+  return s[82] = e[n], s;
 }
-function Fn(t) {
+function Xn(t) {
   let e;
   return {
     c() {
-      e = o("div"), e.textContent = "Classic Lines mode active", s(e, "class", "muted");
+      e = a("div"), e.textContent = "Classic Lines mode active", o(e, "class", "muted");
     },
-    m(n, a) {
-      ce(n, e, a);
+    m(n, s) {
+      re(n, e, s);
     },
-    p: Je,
+    p: lt,
     d(n) {
-      n && fe(e);
+      n && oe(e);
     }
   };
 }
-function bn(t) {
-  let e, n, a, u, l, r, _, v, f, w, D, S, C, M, R, V, P, X, g, y, c, k, m, O, A, I, W, N, ge, ye, J, se, pe, Ye, Se, Be, U, ae, ke, Ae, Ke, Fe, Q, me, b, ue, Ie, Oe, Ze, be, Z, de, Ce, he, h, T, x, we, xe, te, Ee, Re, Le, Ve, _t, $e, et, Pe, ot, tt, nt, Me, rt, lt, ft, Ne, it, Ue, vt, Ge, ut, st, Xe, Y, kt, He, ne = [], $ = /* @__PURE__ */ new Map(), gt, mt, je = oe(
+function Wn(t) {
+  let e, n, s, f, i, r, v, g, u, w, F, O, T, P, R, M, N, X, h, p, _, m, k, C, B, L, K, W, te, fe, q, ue, z, $e, Ve, Ce, H, de, ce, Ee, me, Le, Q, he, _e, Pe, Me, ot, ve, Be, Y, ge, Ie, se, pe, je, A, qe, ze, x, Ne, ke, Ge, Xe, st, Ye, Je, We, c, S, $, we, ct, at, ht, Qe, rt, et, ft, tt, Ft, He, ne, _t, Ot, Ke, le, vt, St, gt, Ze, ee, Et, Ue, ie, pt, Lt, Te, Ct, Re = [], Ae = /* @__PURE__ */ new Map(), y, V, d, Z = ye(
     /*teamOptions*/
     t[9]
-  ), q = [];
-  for (let F = 0; F < je.length; F += 1)
-    q[F] = Gt(Nt(t, je, F));
-  let z = oe(
+  ), De = [];
+  for (let D = 0; D < Z.length; D += 1)
+    De[D] = Zt(Qt(t, Z, D));
+  let yt = ye(
     /*shiftOptions*/
     t[8]
-  ), le = [];
-  for (let F = 0; F < z.length; F += 1)
-    le[F] = Xt(Mt(t, z, F));
-  let _e = oe(
-    /*rows*/
-    t[6]
+  ), be = [];
+  for (let D = 0; D < yt.length; D += 1)
+    be[D] = xt(Jt(t, yt, D));
+  let Oe = (
+    /*offsetY*/
+    t[13] > 0 && $t(t)
+  ), ut = ye(
+    /*visibleRows*/
+    t[14]
   );
-  const ee = (F) => (
+  const Nt = (D) => (
     /*row*/
-    F[53].id
+    D[67].id
   );
-  for (let F = 0; F < _e.length; F += 1) {
-    let H = Et(t, _e, F), L = ee(H);
-    $.set(L, ne[F] = Jt(L, H));
+  for (let D = 0; D < ut.length; D += 1) {
+    let j = Kt(t, ut, D), I = Nt(j);
+    Ae.set(I, Re[D] = rn(I, j));
   }
-  let ie = null;
-  return _e.length || (ie = Wt()), {
+  let Fe = null;
+  ut.length || (Fe = en());
+  let Se = (
+    /*paddingBottom*/
+    t[12] > 0 && fn(t)
+  );
+  return {
     c() {
-      e = o("div"), n = o("div"), a = o("label"), u = re(`Search
-          `), l = o("input"), r = B(), _ = o("label"), v = re(`Role
-          `), f = o("select"), w = o("option"), w.textContent = "All", D = o("option"), D.textContent = "STSO", S = o("option"), S.textContent = "LTSO", C = o("option"), C.textContent = "TSO (FT/PT)", M = B(), R = o("label"), V = re(`Team
-          `), P = o("select"), X = o("option"), X.textContent = "All", g = o("option"), g.textContent = "Unassigned";
-      for (let F = 0; F < q.length; F += 1)
-        q[F].c();
-      y = B(), c = o("label"), k = re(`Shift
-          `), m = o("select"), O = o("option"), O.textContent = "All shifts";
-      for (let F = 0; F < le.length; F += 1)
-        le[F].c();
-      A = B(), I = o("label"), W = re(`Duty
-          `), N = o("select"), ge = o("option"), ge.textContent = "All duties", ye = o("option"), ye.textContent = "BAG", J = o("option"), J.textContent = "PAX", se = o("option"), se.textContent = "DFO", pe = o("option"), pe.textContent = "OFF / RDO", Ye = B(), Se = o("label"), Be = re(`Sex
-          `), U = o("select"), ae = o("option"), ae.textContent = "All", ke = o("option"), ke.textContent = "M", Ae = o("option"), Ae.textContent = "F", Ke = B(), Fe = o("div"), Q = o("table"), me = o("thead"), b = o("tr"), ue = o("th"), ue.textContent = `Team${/*sortIndicator*/
-      t[19]("team")}`, Ie = B(), Oe = o("th"), Oe.textContent = `Line${/*sortIndicator*/
-      t[19]("line")}`, Ze = B(), be = o("th"), be.textContent = `Shift${/*sortIndicator*/
-      t[19]("shift")}`, Z = B(), de = o("th"), de.textContent = `Start${/*sortIndicator*/
-      t[19]("start")}`, Ce = B(), he = o("th"), he.textContent = "End", h = B(), T = o("th"), T.textContent = `Position${/*sortIndicator*/
-      t[19]("role")}`, x = B(), we = o("th"), we.textContent = "Emp", xe = B(), te = o("th"), te.textContent = "Sex", Ee = B(), Re = o("th"), Re.textContent = "Duty", Le = B(), Ve = o("th"), Ve.textContent = "Cert", _t = B(), $e = o("th"), $e.textContent = "RDOs", et = B(), Pe = o("th"), Pe.textContent = "Paid", ot = B(), tt = o("th"), tt.textContent = "Sun", nt = B(), Me = o("th"), Me.textContent = "Mon", rt = B(), lt = o("th"), lt.textContent = "Tue", ft = B(), Ne = o("th"), Ne.textContent = "Wed", it = B(), Ue = o("th"), Ue.textContent = "Thu", vt = B(), Ge = o("th"), Ge.textContent = "Fri", ut = B(), st = o("th"), st.textContent = "Sat", Xe = B(), Y = o("th"), Y.textContent = "Hrs", kt = B(), He = o("tbody");
-      for (let F = 0; F < ne.length; F += 1)
-        ne[F].c();
-      ie && ie.c(), s(l, "type", "text"), s(l, "class", "filter-input search-input svelte-1f0dkhk"), s(l, "placeholder", "Search line code..."), s(a, "class", "svelte-1f0dkhk"), w.__value = "ALL", E(w, w.__value), D.__value = "STSO", E(D, D.__value), S.__value = "LTSO", E(S, S.__value), C.__value = "TSO", E(C, C.__value), s(f, "class", "filter-select svelte-1f0dkhk"), /*filterRole*/
-      t[0] === void 0 && qe(() => (
+      e = a("div"), n = a("div"), s = a("label"), f = ae(`Search
+          `), i = a("input"), r = E(), v = a("label"), g = ae(`Role
+          `), u = a("select"), w = a("option"), w.textContent = "All", F = a("option"), F.textContent = "STSO", O = a("option"), O.textContent = "LTSO", T = a("option"), T.textContent = "TSO (FT/PT)", P = E(), R = a("label"), M = ae(`Team
+          `), N = a("select"), X = a("option"), X.textContent = "All", h = a("option"), h.textContent = "Unassigned";
+      for (let D = 0; D < De.length; D += 1)
+        De[D].c();
+      p = E(), _ = a("label"), m = ae(`Shift
+          `), k = a("select"), C = a("option"), C.textContent = "All shifts";
+      for (let D = 0; D < be.length; D += 1)
+        be[D].c();
+      B = E(), L = a("label"), K = ae(`Duty
+          `), W = a("select"), te = a("option"), te.textContent = "All duties", fe = a("option"), fe.textContent = "BAG", q = a("option"), q.textContent = "PAX", ue = a("option"), ue.textContent = "DFO", z = a("option"), z.textContent = "OFF / RDO", $e = E(), Ve = a("label"), Ce = ae(`On Day
+          `), H = a("select"), de = a("option"), de.textContent = "Any day", ce = a("option"), ce.textContent = "Sun", Ee = a("option"), Ee.textContent = "Mon", me = a("option"), me.textContent = "Tue", Le = a("option"), Le.textContent = "Wed", Q = a("option"), Q.textContent = "Thu", he = a("option"), he.textContent = "Fri", _e = a("option"), _e.textContent = "Sat", Pe = E(), Me = a("label"), ot = ae(`Sex
+          `), ve = a("select"), Be = a("option"), Be.textContent = "All", Y = a("option"), Y.textContent = "M", ge = a("option"), ge.textContent = "F", Ie = E(), se = a("div"), pe = a("table"), je = a("thead"), A = a("tr"), qe = a("th"), qe.textContent = `Team${/*sortIndicator*/
+      t[23]("team")}`, ze = E(), x = a("th"), x.textContent = `Line${/*sortIndicator*/
+      t[23]("line")}`, Ne = E(), ke = a("th"), ke.textContent = `Shift${/*sortIndicator*/
+      t[23]("shift")}`, Ge = E(), Xe = a("th"), Xe.textContent = `Start${/*sortIndicator*/
+      t[23]("start")}`, st = E(), Ye = a("th"), Ye.textContent = "End", Je = E(), We = a("th"), We.textContent = `Position${/*sortIndicator*/
+      t[23]("role")}`, c = E(), S = a("th"), S.textContent = "Emp", $ = E(), we = a("th"), we.textContent = "Sex", ct = E(), at = a("th"), at.textContent = "Duty", ht = E(), Qe = a("th"), Qe.textContent = "Cert", rt = E(), et = a("th"), et.textContent = "RDOs", ft = E(), tt = a("th"), tt.textContent = "Paid", Ft = E(), He = a("th"), He.textContent = "Sun", ne = E(), _t = a("th"), _t.textContent = "Mon", Ot = E(), Ke = a("th"), Ke.textContent = "Tue", le = E(), vt = a("th"), vt.textContent = "Wed", St = E(), gt = a("th"), gt.textContent = "Thu", Ze = E(), ee = a("th"), ee.textContent = "Fri", Et = E(), Ue = a("th"), Ue.textContent = "Sat", ie = E(), pt = a("th"), pt.textContent = "Hrs", Lt = E(), Te = a("tbody"), Oe && Oe.c(), Ct = E();
+      for (let D = 0; D < Re.length; D += 1)
+        Re[D].c();
+      Fe && Fe.c(), y = E(), Se && Se.c(), o(i, "type", "text"), o(i, "class", "filter-input search-input svelte-1f0dkhk"), o(i, "placeholder", "Search line code..."), o(s, "class", "svelte-1f0dkhk"), w.__value = "ALL", b(w, w.__value), F.__value = "STSO", b(F, F.__value), O.__value = "LTSO", b(O, O.__value), T.__value = "TSO", b(T, T.__value), o(u, "class", "filter-select svelte-1f0dkhk"), /*filterRole*/
+      t[0] === void 0 && xe(() => (
         /*select0_change_handler*/
-        t[29].call(f)
-      )), s(_, "class", "svelte-1f0dkhk"), X.__value = "", E(X, X.__value), g.__value = "__none__", E(g, g.__value), s(P, "class", "filter-select svelte-1f0dkhk"), /*filterTeam*/
-      t[2] === void 0 && qe(() => (
+        t[41].call(u)
+      )), o(v, "class", "svelte-1f0dkhk"), X.__value = "", b(X, X.__value), h.__value = "__none__", b(h, h.__value), o(N, "class", "filter-select svelte-1f0dkhk"), /*filterTeam*/
+      t[2] === void 0 && xe(() => (
         /*select1_change_handler*/
-        t[30].call(P)
-      )), s(R, "class", "svelte-1f0dkhk"), O.__value = "", E(O, O.__value), s(m, "class", "filter-select svelte-1f0dkhk"), /*filterShift*/
-      t[1] === void 0 && qe(() => (
+        t[42].call(N)
+      )), o(R, "class", "svelte-1f0dkhk"), C.__value = "", b(C, C.__value), o(k, "class", "filter-select svelte-1f0dkhk"), /*filterShift*/
+      t[1] === void 0 && xe(() => (
         /*select2_change_handler*/
-        t[31].call(m)
-      )), s(c, "class", "svelte-1f0dkhk"), ge.__value = "", E(ge, ge.__value), ye.__value = "BAG", E(ye, ye.__value), J.__value = "PAX", E(J, J.__value), se.__value = "DFO", E(se, se.__value), pe.__value = "OFF", E(pe, pe.__value), s(N, "class", "filter-select svelte-1f0dkhk"), /*filterDuty*/
-      t[4] === void 0 && qe(() => (
+        t[43].call(k)
+      )), o(_, "class", "svelte-1f0dkhk"), te.__value = "", b(te, te.__value), fe.__value = "BAG", b(fe, fe.__value), q.__value = "PAX", b(q, q.__value), ue.__value = "DFO", b(ue, ue.__value), z.__value = "OFF", b(z, z.__value), o(W, "class", "filter-select svelte-1f0dkhk"), /*filterDuty*/
+      t[4] === void 0 && xe(() => (
         /*select3_change_handler*/
-        t[32].call(N)
-      )), s(I, "class", "svelte-1f0dkhk"), ae.__value = "", E(ae, ae.__value), ke.__value = "M", E(ke, ke.__value), Ae.__value = "F", E(Ae, Ae.__value), s(U, "class", "filter-select svelte-1f0dkhk"), /*filterSex*/
-      t[3] === void 0 && qe(() => (
+        t[44].call(W)
+      )), o(L, "class", "svelte-1f0dkhk"), de.__value = "", b(de, de.__value), ce.__value = "0", b(ce, ce.__value), Ee.__value = "1", b(Ee, Ee.__value), me.__value = "2", b(me, me.__value), Le.__value = "3", b(Le, Le.__value), Q.__value = "4", b(Q, Q.__value), he.__value = "5", b(he, he.__value), _e.__value = "6", b(_e, _e.__value), o(H, "class", "filter-select svelte-1f0dkhk"), /*filterDay*/
+      t[5] === void 0 && xe(() => (
         /*select4_change_handler*/
-        t[33].call(U)
-      )), s(Se, "class", "svelte-1f0dkhk"), s(n, "class", "filter-controls svelte-1f0dkhk"), s(e, "class", "lines-table-header-controls svelte-1f0dkhk"), s(ue, "class", "sortable col-team svelte-1f0dkhk"), s(Oe, "class", "sortable col-line svelte-1f0dkhk"), s(be, "class", "sortable col-shift svelte-1f0dkhk"), s(de, "class", "sortable col-time svelte-1f0dkhk"), s(he, "class", "col-time svelte-1f0dkhk"), s(T, "class", "sortable col-pos svelte-1f0dkhk"), s(we, "class", "col-sm svelte-1f0dkhk"), s(te, "class", "col-sm svelte-1f0dkhk"), s(Re, "class", "col-duty svelte-1f0dkhk"), s(Ve, "class", "col-sm svelte-1f0dkhk"), s($e, "class", "col-rdos svelte-1f0dkhk"), s(Pe, "class", "col-sm svelte-1f0dkhk"), s(tt, "class", "col-day svelte-1f0dkhk"), s(Me, "class", "col-day svelte-1f0dkhk"), s(lt, "class", "col-day svelte-1f0dkhk"), s(Ne, "class", "col-day svelte-1f0dkhk"), s(Ue, "class", "col-day svelte-1f0dkhk"), s(Ge, "class", "col-day svelte-1f0dkhk"), s(st, "class", "col-day svelte-1f0dkhk"), s(Y, "class", "col-sm svelte-1f0dkhk"), s(b, "class", "svelte-1f0dkhk"), s(Q, "class", "data-table lines-editable svelte-1f0dkhk"), s(Fe, "class", "lines-virtual-root svelte-1f0dkhk");
+        t[45].call(H)
+      )), o(Ve, "class", "svelte-1f0dkhk"), Be.__value = "", b(Be, Be.__value), Y.__value = "M", b(Y, Y.__value), ge.__value = "F", b(ge, ge.__value), o(ve, "class", "filter-select svelte-1f0dkhk"), /*filterSex*/
+      t[3] === void 0 && xe(() => (
+        /*select5_change_handler*/
+        t[46].call(ve)
+      )), o(Me, "class", "svelte-1f0dkhk"), o(n, "class", "filter-controls svelte-1f0dkhk"), o(e, "class", "lines-table-header-controls svelte-1f0dkhk"), o(qe, "class", "sortable col-team svelte-1f0dkhk"), o(x, "class", "sortable col-line svelte-1f0dkhk"), o(ke, "class", "sortable col-shift svelte-1f0dkhk"), o(Xe, "class", "sortable col-time svelte-1f0dkhk"), o(Ye, "class", "col-time svelte-1f0dkhk"), o(We, "class", "sortable col-pos svelte-1f0dkhk"), o(S, "class", "col-sm svelte-1f0dkhk"), o(we, "class", "col-sm svelte-1f0dkhk"), o(at, "class", "col-duty svelte-1f0dkhk"), o(Qe, "class", "col-sm svelte-1f0dkhk"), o(et, "class", "col-rdos svelte-1f0dkhk"), o(tt, "class", "col-sm svelte-1f0dkhk"), o(He, "class", "col-day svelte-1f0dkhk"), o(_t, "class", "col-day svelte-1f0dkhk"), o(Ke, "class", "col-day svelte-1f0dkhk"), o(vt, "class", "col-day svelte-1f0dkhk"), o(gt, "class", "col-day svelte-1f0dkhk"), o(ee, "class", "col-day svelte-1f0dkhk"), o(Ue, "class", "col-day svelte-1f0dkhk"), o(pt, "class", "col-sm svelte-1f0dkhk"), o(A, "class", "svelte-1f0dkhk"), o(pe, "class", "data-table lines-editable svelte-1f0dkhk"), o(se, "class", "lines-virtual-root svelte-1f0dkhk");
     },
-    m(F, H) {
-      ce(F, e, H), i(e, n), i(n, a), i(a, u), i(a, l), E(
-        l,
+    m(D, j) {
+      re(D, e, j), l(e, n), l(n, s), l(s, f), l(s, i), b(
+        i,
         /*searchCode*/
-        t[5]
-      ), i(n, r), i(n, _), i(_, v), i(_, f), i(f, w), i(f, D), i(f, S), i(f, C), j(
-        f,
+        t[6]
+      ), l(n, r), l(n, v), l(v, g), l(v, u), l(u, w), l(u, F), l(u, O), l(u, T), U(
+        u,
         /*filterRole*/
         t[0],
         !0
-      ), i(n, M), i(n, R), i(R, V), i(R, P), i(P, X), i(P, g);
-      for (let L = 0; L < q.length; L += 1)
-        q[L] && q[L].m(P, null);
-      j(
-        P,
+      ), l(n, P), l(n, R), l(R, M), l(R, N), l(N, X), l(N, h);
+      for (let I = 0; I < De.length; I += 1)
+        De[I] && De[I].m(N, null);
+      U(
+        N,
         /*filterTeam*/
         t[2],
         !0
-      ), i(n, y), i(n, c), i(c, k), i(c, m), i(m, O);
-      for (let L = 0; L < le.length; L += 1)
-        le[L] && le[L].m(m, null);
-      j(
-        m,
+      ), l(n, p), l(n, _), l(_, m), l(_, k), l(k, C);
+      for (let I = 0; I < be.length; I += 1)
+        be[I] && be[I].m(k, null);
+      U(
+        k,
         /*filterShift*/
         t[1],
         !0
-      ), i(n, A), i(n, I), i(I, W), i(I, N), i(N, ge), i(N, ye), i(N, J), i(N, se), i(N, pe), j(
-        N,
+      ), l(n, B), l(n, L), l(L, K), l(L, W), l(W, te), l(W, fe), l(W, q), l(W, ue), l(W, z), U(
+        W,
         /*filterDuty*/
         t[4],
         !0
-      ), i(n, Ye), i(n, Se), i(Se, Be), i(Se, U), i(U, ae), i(U, ke), i(U, Ae), j(
-        U,
+      ), l(n, $e), l(n, Ve), l(Ve, Ce), l(Ve, H), l(H, de), l(H, ce), l(H, Ee), l(H, me), l(H, Le), l(H, Q), l(H, he), l(H, _e), U(
+        H,
+        /*filterDay*/
+        t[5],
+        !0
+      ), l(n, Pe), l(n, Me), l(Me, ot), l(Me, ve), l(ve, Be), l(ve, Y), l(ve, ge), U(
+        ve,
         /*filterSex*/
         t[3],
         !0
-      ), ce(F, Ke, H), ce(F, Fe, H), i(Fe, Q), i(Q, me), i(me, b), i(b, ue), i(b, Ie), i(b, Oe), i(b, Ze), i(b, be), i(b, Z), i(b, de), i(b, Ce), i(b, he), i(b, h), i(b, T), i(b, x), i(b, we), i(b, xe), i(b, te), i(b, Ee), i(b, Re), i(b, Le), i(b, Ve), i(b, _t), i(b, $e), i(b, et), i(b, Pe), i(b, ot), i(b, tt), i(b, nt), i(b, Me), i(b, rt), i(b, lt), i(b, ft), i(b, Ne), i(b, it), i(b, Ue), i(b, vt), i(b, Ge), i(b, ut), i(b, st), i(b, Xe), i(b, Y), i(Q, kt), i(Q, He);
-      for (let L = 0; L < ne.length; L += 1)
-        ne[L] && ne[L].m(He, null);
-      ie && ie.m(He, null), gt || (mt = [
-        K(
-          l,
+      ), re(D, Ie, j), re(D, se, j), l(se, pe), l(pe, je), l(je, A), l(A, qe), l(A, ze), l(A, x), l(A, Ne), l(A, ke), l(A, Ge), l(A, Xe), l(A, st), l(A, Ye), l(A, Je), l(A, We), l(A, c), l(A, S), l(A, $), l(A, we), l(A, ct), l(A, at), l(A, ht), l(A, Qe), l(A, rt), l(A, et), l(A, ft), l(A, tt), l(A, Ft), l(A, He), l(A, ne), l(A, _t), l(A, Ot), l(A, Ke), l(A, le), l(A, vt), l(A, St), l(A, gt), l(A, Ze), l(A, ee), l(A, Et), l(A, Ue), l(A, ie), l(A, pt), l(pe, Lt), l(pe, Te), Oe && Oe.m(Te, null), l(Te, Ct);
+      for (let I = 0; I < Re.length; I += 1)
+        Re[I] && Re[I].m(Te, null);
+      Fe && Fe.m(Te, null), l(Te, y), Se && Se.m(Te, null), t[65](se), V || (d = [
+        G(
+          i,
           "input",
           /*input_input_handler*/
-          t[28]
+          t[40]
         ),
-        K(
-          l,
+        G(
+          i,
           "input",
           /*handleFilterChange*/
-          t[18]
+          t[22]
         ),
-        K(
-          f,
+        G(
+          u,
           "change",
           /*select0_change_handler*/
-          t[29]
+          t[41]
         ),
-        K(
-          f,
+        G(
+          u,
           "change",
           /*handleFilterChange*/
-          t[18]
+          t[22]
         ),
-        K(
-          P,
+        G(
+          N,
           "change",
           /*select1_change_handler*/
-          t[30]
+          t[42]
         ),
-        K(
-          P,
+        G(
+          N,
           "change",
           /*handleFilterChange*/
-          t[18]
+          t[22]
         ),
-        K(
-          m,
+        G(
+          k,
           "change",
           /*select2_change_handler*/
-          t[31]
+          t[43]
         ),
-        K(
-          m,
+        G(
+          k,
           "change",
           /*handleFilterChange*/
-          t[18]
+          t[22]
         ),
-        K(
-          N,
+        G(
+          W,
           "change",
           /*select3_change_handler*/
-          t[32]
+          t[44]
         ),
-        K(
-          N,
+        G(
+          W,
           "change",
           /*handleFilterChange*/
-          t[18]
+          t[22]
         ),
-        K(
-          U,
+        G(
+          H,
           "change",
           /*select4_change_handler*/
-          t[33]
+          t[45]
         ),
-        K(
-          U,
+        G(
+          H,
           "change",
           /*handleFilterChange*/
-          t[18]
+          t[22]
         ),
-        K(
-          ue,
+        G(
+          ve,
+          "change",
+          /*select5_change_handler*/
+          t[46]
+        ),
+        G(
+          ve,
+          "change",
+          /*handleFilterChange*/
+          t[22]
+        ),
+        G(
+          qe,
           "click",
           /*click_handler*/
-          t[34]
+          t[47]
         ),
-        K(
-          Oe,
+        G(
+          x,
           "click",
           /*click_handler_1*/
-          t[35]
+          t[48]
         ),
-        K(
-          be,
+        G(
+          ke,
           "click",
           /*click_handler_2*/
-          t[36]
+          t[49]
         ),
-        K(
-          de,
+        G(
+          Xe,
           "click",
           /*click_handler_3*/
-          t[37]
+          t[50]
         ),
-        K(
-          T,
+        G(
+          We,
           "click",
           /*click_handler_4*/
-          t[38]
+          t[51]
+        ),
+        G(
+          se,
+          "scroll",
+          /*handleScroll*/
+          t[24]
         )
-      ], gt = !0);
+      ], V = !0);
     },
-    p(F, H) {
-      if (H[0] & /*searchCode*/
-      32 && l.value !== /*searchCode*/
-      F[5] && E(
-        l,
+    p(D, j) {
+      if (j[0] & /*searchCode*/
+      64 && i.value !== /*searchCode*/
+      D[6] && b(
+        i,
         /*searchCode*/
-        F[5]
-      ), H[0] & /*filterRole*/
-      1 && j(
-        f,
+        D[6]
+      ), j[0] & /*filterRole*/
+      1 && U(
+        u,
         /*filterRole*/
-        F[0]
-      ), H[0] & /*teamOptions*/
+        D[0]
+      ), j[0] & /*teamOptions*/
       512) {
-        je = oe(
+        Z = ye(
           /*teamOptions*/
-          F[9]
+          D[9]
         );
-        let L;
-        for (L = 0; L < je.length; L += 1) {
-          const We = Nt(F, je, L);
-          q[L] ? q[L].p(We, H) : (q[L] = Gt(We), q[L].c(), q[L].m(P, null));
+        let I;
+        for (I = 0; I < Z.length; I += 1) {
+          const Tt = Qt(D, Z, I);
+          De[I] ? De[I].p(Tt, j) : (De[I] = Zt(Tt), De[I].c(), De[I].m(N, null));
         }
-        for (; L < q.length; L += 1)
-          q[L].d(1);
-        q.length = je.length;
+        for (; I < De.length; I += 1)
+          De[I].d(1);
+        De.length = Z.length;
       }
-      if (H[0] & /*filterTeam, teamOptions*/
-      516 && j(
-        P,
-        /*filterTeam*/
-        F[2]
-      ), H[0] & /*shiftOptions*/
-      256) {
-        z = oe(
-          /*shiftOptions*/
-          F[8]
-        );
-        let L;
-        for (L = 0; L < z.length; L += 1) {
-          const We = Mt(F, z, L);
-          le[L] ? le[L].p(We, H) : (le[L] = Xt(We), le[L].c(), le[L].m(m, null));
-        }
-        for (; L < le.length; L += 1)
-          le[L].d(1);
-        le.length = z.length;
-      }
-      H[0] & /*filterShift, shiftOptions*/
-      258 && j(
-        m,
-        /*filterShift*/
-        F[1]
-      ), H[0] & /*filterDuty*/
-      16 && j(
+      if (j[0] & /*filterTeam, teamOptions*/
+      516 && U(
         N,
+        /*filterTeam*/
+        D[2]
+      ), j[0] & /*shiftOptions*/
+      256) {
+        yt = ye(
+          /*shiftOptions*/
+          D[8]
+        );
+        let I;
+        for (I = 0; I < yt.length; I += 1) {
+          const Tt = Jt(D, yt, I);
+          be[I] ? be[I].p(Tt, j) : (be[I] = xt(Tt), be[I].c(), be[I].m(k, null));
+        }
+        for (; I < be.length; I += 1)
+          be[I].d(1);
+        be.length = yt.length;
+      }
+      j[0] & /*filterShift, shiftOptions*/
+      258 && U(
+        k,
+        /*filterShift*/
+        D[1]
+      ), j[0] & /*filterDuty*/
+      16 && U(
+        W,
         /*filterDuty*/
-        F[4]
-      ), H[0] & /*filterSex*/
-      8 && j(
-        U,
+        D[4]
+      ), j[0] & /*filterDay*/
+      32 && U(
+        H,
+        /*filterDay*/
+        D[5]
+      ), j[0] & /*filterSex*/
+      8 && U(
+        ve,
         /*filterSex*/
-        F[3]
-      ), H[0] & /*rows, dayStyle, emitDayTime, emitDayDuty, emitEdit, BASE_EMPS, BASE_POSITIONS, shiftOptions, teamOptions*/
-      129856 && (_e = oe(
-        /*rows*/
-        F[6]
-      ), ne = _n(ne, H, ee, 1, F, _e, $, He, hn, Jt, null, Et), !_e.length && ie ? ie.p(F, H) : _e.length ? ie && (ie.d(1), ie = null) : (ie = Wt(), ie.c(), ie.m(He, null)));
+        D[3]
+      ), /*offsetY*/
+      D[13] > 0 ? Oe ? Oe.p(D, j) : (Oe = $t(D), Oe.c(), Oe.m(Te, Ct)) : Oe && (Oe.d(1), Oe = null), j[0] & /*visibleRows, dayStyle, emitDayTime, emitDayDuty, emitEdit, BASE_EMPS, BASE_POSITIONS, shiftOptions, teamOptions*/
+      2081536 && (ut = ye(
+        /*visibleRows*/
+        D[14]
+      ), Re = En(Re, j, Nt, 1, D, ut, Ae, Te, Sn, rn, y, Kt), !ut.length && Fe ? Fe.p(D, j) : ut.length ? Fe && (Fe.d(1), Fe = null) : (Fe = en(), Fe.c(), Fe.m(Te, y))), /*paddingBottom*/
+      D[12] > 0 ? Se ? Se.p(D, j) : (Se = fn(D), Se.c(), Se.m(Te, null)) : Se && (Se.d(1), Se = null);
     },
-    d(F) {
-      F && (fe(e), fe(Ke), fe(Fe)), at(q, F), at(le, F);
-      for (let H = 0; H < ne.length; H += 1)
-        ne[H].d();
-      ie && ie.d(), gt = !1, Qe(mt);
+    d(D) {
+      D && (oe(e), oe(Ie), oe(se)), dt(De, D), dt(be, D), Oe && Oe.d();
+      for (let j = 0; j < Re.length; j += 1)
+        Re[j].d();
+      Fe && Fe.d(), Se && Se.d(), t[65](null), V = !1, it(d);
     }
   };
 }
-function Gt(t) {
+function Zt(t) {
   let e, n = (
     /*team*/
-    (t[68].name ?? /*team*/
-    t[68].id) + ""
-  ), a, u;
+    (t[82].name ?? /*team*/
+    t[82].id) + ""
+  ), s, f;
   return {
     c() {
-      e = o("option"), a = re(n), e.__value = u = /*team*/
-      t[68].id, E(e, e.__value);
+      e = a("option"), s = ae(n), e.__value = f = /*team*/
+      t[82].id, b(e, e.__value);
     },
-    m(l, r) {
-      ce(l, e, r), i(e, a);
+    m(i, r) {
+      re(i, e, r), l(e, s);
     },
-    p(l, r) {
+    p(i, r) {
       r[0] & /*teamOptions*/
       512 && n !== (n = /*team*/
-      (l[68].name ?? /*team*/
-      l[68].id) + "") && ze(a, n), r[0] & /*teamOptions*/
-      512 && u !== (u = /*team*/
-      l[68].id) && (e.__value = u, E(e, e.__value));
+      (i[82].name ?? /*team*/
+      i[82].id) + "") && nt(s, n), r[0] & /*teamOptions*/
+      512 && f !== (f = /*team*/
+      i[82].id) && (e.__value = f, b(e, e.__value));
     },
-    d(l) {
-      l && fe(e);
+    d(i) {
+      i && oe(e);
     }
   };
 }
-function Xt(t) {
-  let e, n = wt(
+function xt(t) {
+  let e, n = Bt(
     /*shift*/
-    t[65]
-  ) + "", a, u;
+    t[79]
+  ) + "", s, f;
   return {
     c() {
-      e = o("option"), a = re(n), e.__value = u = /*shift*/
-      t[65].id, E(e, e.__value);
+      e = a("option"), s = ae(n), e.__value = f = /*shift*/
+      t[79].id, b(e, e.__value);
     },
-    m(l, r) {
-      ce(l, e, r), i(e, a);
+    m(i, r) {
+      re(i, e, r), l(e, s);
     },
-    p(l, r) {
+    p(i, r) {
       r[0] & /*shiftOptions*/
-      256 && n !== (n = wt(
+      256 && n !== (n = Bt(
         /*shift*/
-        l[65]
-      ) + "") && ze(a, n), r[0] & /*shiftOptions*/
-      256 && u !== (u = /*shift*/
-      l[65].id) && (e.__value = u, E(e, e.__value));
+        i[79]
+      ) + "") && nt(s, n), r[0] & /*shiftOptions*/
+      256 && f !== (f = /*shift*/
+      i[79].id) && (e.__value = f, b(e, e.__value));
     },
-    d(l) {
-      l && fe(e);
+    d(i) {
+      i && oe(e);
     }
   };
 }
-function Wt(t) {
+function $t(t) {
+  let e, n;
+  return {
+    c() {
+      e = a("tr"), n = a("td"), o(n, "colspan", "20"), J(n, "padding", "0"), J(n, "border", "none"), o(n, "class", "svelte-1f0dkhk"), J(
+        e,
+        "height",
+        /*offsetY*/
+        t[13] + "px"
+      ), o(e, "class", "svelte-1f0dkhk");
+    },
+    m(s, f) {
+      re(s, e, f), l(e, n);
+    },
+    p(s, f) {
+      f[0] & /*offsetY*/
+      8192 && J(
+        e,
+        "height",
+        /*offsetY*/
+        s[13] + "px"
+      );
+    },
+    d(s) {
+      s && oe(e);
+    }
+  };
+}
+function en(t) {
   let e;
   return {
     c() {
-      e = o("tr"), e.innerHTML = '<td colspan="20" class="muted svelte-1f0dkhk" style="padding: 1.5rem; text-align: center;">No matching lines found.</td>', s(e, "class", "svelte-1f0dkhk");
+      e = a("tr"), e.innerHTML = '<td colspan="20" class="muted svelte-1f0dkhk" style="padding: 1.5rem; text-align: center;">No matching lines found.</td>', o(e, "class", "svelte-1f0dkhk");
     },
-    m(n, a) {
-      ce(n, e, a);
+    m(n, s) {
+      re(n, e, s);
     },
-    p: Je,
+    p: lt,
     d(n) {
-      n && fe(e);
+      n && oe(e);
     }
   };
 }
-function Kt(t) {
+function tn(t) {
   let e, n = (
     /*team*/
-    (t[68].name ?? /*team*/
-    t[68].id) + ""
-  ), a, u;
+    (t[82].name ?? /*team*/
+    t[82].id) + ""
+  ), s, f;
   return {
     c() {
-      e = o("option"), a = re(n), e.__value = u = /*team*/
-      t[68].id, E(e, e.__value), s(e, "class", "svelte-1f0dkhk");
+      e = a("option"), s = ae(n), e.__value = f = /*team*/
+      t[82].id, b(e, e.__value), o(e, "class", "svelte-1f0dkhk");
     },
-    m(l, r) {
-      ce(l, e, r), i(e, a);
+    m(i, r) {
+      re(i, e, r), l(e, s);
     },
-    p(l, r) {
+    p(i, r) {
       r[0] & /*teamOptions*/
       512 && n !== (n = /*team*/
-      (l[68].name ?? /*team*/
-      l[68].id) + "") && ze(a, n), r[0] & /*teamOptions*/
-      512 && u !== (u = /*team*/
-      l[68].id) && (e.__value = u, E(e, e.__value));
+      (i[82].name ?? /*team*/
+      i[82].id) + "") && nt(s, n), r[0] & /*teamOptions*/
+      512 && f !== (f = /*team*/
+      i[82].id) && (e.__value = f, b(e, e.__value));
     },
-    d(l) {
-      l && fe(e);
+    d(i) {
+      i && oe(e);
     }
   };
 }
-function Ut(t) {
-  let e, n = wt(
+function nn(t) {
+  let e, n = Bt(
     /*shift*/
-    t[65]
-  ) + "", a, u;
+    t[79]
+  ) + "", s, f;
   return {
     c() {
-      e = o("option"), a = re(n), e.__value = u = /*shift*/
-      t[65].id, E(e, e.__value), s(e, "class", "svelte-1f0dkhk");
+      e = a("option"), s = ae(n), e.__value = f = /*shift*/
+      t[79].id, b(e, e.__value), o(e, "class", "svelte-1f0dkhk");
     },
-    m(l, r) {
-      ce(l, e, r), i(e, a);
+    m(i, r) {
+      re(i, e, r), l(e, s);
     },
-    p(l, r) {
+    p(i, r) {
       r[0] & /*shiftOptions*/
-      256 && n !== (n = wt(
+      256 && n !== (n = Bt(
         /*shift*/
-        l[65]
-      ) + "") && ze(a, n), r[0] & /*shiftOptions*/
-      256 && u !== (u = /*shift*/
-      l[65].id) && (e.__value = u, E(e, e.__value));
+        i[79]
+      ) + "") && nt(s, n), r[0] & /*shiftOptions*/
+      256 && f !== (f = /*shift*/
+      i[79].id) && (e.__value = f, b(e, e.__value));
     },
-    d(l) {
-      l && fe(e);
+    d(i) {
+      i && oe(e);
     }
   };
 }
-function Ht(t) {
+function ln(t) {
   let e, n = (
     /*pos*/
-    t[62] + ""
-  ), a, u;
+    t[76] + ""
+  ), s, f;
   return {
     c() {
-      e = o("option"), a = re(n), e.__value = u = /*pos*/
-      t[62], E(e, e.__value), s(e, "class", "svelte-1f0dkhk");
+      e = a("option"), s = ae(n), e.__value = f = /*pos*/
+      t[76], b(e, e.__value), o(e, "class", "svelte-1f0dkhk");
     },
-    m(l, r) {
-      ce(l, e, r), i(e, a);
+    m(i, r) {
+      re(i, e, r), l(e, s);
     },
-    p(l, r) {
-      r[0] & /*rows*/
-      64 && n !== (n = /*pos*/
-      l[62] + "") && ze(a, n), r[0] & /*rows, teamOptions*/
-      576 && u !== (u = /*pos*/
-      l[62]) && (e.__value = u, E(e, e.__value));
+    p(i, r) {
+      r[0] & /*visibleRows*/
+      16384 && n !== (n = /*pos*/
+      i[76] + "") && nt(s, n), r[0] & /*visibleRows, teamOptions*/
+      16896 && f !== (f = /*pos*/
+      i[76]) && (e.__value = f, b(e, e.__value));
     },
-    d(l) {
-      l && fe(e);
+    d(i) {
+      i && oe(e);
     }
   };
 }
-function jt(t) {
+function on(t) {
   let e, n = (
     /*emp*/
-    t[59] + ""
-  ), a;
+    t[73] + ""
+  ), s;
   return {
     c() {
-      e = o("option"), a = re(n), e.__value = /*emp*/
-      t[59], E(e, e.__value), s(e, "class", "svelte-1f0dkhk");
+      e = a("option"), s = ae(n), e.__value = /*emp*/
+      t[73], b(e, e.__value), o(e, "class", "svelte-1f0dkhk");
     },
-    m(u, l) {
-      ce(u, e, l), i(e, a);
+    m(f, i) {
+      re(f, e, i), l(e, s);
     },
-    p: Je,
-    d(u) {
-      u && fe(e);
+    p: lt,
+    d(f) {
+      f && oe(e);
     }
   };
 }
-function qt(t) {
-  let e, n, a, u, l, r, _, v, f, w;
-  function D(...C) {
+function sn(t) {
+  let e, n, s, f, i, r, v, g, u, w;
+  function F(...T) {
     return (
       /*change_handler_11*/
-      t[50](
+      t[63](
         /*row*/
-        t[53],
+        t[67],
         /*i*/
-        t[56],
-        ...C
+        t[70],
+        ...T
       )
     );
   }
-  function S(...C) {
+  function O(...T) {
     return (
       /*change_handler_12*/
-      t[51](
+      t[64](
         /*row*/
-        t[53],
+        t[67],
         /*i*/
-        t[56],
-        ...C
+        t[70],
+        ...T
       )
     );
   }
   return {
     c() {
-      e = o("div"), n = o("input"), u = B(), l = o("span"), l.textContent = "–", r = B(), _ = o("input"), s(n, "type", "time"), s(n, "class", "day-time-input svelte-1f0dkhk"), n.value = a = /*row*/
-      t[53]?.dayStarts?.[
+      e = a("div"), n = a("input"), f = E(), i = a("span"), i.textContent = "–", r = E(), v = a("input"), o(n, "type", "time"), o(n, "class", "day-time-input svelte-1f0dkhk"), n.value = s = /*row*/
+      t[67]?.dayStarts?.[
         /*i*/
-        t[56]
+        t[70]
       ] || /*row*/
-      t[53]?.start || "", s(l, "class", "day-time-sep svelte-1f0dkhk"), s(_, "type", "time"), s(_, "class", "day-time-input svelte-1f0dkhk"), _.value = v = /*row*/
-      t[53]?.dayEnds?.[
+      t[67]?.start || "", o(i, "class", "day-time-sep svelte-1f0dkhk"), o(v, "type", "time"), o(v, "class", "day-time-input svelte-1f0dkhk"), v.value = g = /*row*/
+      t[67]?.dayEnds?.[
         /*i*/
-        t[56]
+        t[70]
       ] || /*row*/
-      t[53]?.end || "", s(e, "class", "day-times-wrap svelte-1f0dkhk");
+      t[67]?.end || "", o(e, "class", "day-times-wrap svelte-1f0dkhk");
     },
-    m(C, M) {
-      ce(C, e, M), i(e, n), i(e, u), i(e, l), i(e, r), i(e, _), f || (w = [
-        K(n, "change", D),
-        K(_, "change", S)
-      ], f = !0);
+    m(T, P) {
+      re(T, e, P), l(e, n), l(e, f), l(e, i), l(e, r), l(e, v), u || (w = [
+        G(n, "change", F),
+        G(v, "change", O)
+      ], u = !0);
     },
-    p(C, M) {
-      t = C, M[0] & /*rows, teamOptions*/
-      576 && a !== (a = /*row*/
-      t[53]?.dayStarts?.[
+    p(T, P) {
+      t = T, P[0] & /*visibleRows, teamOptions*/
+      16896 && s !== (s = /*row*/
+      t[67]?.dayStarts?.[
         /*i*/
-        t[56]
+        t[70]
       ] || /*row*/
-      t[53]?.start || "") && n.value !== a && (n.value = a), M[0] & /*rows, teamOptions*/
-      576 && v !== (v = /*row*/
-      t[53]?.dayEnds?.[
+      t[67]?.start || "") && n.value !== s && (n.value = s), P[0] & /*visibleRows, teamOptions*/
+      16896 && g !== (g = /*row*/
+      t[67]?.dayEnds?.[
         /*i*/
-        t[56]
+        t[70]
       ] || /*row*/
-      t[53]?.end || "") && _.value !== v && (_.value = v);
+      t[67]?.end || "") && v.value !== g && (v.value = g);
     },
-    d(C) {
-      C && fe(e), f = !1, Qe(w);
+    d(T) {
+      T && oe(e), u = !1, it(w);
     }
   };
 }
-function zt(t) {
-  let e, n, a, u, l, r, _, v, f, w, D, S, C;
-  function M(...V) {
+function an(t) {
+  let e, n, s, f, i, r, v, g, u, w, F, O, T;
+  function P(...M) {
     return (
       /*change_handler_10*/
-      t[49](
+      t[62](
         /*row*/
-        t[53],
+        t[67],
         /*i*/
-        t[56],
-        ...V
+        t[70],
+        ...M
       )
     );
   }
   let R = (
     /*row*/
-    t[53]?.dayDuties?.[
+    t[67]?.dayDuties?.[
       /*i*/
-      t[56]
+      t[70]
     ] !== "OFF" && /*row*/
-    t[53]?.days?.[
+    t[67]?.days?.[
       /*i*/
-      t[56]
-    ] !== "RDO" && qt(t)
+      t[70]
+    ] !== "RDO" && sn(t)
   );
   return {
     c() {
-      e = o("td"), n = o("div"), a = o("select"), u = o("option"), u.textContent = "PAX", l = o("option"), l.textContent = "BAG", r = o("option"), r.textContent = "DFO", _ = o("option"), _.textContent = "OFF", f = B(), R && R.c(), u.__value = "PAX", E(u, u.__value), s(u, "class", "svelte-1f0dkhk"), l.__value = "BAG", E(l, l.__value), s(l, "class", "svelte-1f0dkhk"), r.__value = "DFO", E(r, r.__value), s(r, "class", "svelte-1f0dkhk"), _.__value = "OFF", E(_, _.__value), s(_, "class", "svelte-1f0dkhk"), s(a, "class", "day-duty-select svelte-1f0dkhk"), s(n, "class", "day-cell-inner svelte-1f0dkhk"), s(e, "class", w = At(Yt(
+      e = a("td"), n = a("div"), s = a("select"), f = a("option"), f.textContent = "PAX", i = a("option"), i.textContent = "BAG", r = a("option"), r.textContent = "DFO", v = a("option"), v.textContent = "OFF", u = E(), R && R.c(), f.__value = "PAX", b(f, f.__value), o(f, "class", "svelte-1f0dkhk"), i.__value = "BAG", b(i, i.__value), o(i, "class", "svelte-1f0dkhk"), r.__value = "DFO", b(r, r.__value), o(r, "class", "svelte-1f0dkhk"), v.__value = "OFF", b(v, v.__value), o(v, "class", "svelte-1f0dkhk"), o(s, "class", "day-duty-select svelte-1f0dkhk"), o(n, "class", "day-cell-inner svelte-1f0dkhk"), o(e, "class", w = Xt(cn(
         /*row*/
-        t[53]?.dayDuties?.[
+        t[67]?.dayDuties?.[
           /*i*/
-          t[56]
+          t[70]
         ] ?? /*row*/
-        t[53]?.days?.[
+        t[67]?.days?.[
           /*i*/
-          t[56]
+          t[70]
         ]
-      )) + " svelte-1f0dkhk"), s(e, "style", D = /*dayStyle*/
-      t[13](
+      )) + " svelte-1f0dkhk"), o(e, "style", F = /*dayStyle*/
+      t[17](
         /*row*/
-        t[53]?.dayDuties?.[
+        t[67]?.dayDuties?.[
           /*i*/
-          t[56]
+          t[70]
         ] ?? /*row*/
-        t[53]?.days?.[
+        t[67]?.days?.[
           /*i*/
-          t[56]
+          t[70]
         ]
       ));
     },
-    m(V, P) {
-      ce(V, e, P), i(e, n), i(n, a), i(a, u), i(a, l), i(a, r), i(a, _), j(
-        a,
+    m(M, N) {
+      re(M, e, N), l(e, n), l(n, s), l(s, f), l(s, i), l(s, r), l(s, v), U(
+        s,
         /*row*/
-        t[53]?.dayDuties?.[
+        t[67]?.dayDuties?.[
           /*i*/
-          t[56]
+          t[70]
         ] === "OFF" || /*row*/
-        t[53]?.days?.[
+        t[67]?.days?.[
           /*i*/
-          t[56]
+          t[70]
         ] === "RDO" ? "OFF" : (
           /*row*/
-          t[53]?.dayDuties?.[
+          t[67]?.dayDuties?.[
             /*i*/
-            t[56]
+            t[70]
           ] || "PAX"
         )
-      ), i(n, f), R && R.m(n, null), S || (C = K(a, "change", M), S = !0);
+      ), l(n, u), R && R.m(n, null), O || (T = G(s, "change", P), O = !0);
     },
-    p(V, P) {
-      t = V, P[0] & /*rows, teamOptions*/
-      576 && v !== (v = /*row*/
-      t[53]?.dayDuties?.[
+    p(M, N) {
+      t = M, N[0] & /*visibleRows, teamOptions*/
+      16896 && g !== (g = /*row*/
+      t[67]?.dayDuties?.[
         /*i*/
-        t[56]
+        t[70]
       ] === "OFF" || /*row*/
-      t[53]?.days?.[
+      t[67]?.days?.[
         /*i*/
-        t[56]
+        t[70]
       ] === "RDO" ? "OFF" : (
         /*row*/
-        t[53]?.dayDuties?.[
+        t[67]?.dayDuties?.[
           /*i*/
-          t[56]
+          t[70]
         ] || "PAX"
-      )) && j(
-        a,
+      )) && U(
+        s,
         /*row*/
-        t[53]?.dayDuties?.[
+        t[67]?.dayDuties?.[
           /*i*/
-          t[56]
+          t[70]
         ] === "OFF" || /*row*/
-        t[53]?.days?.[
+        t[67]?.days?.[
           /*i*/
-          t[56]
+          t[70]
         ] === "RDO" ? "OFF" : (
           /*row*/
-          t[53]?.dayDuties?.[
+          t[67]?.dayDuties?.[
             /*i*/
-            t[56]
+            t[70]
           ] || "PAX"
         )
       ), /*row*/
-      t[53]?.dayDuties?.[
+      t[67]?.dayDuties?.[
         /*i*/
-        t[56]
+        t[70]
       ] !== "OFF" && /*row*/
-      t[53]?.days?.[
+      t[67]?.days?.[
         /*i*/
-        t[56]
-      ] !== "RDO" ? R ? R.p(t, P) : (R = qt(t), R.c(), R.m(n, null)) : R && (R.d(1), R = null), P[0] & /*rows, teamOptions*/
-      576 && w !== (w = At(Yt(
+        t[70]
+      ] !== "RDO" ? R ? R.p(t, N) : (R = sn(t), R.c(), R.m(n, null)) : R && (R.d(1), R = null), N[0] & /*visibleRows, teamOptions*/
+      16896 && w !== (w = Xt(cn(
         /*row*/
-        t[53]?.dayDuties?.[
+        t[67]?.dayDuties?.[
           /*i*/
-          t[56]
+          t[70]
         ] ?? /*row*/
-        t[53]?.days?.[
+        t[67]?.days?.[
           /*i*/
-          t[56]
+          t[70]
         ]
-      )) + " svelte-1f0dkhk") && s(e, "class", w), P[0] & /*rows, teamOptions*/
-      576 && D !== (D = /*dayStyle*/
-      t[13](
+      )) + " svelte-1f0dkhk") && o(e, "class", w), N[0] & /*visibleRows, teamOptions*/
+      16896 && F !== (F = /*dayStyle*/
+      t[17](
         /*row*/
-        t[53]?.dayDuties?.[
+        t[67]?.dayDuties?.[
           /*i*/
-          t[56]
+          t[70]
         ] ?? /*row*/
-        t[53]?.days?.[
+        t[67]?.days?.[
           /*i*/
-          t[56]
+          t[70]
         ]
-      )) && s(e, "style", D);
+      )) && o(e, "style", F);
     },
-    d(V) {
-      V && fe(e), R && R.d(), S = !1, C();
+    d(M) {
+      M && oe(e), R && R.d(), O = !1, T();
     }
   };
 }
-function Jt(t, e) {
-  let n, a, u, l, r, _, v, f, w, D, S, C, M, R, V, P, X, g, y, c, k, m, O, A, I, W, N, ge, ye, J, se, pe, Ye, Se, Be, U, ae, ke, Ae, Ke, Fe, Q, me, b, ue, Ie, Oe, Ze, be, Z, de, Ce, he, h, T, x, we, xe, te, Ee, Re, Le, Ve, _t, $e, et, Pe = (
+function rn(t, e) {
+  let n, s, f, i, r, v, g, u, w, F, O, T, P, R, M, N, X, h, p, _, m, k, C, B, L, K, W, te, fe, q, ue, z, $e, Ve, Ce, H, de, ce, Ee, me, Le, Q, he, _e, Pe, Me, ot, ve, Be, Y, ge, Ie, se, pe, je, A, qe, ze, x, Ne, ke, Ge, Xe, st, Ye, Je, We = (
     /*row*/
-    (e[53]?.rdos ?? "—") + ""
-  ), ot, tt, nt, Me = (
+    (e[67]?.rdos ?? "—") + ""
+  ), c, S, $, we = (
     /*row*/
-    (e[53]?.paid ?? "") + ""
-  ), rt, lt, ft, Ne, it = (
+    (e[67]?.paid ?? "") + ""
+  ), ct, at, ht, Qe, rt = (
     /*row*/
-    (e[53]?.hours ?? "") + ""
-  ), Ue, vt, Ge, ut, st, Xe = oe(
+    (e[67]?.hours ?? "") + ""
+  ), et, ft, tt, Ft, He = ye(
     /*teamOptions*/
     e[9]
-  ), Y = [];
-  for (let p = 0; p < Xe.length; p += 1)
-    Y[p] = Kt(Pt(e, Xe, p));
-  function kt(...p) {
+  ), ne = [];
+  for (let y = 0; y < He.length; y += 1)
+    ne[y] = tn(Yt(e, He, y));
+  function _t(...y) {
     return (
       /*change_handler*/
-      e[39](
+      e[52](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  function He(...p) {
+  function Ot(...y) {
     return (
       /*change_handler_1*/
-      e[40](
+      e[53](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  let ne = oe(
+  let Ke = ye(
     /*shiftOptions*/
     e[8]
-  ), $ = [];
-  for (let p = 0; p < ne.length; p += 1)
-    $[p] = Ut(Vt(e, ne, p));
-  function gt(...p) {
+  ), le = [];
+  for (let y = 0; y < Ke.length; y += 1)
+    le[y] = nn(zt(e, Ke, y));
+  function vt(...y) {
     return (
       /*change_handler_2*/
-      e[41](
+      e[54](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  function mt(...p) {
+  function St(...y) {
     return (
       /*change_handler_3*/
-      e[42](
+      e[55](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  function je(...p) {
+  function gt(...y) {
     return (
       /*change_handler_4*/
-      e[43](
+      e[56](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  let q = oe(Qt(
+  let Ze = ye(dn(
     /*BASE_POSITIONS*/
-    e[11],
+    e[15],
     /*row*/
-    e[53]?.position
-  )), z = [];
-  for (let p = 0; p < q.length; p += 1)
-    z[p] = Ht(It(e, q, p));
-  function le(...p) {
+    e[67]?.position
+  )), ee = [];
+  for (let y = 0; y < Ze.length; y += 1)
+    ee[y] = ln(qt(e, Ze, y));
+  function Et(...y) {
     return (
       /*change_handler_5*/
-      e[44](
+      e[57](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  let _e = oe(
+  let Ue = ye(
     /*BASE_EMPS*/
-    e[12]
-  ), ee = [];
-  for (let p = 0; p < _e.length; p += 1)
-    ee[p] = jt(Bt(e, _e, p));
-  function ie(...p) {
+    e[16]
+  ), ie = [];
+  for (let y = 0; y < Ue.length; y += 1)
+    ie[y] = on(jt(e, Ue, y));
+  function pt(...y) {
     return (
       /*change_handler_6*/
-      e[45](
+      e[58](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  function F(...p) {
+  function Lt(...y) {
     return (
       /*change_handler_7*/
-      e[46](
+      e[59](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  function H(...p) {
+  function Te(...y) {
     return (
       /*change_handler_8*/
-      e[47](
+      e[60](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  function L(...p) {
+  function Ct(...y) {
     return (
       /*change_handler_9*/
-      e[48](
+      e[61](
         /*row*/
-        e[53],
-        ...p
+        e[67],
+        ...y
       )
     );
   }
-  let We = oe([0, 1, 2, 3, 4, 5, 6]), Te = [];
-  for (let p = 0; p < 7; p += 1)
-    Te[p] = zt(Lt(e, We, p));
+  let Re = ye([0, 1, 2, 3, 4, 5, 6]), Ae = [];
+  for (let y = 0; y < 7; y += 1)
+    Ae[y] = an(Ut(e, Re, y));
   return {
     key: t,
     first: null,
     c() {
-      n = o("tr"), a = o("td"), u = o("select"), l = o("option"), l.textContent = "—";
-      for (let p = 0; p < Y.length; p += 1)
-        Y[p].c();
-      v = B(), f = o("td"), w = o("input"), C = B(), M = o("td"), R = o("select"), V = o("option"), V.textContent = "—";
-      for (let p = 0; p < $.length; p += 1)
-        $[p].c();
-      g = B(), y = o("td"), c = o("input"), O = B(), A = o("td"), I = o("input"), ge = B(), ye = o("td"), J = o("select"), se = o("option"), se.textContent = "—";
-      for (let p = 0; p < z.length; p += 1)
-        z[p].c();
-      Se = B(), Be = o("td"), U = o("select"), ae = o("option"), ae.textContent = "—";
-      for (let p = 0; p < ee.length; p += 1)
-        ee[p].c();
-      Ke = B(), Fe = o("td"), Q = o("select"), me = o("option"), me.textContent = "—", b = o("option"), b.textContent = "M", ue = o("option"), ue.textContent = "F", Ze = B(), be = o("td"), Z = o("select"), de = o("option"), de.textContent = "—", Ce = o("option"), Ce.textContent = "DFO", he = o("option"), he.textContent = "BAG", h = o("option"), h.textContent = "PAX", we = B(), xe = o("td"), te = o("select"), Ee = o("option"), Ee.textContent = "—", Re = o("option"), Re.textContent = "A", Le = o("option"), Le.textContent = "B", $e = B(), et = o("td"), ot = re(Pe), tt = B(), nt = o("td"), rt = re(Me), lt = B();
-      for (let p = 0; p < 7; p += 1)
-        Te[p].c();
-      ft = B(), Ne = o("td"), Ue = re(it), vt = B(), l.__value = "", E(l, l.__value), s(l, "class", "svelte-1f0dkhk"), s(u, "class", "line-edit svelte-1f0dkhk"), s(u, "data-field", "team"), s(u, "data-line-id", r = /*row*/
-      e[53]?.id), s(a, "class", "svelte-1f0dkhk"), s(w, "type", "text"), s(w, "class", "line-edit line-code-input svelte-1f0dkhk"), s(w, "data-field", "lineCode"), s(w, "data-line-id", D = /*row*/
-      e[53]?.id), w.value = S = /*row*/
-      e[53]?.line ?? "", s(f, "class", "svelte-1f0dkhk"), V.__value = "", E(V, V.__value), s(V, "class", "svelte-1f0dkhk"), s(R, "class", "line-edit svelte-1f0dkhk"), s(R, "data-field", "shift"), s(R, "data-line-id", P = /*row*/
-      e[53]?.id), s(M, "class", "svelte-1f0dkhk"), s(c, "type", "time"), s(c, "class", "line-edit line-time-input svelte-1f0dkhk"), s(c, "data-field", "start"), s(c, "data-line-id", k = /*row*/
-      e[53]?.id), c.value = m = /*row*/
-      e[53]?.start ?? "", s(y, "class", "svelte-1f0dkhk"), s(I, "type", "time"), s(I, "class", "line-edit line-time-input svelte-1f0dkhk"), s(I, "data-field", "end"), s(I, "data-line-id", W = /*row*/
-      e[53]?.id), I.value = N = /*row*/
-      e[53]?.end ?? "", s(A, "class", "svelte-1f0dkhk"), se.__value = "", E(se, se.__value), s(se, "class", "svelte-1f0dkhk"), s(J, "class", "line-edit svelte-1f0dkhk"), s(J, "data-field", "position"), s(J, "data-line-id", pe = /*row*/
-      e[53]?.id), s(ye, "class", "svelte-1f0dkhk"), ae.__value = "", E(ae, ae.__value), s(ae, "class", "svelte-1f0dkhk"), s(U, "class", "line-edit svelte-1f0dkhk"), s(U, "data-field", "emp"), s(U, "data-line-id", ke = /*row*/
-      e[53]?.id), s(Be, "class", "svelte-1f0dkhk"), me.__value = "", E(me, me.__value), s(me, "class", "svelte-1f0dkhk"), b.__value = "M", E(b, b.__value), s(b, "class", "svelte-1f0dkhk"), ue.__value = "F", E(ue, ue.__value), s(ue, "class", "svelte-1f0dkhk"), s(Q, "class", "line-edit svelte-1f0dkhk"), s(Q, "data-field", "sex"), s(Q, "data-line-id", Ie = /*row*/
-      e[53]?.id), s(Fe, "class", "svelte-1f0dkhk"), de.__value = "", E(de, de.__value), s(de, "class", "svelte-1f0dkhk"), Ce.__value = "DFO", E(Ce, Ce.__value), s(Ce, "class", "svelte-1f0dkhk"), he.__value = "BAG", E(he, he.__value), s(he, "class", "svelte-1f0dkhk"), h.__value = "PAX", E(h, h.__value), s(h, "class", "svelte-1f0dkhk"), s(Z, "class", "line-edit svelte-1f0dkhk"), s(Z, "data-field", "function"), s(Z, "data-line-id", T = /*row*/
-      e[53]?.id), s(be, "class", "svelte-1f0dkhk"), Ee.__value = "", E(Ee, Ee.__value), s(Ee, "class", "svelte-1f0dkhk"), Re.__value = "A", E(Re, Re.__value), s(Re, "class", "svelte-1f0dkhk"), Le.__value = "B", E(Le, Le.__value), s(Le, "class", "svelte-1f0dkhk"), s(te, "class", "line-edit svelte-1f0dkhk"), s(te, "data-field", "certPool"), s(te, "data-line-id", Ve = /*row*/
-      e[53]?.id), s(xe, "class", "svelte-1f0dkhk"), s(et, "class", "line-rdo-cell svelte-1f0dkhk"), s(nt, "class", "line-center svelte-1f0dkhk"), s(Ne, "class", "line-hours svelte-1f0dkhk"), s(n, "data-line-row", Ge = /*row*/
-      e[53]?.id), s(n, "class", "svelte-1f0dkhk"), this.first = n;
+      n = a("tr"), s = a("td"), f = a("select"), i = a("option"), i.textContent = "—";
+      for (let y = 0; y < ne.length; y += 1)
+        ne[y].c();
+      g = E(), u = a("td"), w = a("input"), T = E(), P = a("td"), R = a("select"), M = a("option"), M.textContent = "—";
+      for (let y = 0; y < le.length; y += 1)
+        le[y].c();
+      h = E(), p = a("td"), _ = a("input"), C = E(), B = a("td"), L = a("input"), te = E(), fe = a("td"), q = a("select"), ue = a("option"), ue.textContent = "—";
+      for (let y = 0; y < ee.length; y += 1)
+        ee[y].c();
+      Ve = E(), Ce = a("td"), H = a("select"), de = a("option"), de.textContent = "—";
+      for (let y = 0; y < ie.length; y += 1)
+        ie[y].c();
+      me = E(), Le = a("td"), Q = a("select"), he = a("option"), he.textContent = "—", _e = a("option"), _e.textContent = "M", Pe = a("option"), Pe.textContent = "F", ve = E(), Be = a("td"), Y = a("select"), ge = a("option"), ge.textContent = "—", Ie = a("option"), Ie.textContent = "DFO", se = a("option"), se.textContent = "BAG", pe = a("option"), pe.textContent = "PAX", qe = E(), ze = a("td"), x = a("select"), Ne = a("option"), Ne.textContent = "—", ke = a("option"), ke.textContent = "A", Ge = a("option"), Ge.textContent = "B", Ye = E(), Je = a("td"), c = ae(We), S = E(), $ = a("td"), ct = ae(we), at = E();
+      for (let y = 0; y < 7; y += 1)
+        Ae[y].c();
+      ht = E(), Qe = a("td"), et = ae(rt), i.__value = "", b(i, i.__value), o(i, "class", "svelte-1f0dkhk"), o(f, "class", "line-edit svelte-1f0dkhk"), o(f, "data-field", "team"), o(f, "data-line-id", r = /*row*/
+      e[67]?.id), o(s, "class", "svelte-1f0dkhk"), o(w, "type", "text"), o(w, "class", "line-edit line-code-input svelte-1f0dkhk"), o(w, "data-field", "lineCode"), o(w, "data-line-id", F = /*row*/
+      e[67]?.id), w.value = O = /*row*/
+      e[67]?.line ?? "", o(u, "class", "svelte-1f0dkhk"), M.__value = "", b(M, M.__value), o(M, "class", "svelte-1f0dkhk"), o(R, "class", "line-edit svelte-1f0dkhk"), o(R, "data-field", "shift"), o(R, "data-line-id", N = /*row*/
+      e[67]?.id), o(P, "class", "svelte-1f0dkhk"), o(_, "type", "time"), o(_, "class", "line-edit line-time-input svelte-1f0dkhk"), o(_, "data-field", "start"), o(_, "data-line-id", m = /*row*/
+      e[67]?.id), _.value = k = /*row*/
+      e[67]?.start ?? "", o(p, "class", "svelte-1f0dkhk"), o(L, "type", "time"), o(L, "class", "line-edit line-time-input svelte-1f0dkhk"), o(L, "data-field", "end"), o(L, "data-line-id", K = /*row*/
+      e[67]?.id), L.value = W = /*row*/
+      e[67]?.end ?? "", o(B, "class", "svelte-1f0dkhk"), ue.__value = "", b(ue, ue.__value), o(ue, "class", "svelte-1f0dkhk"), o(q, "class", "line-edit svelte-1f0dkhk"), o(q, "data-field", "position"), o(q, "data-line-id", z = /*row*/
+      e[67]?.id), o(fe, "class", "svelte-1f0dkhk"), de.__value = "", b(de, de.__value), o(de, "class", "svelte-1f0dkhk"), o(H, "class", "line-edit svelte-1f0dkhk"), o(H, "data-field", "emp"), o(H, "data-line-id", ce = /*row*/
+      e[67]?.id), o(Ce, "class", "svelte-1f0dkhk"), he.__value = "", b(he, he.__value), o(he, "class", "svelte-1f0dkhk"), _e.__value = "M", b(_e, _e.__value), o(_e, "class", "svelte-1f0dkhk"), Pe.__value = "F", b(Pe, Pe.__value), o(Pe, "class", "svelte-1f0dkhk"), o(Q, "class", "line-edit svelte-1f0dkhk"), o(Q, "data-field", "sex"), o(Q, "data-line-id", Me = /*row*/
+      e[67]?.id), o(Le, "class", "svelte-1f0dkhk"), ge.__value = "", b(ge, ge.__value), o(ge, "class", "svelte-1f0dkhk"), Ie.__value = "DFO", b(Ie, Ie.__value), o(Ie, "class", "svelte-1f0dkhk"), se.__value = "BAG", b(se, se.__value), o(se, "class", "svelte-1f0dkhk"), pe.__value = "PAX", b(pe, pe.__value), o(pe, "class", "svelte-1f0dkhk"), o(Y, "class", "line-edit svelte-1f0dkhk"), o(Y, "data-field", "function"), o(Y, "data-line-id", je = /*row*/
+      e[67]?.id), o(Be, "class", "svelte-1f0dkhk"), Ne.__value = "", b(Ne, Ne.__value), o(Ne, "class", "svelte-1f0dkhk"), ke.__value = "A", b(ke, ke.__value), o(ke, "class", "svelte-1f0dkhk"), Ge.__value = "B", b(Ge, Ge.__value), o(Ge, "class", "svelte-1f0dkhk"), o(x, "class", "line-edit svelte-1f0dkhk"), o(x, "data-field", "certPool"), o(x, "data-line-id", Xe = /*row*/
+      e[67]?.id), o(ze, "class", "svelte-1f0dkhk"), o(Je, "class", "line-rdo-cell svelte-1f0dkhk"), o($, "class", "line-center svelte-1f0dkhk"), o(Qe, "class", "line-hours svelte-1f0dkhk"), o(n, "data-line-row", ft = /*row*/
+      e[67]?.id), J(n, "height", Dt + "px"), o(n, "class", "svelte-1f0dkhk"), this.first = n;
     },
-    m(p, G) {
-      ce(p, n, G), i(n, a), i(a, u), i(u, l);
-      for (let d = 0; d < Y.length; d += 1)
-        Y[d] && Y[d].m(u, null);
-      j(
-        u,
+    m(y, V) {
+      re(y, n, V), l(n, s), l(s, f), l(f, i);
+      for (let d = 0; d < ne.length; d += 1)
+        ne[d] && ne[d].m(f, null);
+      U(
+        f,
         /*row*/
-        e[53]?.teamId ?? ""
-      ), i(n, v), i(n, f), i(f, w), i(n, C), i(n, M), i(M, R), i(R, V);
-      for (let d = 0; d < $.length; d += 1)
-        $[d] && $[d].m(R, null);
-      j(
+        e[67]?.teamId ?? ""
+      ), l(n, g), l(n, u), l(u, w), l(n, T), l(n, P), l(P, R), l(R, M);
+      for (let d = 0; d < le.length; d += 1)
+        le[d] && le[d].m(R, null);
+      U(
         R,
         /*row*/
-        e[53]?.shiftId ?? ""
-      ), i(n, g), i(n, y), i(y, c), i(n, O), i(n, A), i(A, I), i(n, ge), i(n, ye), i(ye, J), i(J, se);
-      for (let d = 0; d < z.length; d += 1)
-        z[d] && z[d].m(J, null);
-      j(
-        J,
-        /*row*/
-        e[53]?.position ?? ""
-      ), i(n, Se), i(n, Be), i(Be, U), i(U, ae);
+        e[67]?.shiftId ?? ""
+      ), l(n, h), l(n, p), l(p, _), l(n, C), l(n, B), l(B, L), l(n, te), l(n, fe), l(fe, q), l(q, ue);
       for (let d = 0; d < ee.length; d += 1)
-        ee[d] && ee[d].m(U, null);
-      j(
-        U,
+        ee[d] && ee[d].m(q, null);
+      U(
+        q,
         /*row*/
-        e[53]?.emp ?? ""
-      ), i(n, Ke), i(n, Fe), i(Fe, Q), i(Q, me), i(Q, b), i(Q, ue), j(
+        e[67]?.position ?? ""
+      ), l(n, Ve), l(n, Ce), l(Ce, H), l(H, de);
+      for (let d = 0; d < ie.length; d += 1)
+        ie[d] && ie[d].m(H, null);
+      U(
+        H,
+        /*row*/
+        e[67]?.emp ?? ""
+      ), l(n, me), l(n, Le), l(Le, Q), l(Q, he), l(Q, _e), l(Q, Pe), U(
         Q,
         /*row*/
-        e[53]?.sex ?? ""
-      ), i(n, Ze), i(n, be), i(be, Z), i(Z, de), i(Z, Ce), i(Z, he), i(Z, h), j(
-        Z,
+        e[67]?.sex ?? ""
+      ), l(n, ve), l(n, Be), l(Be, Y), l(Y, ge), l(Y, Ie), l(Y, se), l(Y, pe), U(
+        Y,
         /*row*/
-        e[53]?.function ?? ""
-      ), i(n, we), i(n, xe), i(xe, te), i(te, Ee), i(te, Re), i(te, Le), j(
-        te,
+        e[67]?.function ?? ""
+      ), l(n, qe), l(n, ze), l(ze, x), l(x, Ne), l(x, ke), l(x, Ge), U(
+        x,
         /*row*/
-        e[53]?.certPool ?? ""
-      ), i(n, $e), i(n, et), i(et, ot), i(n, tt), i(n, nt), i(nt, rt), i(n, lt);
+        e[67]?.certPool ?? ""
+      ), l(n, Ye), l(n, Je), l(Je, c), l(n, S), l(n, $), l($, ct), l(n, at);
       for (let d = 0; d < 7; d += 1)
-        Te[d] && Te[d].m(n, null);
-      i(n, ft), i(n, Ne), i(Ne, Ue), i(n, vt), ut || (st = [
-        K(u, "change", kt),
-        K(w, "change", He),
-        K(R, "change", gt),
-        K(c, "change", mt),
-        K(I, "change", je),
-        K(J, "change", le),
-        K(U, "change", ie),
-        K(Q, "change", F),
-        K(Z, "change", H),
-        K(te, "change", L)
-      ], ut = !0);
+        Ae[d] && Ae[d].m(n, null);
+      l(n, ht), l(n, Qe), l(Qe, et), tt || (Ft = [
+        G(f, "change", _t),
+        G(w, "change", Ot),
+        G(R, "change", vt),
+        G(_, "change", St),
+        G(L, "change", gt),
+        G(q, "change", Et),
+        G(H, "change", pt),
+        G(Q, "change", Lt),
+        G(Y, "change", Te),
+        G(x, "change", Ct)
+      ], tt = !0);
     },
-    p(p, G) {
-      if (e = p, G[0] & /*teamOptions*/
+    p(y, V) {
+      if (e = y, V[0] & /*teamOptions*/
       512) {
-        Xe = oe(
+        He = ye(
           /*teamOptions*/
           e[9]
         );
         let d;
-        for (d = 0; d < Xe.length; d += 1) {
-          const ve = Pt(e, Xe, d);
-          Y[d] ? Y[d].p(ve, G) : (Y[d] = Kt(ve), Y[d].c(), Y[d].m(u, null));
+        for (d = 0; d < He.length; d += 1) {
+          const Z = Yt(e, He, d);
+          ne[d] ? ne[d].p(Z, V) : (ne[d] = tn(Z), ne[d].c(), ne[d].m(f, null));
         }
-        for (; d < Y.length; d += 1)
-          Y[d].d(1);
-        Y.length = Xe.length;
+        for (; d < ne.length; d += 1)
+          ne[d].d(1);
+        ne.length = He.length;
       }
-      if (G[0] & /*rows, teamOptions*/
-      576 && r !== (r = /*row*/
-      e[53]?.id) && s(u, "data-line-id", r), G[0] & /*rows, teamOptions*/
-      576 && _ !== (_ = /*row*/
-      e[53]?.teamId ?? "") && j(
-        u,
+      if (V[0] & /*visibleRows, teamOptions*/
+      16896 && r !== (r = /*row*/
+      e[67]?.id) && o(f, "data-line-id", r), V[0] & /*visibleRows, teamOptions*/
+      16896 && v !== (v = /*row*/
+      e[67]?.teamId ?? "") && U(
+        f,
         /*row*/
-        e[53]?.teamId ?? ""
-      ), G[0] & /*rows, teamOptions*/
-      576 && D !== (D = /*row*/
-      e[53]?.id) && s(w, "data-line-id", D), G[0] & /*rows, teamOptions*/
-      576 && S !== (S = /*row*/
-      e[53]?.line ?? "") && w.value !== S && (w.value = S), G[0] & /*shiftOptions*/
+        e[67]?.teamId ?? ""
+      ), V[0] & /*visibleRows, teamOptions*/
+      16896 && F !== (F = /*row*/
+      e[67]?.id) && o(w, "data-line-id", F), V[0] & /*visibleRows, teamOptions*/
+      16896 && O !== (O = /*row*/
+      e[67]?.line ?? "") && w.value !== O && (w.value = O), V[0] & /*shiftOptions*/
       256) {
-        ne = oe(
+        Ke = ye(
           /*shiftOptions*/
           e[8]
         );
         let d;
-        for (d = 0; d < ne.length; d += 1) {
-          const ve = Vt(e, ne, d);
-          $[d] ? $[d].p(ve, G) : ($[d] = Ut(ve), $[d].c(), $[d].m(R, null));
+        for (d = 0; d < Ke.length; d += 1) {
+          const Z = zt(e, Ke, d);
+          le[d] ? le[d].p(Z, V) : (le[d] = nn(Z), le[d].c(), le[d].m(R, null));
         }
-        for (; d < $.length; d += 1)
-          $[d].d(1);
-        $.length = ne.length;
+        for (; d < le.length; d += 1)
+          le[d].d(1);
+        le.length = Ke.length;
       }
-      if (G[0] & /*rows, teamOptions*/
-      576 && P !== (P = /*row*/
-      e[53]?.id) && s(R, "data-line-id", P), G[0] & /*rows, teamOptions*/
-      576 && X !== (X = /*row*/
-      e[53]?.shiftId ?? "") && j(
+      if (V[0] & /*visibleRows, teamOptions*/
+      16896 && N !== (N = /*row*/
+      e[67]?.id) && o(R, "data-line-id", N), V[0] & /*visibleRows, teamOptions*/
+      16896 && X !== (X = /*row*/
+      e[67]?.shiftId ?? "") && U(
         R,
         /*row*/
-        e[53]?.shiftId ?? ""
-      ), G[0] & /*rows, teamOptions*/
-      576 && k !== (k = /*row*/
-      e[53]?.id) && s(c, "data-line-id", k), G[0] & /*rows, teamOptions*/
-      576 && m !== (m = /*row*/
-      e[53]?.start ?? "") && c.value !== m && (c.value = m), G[0] & /*rows, teamOptions*/
-      576 && W !== (W = /*row*/
-      e[53]?.id) && s(I, "data-line-id", W), G[0] & /*rows, teamOptions*/
-      576 && N !== (N = /*row*/
-      e[53]?.end ?? "") && I.value !== N && (I.value = N), G[0] & /*BASE_POSITIONS, rows*/
-      2112) {
-        q = oe(Qt(
+        e[67]?.shiftId ?? ""
+      ), V[0] & /*visibleRows, teamOptions*/
+      16896 && m !== (m = /*row*/
+      e[67]?.id) && o(_, "data-line-id", m), V[0] & /*visibleRows, teamOptions*/
+      16896 && k !== (k = /*row*/
+      e[67]?.start ?? "") && _.value !== k && (_.value = k), V[0] & /*visibleRows, teamOptions*/
+      16896 && K !== (K = /*row*/
+      e[67]?.id) && o(L, "data-line-id", K), V[0] & /*visibleRows, teamOptions*/
+      16896 && W !== (W = /*row*/
+      e[67]?.end ?? "") && L.value !== W && (L.value = W), V[0] & /*BASE_POSITIONS, visibleRows*/
+      49152) {
+        Ze = ye(dn(
           /*BASE_POSITIONS*/
-          e[11],
+          e[15],
           /*row*/
-          e[53]?.position
+          e[67]?.position
         ));
         let d;
-        for (d = 0; d < q.length; d += 1) {
-          const ve = It(e, q, d);
-          z[d] ? z[d].p(ve, G) : (z[d] = Ht(ve), z[d].c(), z[d].m(J, null));
-        }
-        for (; d < z.length; d += 1)
-          z[d].d(1);
-        z.length = q.length;
-      }
-      if (G[0] & /*rows, teamOptions*/
-      576 && pe !== (pe = /*row*/
-      e[53]?.id) && s(J, "data-line-id", pe), G[0] & /*rows, teamOptions*/
-      576 && Ye !== (Ye = /*row*/
-      e[53]?.position ?? "") && j(
-        J,
-        /*row*/
-        e[53]?.position ?? ""
-      ), G[0] & /*BASE_EMPS*/
-      4096) {
-        _e = oe(
-          /*BASE_EMPS*/
-          e[12]
-        );
-        let d;
-        for (d = 0; d < _e.length; d += 1) {
-          const ve = Bt(e, _e, d);
-          ee[d] ? ee[d].p(ve, G) : (ee[d] = jt(ve), ee[d].c(), ee[d].m(U, null));
+        for (d = 0; d < Ze.length; d += 1) {
+          const Z = qt(e, Ze, d);
+          ee[d] ? ee[d].p(Z, V) : (ee[d] = ln(Z), ee[d].c(), ee[d].m(q, null));
         }
         for (; d < ee.length; d += 1)
           ee[d].d(1);
-        ee.length = _e.length;
+        ee.length = Ze.length;
       }
-      if (G[0] & /*rows, teamOptions*/
-      576 && ke !== (ke = /*row*/
-      e[53]?.id) && s(U, "data-line-id", ke), G[0] & /*rows, teamOptions*/
-      576 && Ae !== (Ae = /*row*/
-      e[53]?.emp ?? "") && j(
-        U,
+      if (V[0] & /*visibleRows, teamOptions*/
+      16896 && z !== (z = /*row*/
+      e[67]?.id) && o(q, "data-line-id", z), V[0] & /*visibleRows, teamOptions*/
+      16896 && $e !== ($e = /*row*/
+      e[67]?.position ?? "") && U(
+        q,
         /*row*/
-        e[53]?.emp ?? ""
-      ), G[0] & /*rows, teamOptions*/
-      576 && Ie !== (Ie = /*row*/
-      e[53]?.id) && s(Q, "data-line-id", Ie), G[0] & /*rows, teamOptions*/
-      576 && Oe !== (Oe = /*row*/
-      e[53]?.sex ?? "") && j(
+        e[67]?.position ?? ""
+      ), V[0] & /*BASE_EMPS*/
+      65536) {
+        Ue = ye(
+          /*BASE_EMPS*/
+          e[16]
+        );
+        let d;
+        for (d = 0; d < Ue.length; d += 1) {
+          const Z = jt(e, Ue, d);
+          ie[d] ? ie[d].p(Z, V) : (ie[d] = on(Z), ie[d].c(), ie[d].m(H, null));
+        }
+        for (; d < ie.length; d += 1)
+          ie[d].d(1);
+        ie.length = Ue.length;
+      }
+      if (V[0] & /*visibleRows, teamOptions*/
+      16896 && ce !== (ce = /*row*/
+      e[67]?.id) && o(H, "data-line-id", ce), V[0] & /*visibleRows, teamOptions*/
+      16896 && Ee !== (Ee = /*row*/
+      e[67]?.emp ?? "") && U(
+        H,
+        /*row*/
+        e[67]?.emp ?? ""
+      ), V[0] & /*visibleRows, teamOptions*/
+      16896 && Me !== (Me = /*row*/
+      e[67]?.id) && o(Q, "data-line-id", Me), V[0] & /*visibleRows, teamOptions*/
+      16896 && ot !== (ot = /*row*/
+      e[67]?.sex ?? "") && U(
         Q,
         /*row*/
-        e[53]?.sex ?? ""
-      ), G[0] & /*rows, teamOptions*/
-      576 && T !== (T = /*row*/
-      e[53]?.id) && s(Z, "data-line-id", T), G[0] & /*rows, teamOptions*/
-      576 && x !== (x = /*row*/
-      e[53]?.function ?? "") && j(
-        Z,
+        e[67]?.sex ?? ""
+      ), V[0] & /*visibleRows, teamOptions*/
+      16896 && je !== (je = /*row*/
+      e[67]?.id) && o(Y, "data-line-id", je), V[0] & /*visibleRows, teamOptions*/
+      16896 && A !== (A = /*row*/
+      e[67]?.function ?? "") && U(
+        Y,
         /*row*/
-        e[53]?.function ?? ""
-      ), G[0] & /*rows, teamOptions*/
-      576 && Ve !== (Ve = /*row*/
-      e[53]?.id) && s(te, "data-line-id", Ve), G[0] & /*rows, teamOptions*/
-      576 && _t !== (_t = /*row*/
-      e[53]?.certPool ?? "") && j(
-        te,
+        e[67]?.function ?? ""
+      ), V[0] & /*visibleRows, teamOptions*/
+      16896 && Xe !== (Xe = /*row*/
+      e[67]?.id) && o(x, "data-line-id", Xe), V[0] & /*visibleRows, teamOptions*/
+      16896 && st !== (st = /*row*/
+      e[67]?.certPool ?? "") && U(
+        x,
         /*row*/
-        e[53]?.certPool ?? ""
-      ), G[0] & /*rows*/
-      64 && Pe !== (Pe = /*row*/
-      (e[53]?.rdos ?? "—") + "") && ze(ot, Pe), G[0] & /*rows*/
-      64 && Me !== (Me = /*row*/
-      (e[53]?.paid ?? "") + "") && ze(rt, Me), G[0] & /*rows, dayStyle, emitDayTime, emitDayDuty*/
-      106560) {
-        We = oe([0, 1, 2, 3, 4, 5, 6]);
+        e[67]?.certPool ?? ""
+      ), V[0] & /*visibleRows*/
+      16384 && We !== (We = /*row*/
+      (e[67]?.rdos ?? "—") + "") && nt(c, We), V[0] & /*visibleRows*/
+      16384 && we !== (we = /*row*/
+      (e[67]?.paid ?? "") + "") && nt(ct, we), V[0] & /*visibleRows, dayStyle, emitDayTime, emitDayDuty*/
+      1720320) {
+        Re = ye([0, 1, 2, 3, 4, 5, 6]);
         let d;
         for (d = 0; d < 7; d += 1) {
-          const ve = Lt(e, We, d);
-          Te[d] ? Te[d].p(ve, G) : (Te[d] = zt(ve), Te[d].c(), Te[d].m(n, ft));
+          const Z = Ut(e, Re, d);
+          Ae[d] ? Ae[d].p(Z, V) : (Ae[d] = an(Z), Ae[d].c(), Ae[d].m(n, ht));
         }
         for (; d < 7; d += 1)
-          Te[d].d(1);
+          Ae[d].d(1);
       }
-      G[0] & /*rows*/
-      64 && it !== (it = /*row*/
-      (e[53]?.hours ?? "") + "") && ze(Ue, it), G[0] & /*rows, teamOptions*/
-      576 && Ge !== (Ge = /*row*/
-      e[53]?.id) && s(n, "data-line-row", Ge);
+      V[0] & /*visibleRows*/
+      16384 && rt !== (rt = /*row*/
+      (e[67]?.hours ?? "") + "") && nt(et, rt), V[0] & /*visibleRows, teamOptions*/
+      16896 && ft !== (ft = /*row*/
+      e[67]?.id) && o(n, "data-line-row", ft);
     },
-    d(p) {
-      p && fe(n), at(Y, p), at($, p), at(z, p), at(ee, p), at(Te, p), ut = !1, Qe(st);
+    d(y) {
+      y && oe(n), dt(ne, y), dt(le, y), dt(ee, y), dt(ie, y), dt(Ae, y), tt = !1, it(Ft);
     }
   };
 }
-function Cn(t) {
-  let e;
-  function n(l, r) {
-    return (
-      /*mode*/
-      l[7] === "svelte" ? bn : Fn
-    );
-  }
-  let a = n(t), u = a(t);
+function fn(t) {
+  let e, n;
   return {
     c() {
-      e = o("div"), u.c(), s(e, "class", "lines-table-root svelte-1f0dkhk"), De(e, "min-height", "min(70vh, 720px)"), De(e, "height", "min(70vh, 720px)"), De(e, "width", "100%"), De(
+      e = a("tr"), n = a("td"), o(n, "colspan", "20"), J(n, "padding", "0"), J(n, "border", "none"), o(n, "class", "svelte-1f0dkhk"), J(
+        e,
+        "height",
+        /*paddingBottom*/
+        t[12] + "px"
+      ), o(e, "class", "svelte-1f0dkhk");
+    },
+    m(s, f) {
+      re(s, e, f), l(e, n);
+    },
+    p(s, f) {
+      f[0] & /*paddingBottom*/
+      4096 && J(
+        e,
+        "height",
+        /*paddingBottom*/
+        s[12] + "px"
+      );
+    },
+    d(s) {
+      s && oe(e);
+    }
+  };
+}
+function Hn(t) {
+  let e;
+  function n(i, r) {
+    return (
+      /*mode*/
+      i[7] === "svelte" ? Wn : Xn
+    );
+  }
+  let s = n(t), f = s(t);
+  return {
+    c() {
+      e = a("div"), f.c(), o(e, "class", "lines-table-root svelte-1f0dkhk"), J(e, "min-height", "min(70vh, 720px)"), J(e, "height", "min(70vh, 720px)"), J(e, "width", "100%"), J(
         e,
         "--export-rdo",
         /*exportStyle*/
         t[10]?.rdo || "#000000"
-      ), De(
+      ), J(
         e,
         "--export-bag",
         /*exportStyle*/
         t[10]?.bag || "#F4B4B4"
-      ), De(
+      ), J(
         e,
         "--export-dfo",
         /*exportStyle*/
         t[10]?.dfo || "#FFF3A8"
-      ), De(
+      ), J(
         e,
         "--export-pax",
         /*exportStyle*/
         t[10]?.pax || "#A0C4FF"
-      ), De(
+      ), J(
         e,
         "--export-header",
         /*exportStyle*/
         t[10]?.header || "#1F4E79"
       );
     },
-    m(l, r) {
-      ce(l, e, r), u.m(e, null);
+    m(i, r) {
+      re(i, e, r), f.m(e, null);
     },
-    p(l, r) {
-      a === (a = n(l)) && u ? u.p(l, r) : (u.d(1), u = a(l), u && (u.c(), u.m(e, null))), r[0] & /*exportStyle*/
-      1024 && De(
+    p(i, r) {
+      s === (s = n(i)) && f ? f.p(i, r) : (f.d(1), f = s(i), f && (f.c(), f.m(e, null))), r[0] & /*exportStyle*/
+      1024 && J(
         e,
         "--export-rdo",
         /*exportStyle*/
-        l[10]?.rdo || "#000000"
+        i[10]?.rdo || "#000000"
       ), r[0] & /*exportStyle*/
-      1024 && De(
+      1024 && J(
         e,
         "--export-bag",
         /*exportStyle*/
-        l[10]?.bag || "#F4B4B4"
+        i[10]?.bag || "#F4B4B4"
       ), r[0] & /*exportStyle*/
-      1024 && De(
+      1024 && J(
         e,
         "--export-dfo",
         /*exportStyle*/
-        l[10]?.dfo || "#FFF3A8"
+        i[10]?.dfo || "#FFF3A8"
       ), r[0] & /*exportStyle*/
-      1024 && De(
+      1024 && J(
         e,
         "--export-pax",
         /*exportStyle*/
-        l[10]?.pax || "#A0C4FF"
+        i[10]?.pax || "#A0C4FF"
       ), r[0] & /*exportStyle*/
-      1024 && De(
+      1024 && J(
         e,
         "--export-header",
         /*exportStyle*/
-        l[10]?.header || "#1F4E79"
+        i[10]?.header || "#1F4E79"
       );
     },
-    i: Je,
-    o: Je,
-    d(l) {
-      l && fe(e), u.d();
+    i: lt,
+    o: lt,
+    d(i) {
+      i && oe(e), f.d();
     }
   };
 }
-function Qt(t, e) {
+const Dt = 42, un = 8;
+function dn(t, e) {
   const n = e == null ? "" : String(e);
   return !n || t.indexOf(n) >= 0 ? t : t.concat([n]);
 }
-function wt(t) {
+function Bt(t) {
   if (!t) return "";
   const e = t.name || t.id || "";
   return t.start && t.end ? (e ? e + " " : "") + "(" + t.start + "–" + t.end + ")" : t.start ? e ? e + " " + t.start : t.start : e;
 }
-function tn(t) {
+function pn(t) {
   const e = String(t || "").toUpperCase();
   return e === "RDO" || e === "—" || e === "-" || e === "OFF" ? "rdo" : e === "BAG" || e === "BAGS" ? "bag" : e === "DFO" ? "dfo" : e === "PAX" ? "pax" : null;
 }
-function Yt(t) {
-  const e = tn(t);
+function cn(t) {
+  const e = pn(t);
   return e === "rdo" ? "cell-day-col cell-rdo" : e === "bag" ? "cell-day-col cell-function-duty cell-bag" : e === "dfo" ? "cell-day-col cell-function-duty cell-dfo" : e === "pax" ? "cell-day-col cell-function-duty cell-pax" : "cell-day-col cell-work";
 }
-function Rn(t, e, n) {
-  let { rows: a = [] } = e, { mode: u = "svelte" } = e, { shiftOptions: l = [] } = e, { teamOptions: r = [] } = e, { exportStyle: _ = Ot() } = e, { onInlineEdit: v = null } = e, { onDayToggle: f = null } = e, { onDayDutyEdit: w = null } = e, { onDayTimeEdit: D = null } = e, { onSort: S = null } = e, { onFilter: C = null } = e, { currentSortBy: M = "role" } = e, { currentSortDir: R = "asc" } = e, { filterRole: V = "ALL" } = e, { filterShift: P = "" } = e, { filterTeam: X = "" } = e, { filterSex: g = "" } = e, { filterDuty: y = "" } = e, { searchCode: c = "" } = e;
-  const k = ["TSO", "LTSO", "STSO"], m = ["FT", "PT"];
-  function O(h) {
-    const T = tn(h);
-    if (!T) return;
-    const we = (_ || Ot())[T];
+function Kn(t, e, n) {
+  let s, f, i, r, v, g, u, { rows: w = [] } = e, { mode: F = "svelte" } = e, { shiftOptions: O = [] } = e, { teamOptions: T = [] } = e, { exportStyle: P = Ht() } = e, { onInlineEdit: R = null } = e, { onDayToggle: M = null } = e, { onDayDutyEdit: N = null } = e, { onDayTimeEdit: X = null } = e, { onSort: h = null } = e, { onFilter: p = null } = e, { currentSortBy: _ = "role" } = e, { currentSortDir: m = "asc" } = e, { filterRole: k = "ALL" } = e, { filterShift: C = "" } = e, { filterTeam: B = "" } = e, { filterSex: L = "" } = e, { filterDuty: K = "" } = e, { filterDay: W = "" } = e, { searchCode: te = "" } = e;
+  const fe = ["TSO", "LTSO", "STSO"], q = ["FT", "PT"];
+  function ue(c) {
+    const S = pn(c);
+    if (!S) return;
+    const we = (P || Ht())[S];
     if (we)
-      return "background:" + we + ";color:" + Dn(we) + ";";
+      return "background:" + we + ";color:" + Gn(we) + ";";
   }
-  function A(h, T, x) {
-    v?.({ lineId: h, field: T, value: x });
+  function z(c, S, $) {
+    R?.({ lineId: c, field: S, value: $ });
   }
-  function I(h, T, x) {
-    w?.({ lineId: h, dayIndex: T, duty: x });
+  function $e(c, S, $) {
+    N?.({ lineId: c, dayIndex: S, duty: $ });
   }
-  function W(h, T, x, we) {
-    D?.({ lineId: h, dayIndex: T, field: x, value: we });
+  function Ve(c, S, $, we) {
+    X?.({ lineId: c, dayIndex: S, field: $, value: we });
   }
-  function N(h) {
-    let T = "asc";
-    M === h && (T = R === "asc" ? "desc" : "asc"), S?.({ sortBy: h, sortDir: T });
+  function Ce(c) {
+    let S = "asc";
+    _ === c && (S = m === "asc" ? "desc" : "asc"), h?.({ sortBy: c, sortDir: S });
   }
-  function ge() {
-    C?.({
-      filterRole: V,
-      filterShift: P,
-      filterTeam: X,
-      filterSex: g,
-      filterDuty: y,
-      searchCode: c
+  function H() {
+    p?.({
+      filterRole: k,
+      filterShift: C,
+      filterTeam: B,
+      filterSex: L,
+      filterDuty: K,
+      filterDay: W,
+      searchCode: te
     });
   }
-  function ye(h) {
-    return M !== h ? "" : R === "asc" ? " ▲" : " ▼";
+  function de(c) {
+    return _ !== c ? "" : m === "asc" ? " ▲" : " ▼";
   }
-  function J() {
-    c = this.value, n(5, c);
+  let ce = 0, Ee = 600, me;
+  function Le(c) {
+    n(34, ce = c.target.scrollTop);
   }
-  function se() {
-    V = yt(this), n(0, V);
+  Fn(() => {
+    me && n(35, Ee = me.clientHeight || 600);
+  });
+  function Q() {
+    te = this.value, n(6, te);
   }
-  function pe() {
-    X = yt(this), n(2, X), n(9, r);
+  function he() {
+    k = mt(this), n(0, k);
   }
-  function Ye() {
-    P = yt(this), n(1, P), n(8, l);
+  function _e() {
+    B = mt(this), n(2, B), n(9, T);
   }
-  function Se() {
-    y = yt(this), n(4, y);
+  function Pe() {
+    C = mt(this), n(1, C), n(8, O);
   }
-  function Be() {
-    g = yt(this), n(3, g);
+  function Me() {
+    K = mt(this), n(4, K);
   }
-  const U = () => N("team"), ae = () => N("line"), ke = () => N("shift"), Ae = () => N("start"), Ke = () => N("role"), Fe = (h, T) => A(h?.id, "team", T.target.value), Q = (h, T) => A(h?.id, "lineCode", T.target.value), me = (h, T) => A(h?.id, "shift", T.target.value), b = (h, T) => A(h?.id, "start", T.target.value), ue = (h, T) => A(h?.id, "end", T.target.value), Ie = (h, T) => A(h?.id, "position", T.target.value), Oe = (h, T) => A(h?.id, "emp", T.target.value), Ze = (h, T) => A(h?.id, "sex", T.target.value), be = (h, T) => A(h?.id, "function", T.target.value), Z = (h, T) => A(h?.id, "certPool", T.target.value), de = (h, T, x) => I(h?.id, T, x.target.value), Ce = (h, T, x) => W(h?.id, T, "start", x.target.value), he = (h, T, x) => W(h?.id, T, "end", x.target.value);
-  return t.$$set = (h) => {
-    "rows" in h && n(6, a = h.rows), "mode" in h && n(7, u = h.mode), "shiftOptions" in h && n(8, l = h.shiftOptions), "teamOptions" in h && n(9, r = h.teamOptions), "exportStyle" in h && n(10, _ = h.exportStyle), "onInlineEdit" in h && n(20, v = h.onInlineEdit), "onDayToggle" in h && n(21, f = h.onDayToggle), "onDayDutyEdit" in h && n(22, w = h.onDayDutyEdit), "onDayTimeEdit" in h && n(23, D = h.onDayTimeEdit), "onSort" in h && n(24, S = h.onSort), "onFilter" in h && n(25, C = h.onFilter), "currentSortBy" in h && n(26, M = h.currentSortBy), "currentSortDir" in h && n(27, R = h.currentSortDir), "filterRole" in h && n(0, V = h.filterRole), "filterShift" in h && n(1, P = h.filterShift), "filterTeam" in h && n(2, X = h.filterTeam), "filterSex" in h && n(3, g = h.filterSex), "filterDuty" in h && n(4, y = h.filterDuty), "searchCode" in h && n(5, c = h.searchCode);
+  function ot() {
+    W = mt(this), n(5, W);
+  }
+  function ve() {
+    L = mt(this), n(3, L);
+  }
+  const Be = () => Ce("team"), Y = () => Ce("line"), ge = () => Ce("shift"), Ie = () => Ce("start"), se = () => Ce("role"), pe = (c, S) => z(c?.id, "team", S.target.value), je = (c, S) => z(c?.id, "lineCode", S.target.value), A = (c, S) => z(c?.id, "shift", S.target.value), qe = (c, S) => z(c?.id, "start", S.target.value), ze = (c, S) => z(c?.id, "end", S.target.value), x = (c, S) => z(c?.id, "position", S.target.value), Ne = (c, S) => z(c?.id, "emp", S.target.value), ke = (c, S) => z(c?.id, "sex", S.target.value), Ge = (c, S) => z(c?.id, "function", S.target.value), Xe = (c, S) => z(c?.id, "certPool", S.target.value), st = (c, S, $) => $e(c?.id, S, $.target.value), Ye = (c, S, $) => Ve(c?.id, S, "start", $.target.value), Je = (c, S, $) => Ve(c?.id, S, "end", $.target.value);
+  function We(c) {
+    Pt[c ? "unshift" : "push"](() => {
+      me = c, n(11, me);
+    });
+  }
+  return t.$$set = (c) => {
+    "rows" in c && n(25, w = c.rows), "mode" in c && n(7, F = c.mode), "shiftOptions" in c && n(8, O = c.shiftOptions), "teamOptions" in c && n(9, T = c.teamOptions), "exportStyle" in c && n(10, P = c.exportStyle), "onInlineEdit" in c && n(26, R = c.onInlineEdit), "onDayToggle" in c && n(27, M = c.onDayToggle), "onDayDutyEdit" in c && n(28, N = c.onDayDutyEdit), "onDayTimeEdit" in c && n(29, X = c.onDayTimeEdit), "onSort" in c && n(30, h = c.onSort), "onFilter" in c && n(31, p = c.onFilter), "currentSortBy" in c && n(32, _ = c.currentSortBy), "currentSortDir" in c && n(33, m = c.currentSortDir), "filterRole" in c && n(0, k = c.filterRole), "filterShift" in c && n(1, C = c.filterShift), "filterTeam" in c && n(2, B = c.filterTeam), "filterSex" in c && n(3, L = c.filterSex), "filterDuty" in c && n(4, K = c.filterDuty), "filterDay" in c && n(5, W = c.filterDay), "searchCode" in c && n(6, te = c.searchCode);
+  }, t.$$.update = () => {
+    t.$$.dirty[0] & /*rows*/
+    33554432 && n(39, s = w.length), t.$$.dirty[1] & /*totalRows*/
+    256 && n(37, f = s * Dt), t.$$.dirty[1] & /*scrollTop*/
+    8 && n(38, i = Math.max(0, Math.floor(ce / Dt) - un)), t.$$.dirty[1] & /*totalRows, scrollTop, viewportHeight*/
+    280 && n(36, r = Math.min(s, Math.ceil((ce + Ee) / Dt) + un)), t.$$.dirty[0] & /*rows*/
+    33554432 | t.$$.dirty[1] & /*startIndex, endIndex*/
+    160 && n(14, v = w.slice(i, r)), t.$$.dirty[1] & /*startIndex*/
+    128 && n(13, g = i * Dt), t.$$.dirty[1] & /*totalHeight, endIndex*/
+    96 && n(12, u = Math.max(0, f - r * Dt));
   }, [
-    V,
-    P,
-    X,
-    g,
-    y,
-    c,
-    a,
-    u,
-    l,
-    r,
-    _,
     k,
-    m,
-    O,
-    A,
-    I,
-    W,
-    N,
-    ge,
-    ye,
-    v,
-    f,
-    w,
-    D,
-    S,
     C,
-    M,
+    B,
+    L,
+    K,
+    W,
+    te,
+    F,
+    O,
+    T,
+    P,
+    me,
+    u,
+    g,
+    v,
+    fe,
+    q,
+    ue,
+    z,
+    $e,
+    Ve,
+    Ce,
+    H,
+    de,
+    Le,
+    w,
     R,
-    J,
+    M,
+    N,
+    X,
+    h,
+    p,
+    _,
+    m,
+    ce,
+    Ee,
+    r,
+    f,
+    i,
+    s,
+    Q,
+    he,
+    _e,
+    Pe,
+    Me,
+    ot,
+    ve,
+    Be,
+    Y,
+    ge,
+    Ie,
     se,
     pe,
-    Ye,
-    Se,
-    Be,
-    U,
-    ae,
+    je,
+    A,
+    qe,
+    ze,
+    x,
+    Ne,
     ke,
-    Ae,
-    Ke,
-    Fe,
-    Q,
-    me,
-    b,
-    ue,
-    Ie,
-    Oe,
-    Ze,
-    be,
-    Z,
-    de,
-    Ce,
-    he
+    Ge,
+    Xe,
+    st,
+    Ye,
+    Je,
+    We
   ];
 }
-class An extends kn {
+class Un extends Pn {
   constructor(e) {
-    super(), pn(
+    super(), Vn(
       this,
       e,
-      Rn,
-      Cn,
-      sn,
+      Kn,
+      Hn,
+      kn,
       {
-        rows: 6,
+        rows: 25,
         mode: 7,
         shiftOptions: 8,
         teamOptions: 9,
         exportStyle: 10,
-        onInlineEdit: 20,
-        onDayToggle: 21,
-        onDayDutyEdit: 22,
-        onDayTimeEdit: 23,
-        onSort: 24,
-        onFilter: 25,
-        currentSortBy: 26,
-        currentSortDir: 27,
+        onInlineEdit: 26,
+        onDayToggle: 27,
+        onDayDutyEdit: 28,
+        onDayTimeEdit: 29,
+        onSort: 30,
+        onFilter: 31,
+        currentSortBy: 32,
+        currentSortDir: 33,
         filterRole: 0,
         filterShift: 1,
         filterTeam: 2,
         filterSex: 3,
         filterDuty: 4,
-        searchCode: 5
+        filterDay: 5,
+        searchCode: 6
       },
       null,
       [-1, -1, -1]
     );
   }
 }
-function Tn(t) {
+function jn(t) {
   if (t = t || window.Scheduler, !t) return;
-  function e(l) {
-    var r = String(l || "").trim();
+  function e(i) {
+    var r = String(i || "").trim();
     if (!r) return "";
-    var _ = r.match(/^(\d+)$/);
-    return _ && Number(_[1]) < 10 ? "0" + _[1] : r;
+    var v = r.match(/^(\d+)$/);
+    return v && Number(v[1]) < 10 ? "0" + v[1] : r;
   }
-  function n(l, r) {
-    var _ = (l.rdoDays || []).map(Number).filter(function(f) {
-      return Number.isInteger(f) && f >= 0 && f <= 6;
-    }), v = _.length ? _.map(function(f) {
-      return r && r[f] != null ? r[f] : String(f);
+  function n(i, r) {
+    var v = (i.rdoDays || []).map(Number).filter(function(u) {
+      return Number.isInteger(u) && u >= 0 && u <= 6;
+    }), g = v.length ? v.map(function(u) {
+      return r && r[u] != null ? r[u] : String(u);
     }).join(",") : "—";
-    return l.rdoHard && (v += " (hard)"), v;
+    return i.rdoHard && (g += " (hard)"), g;
   }
-  function a(l, r, _) {
-    return _ || "WORK";
+  function s(i, r, v) {
+    return v || "WORK";
   }
-  function u(l, r) {
-    return r === "BAG" || r === "PAX" ? r : l.function === "BAG" ? "BAG" : l.function === "DFO" || l.function === "PAX" ? "PAX" : r === "BAG" || r === "PAX" ? r : null;
+  function f(i, r) {
+    return r === "BAG" || r === "PAX" ? r : i.function === "BAG" ? "BAG" : i.function === "DFO" || i.function === "PAX" ? "PAX" : r === "BAG" || r === "PAX" ? r : null;
   }
-  t.lineToRowModel = function(l, r, _) {
-    if (_ = _ || {}, !l || !r) return null;
-    for (var v = _.dayNames || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], f = typeof _.teamResolver == "function" ? _.teamResolver(l.id) : null, w = typeof _.shiftResolver == "function" ? _.shiftResolver(l.shiftId) : null, D = l.shiftName || w && w.name || "", S = w && w.start ? w.start : "", C = w && w.end ? w.end : "", M = l.shiftLabel || (S && C ? S + "–" + C : S || "WORK"), R = !!(l.isExtra || l.extraPositionId), V = R ? l.position || l.extraName || "TSO" : l.isStso || l.empClass === "STSO" ? "STSO" : l.isLtso || l.empClass === "LTSO" ? "LTSO" : "TSO", P = R ? l.empClass === "PT" ? "PT" : "FT" : V === "STSO" || V === "LTSO" ? "FT" : l.empClass === "PT" ? "PT" : "FT", X = l.paid || 0, g = Array.isArray(r) ? r : r[l.id] || r[String(l.id)] || [], y = [], c = [], k = [], m = [], O = 0, A = 0; A < 7; A++) {
-      var I = typeof _.effectiveTimesResolver == "function" ? _.effectiveTimesResolver(l.shiftId, A) : w ? { start: w.start, end: w.end } : { start: "", end: "" };
-      k.push(I && I.start || S), m.push(I && I.end || C);
-      var W = g[A];
-      if (W === "WORK") {
-        O += X;
-        var N = typeof _.rotationDutyResolver == "function" ? _.rotationDutyResolver(l.id, A) : null, ge = a(l, N, M);
-        y.push(ge), c.push(u(l, N) || "PAX");
+  t.lineToRowModel = function(i, r, v) {
+    if (v = v || {}, !i || !r) return null;
+    for (var g = v.dayNames || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], u = typeof v.teamResolver == "function" ? v.teamResolver(i.id) : null, w = typeof v.shiftResolver == "function" ? v.shiftResolver(i.shiftId) : null, F = i.shiftName || w && w.name || "", O = i.startTime || (w && w.start ? w.start : ""), T = i.endTime || (w && w.end ? w.end : ""), P = i.shiftLabel || (O && T ? O + "–" + T : O || "WORK"), R = !!(i.isExtra || i.extraPositionId), M = R ? i.position || i.extraName || "TSO" : i.isStso || i.empClass === "STSO" ? "STSO" : i.isLtso || i.empClass === "LTSO" ? "LTSO" : "TSO", N = R ? i.empClass === "PT" ? "PT" : "FT" : M === "STSO" || M === "LTSO" ? "FT" : i.empClass === "PT" ? "PT" : "FT", X = i.paid || 0, h = Array.isArray(r) ? r : r[i.id] || r[String(i.id)] || [], p = [], _ = [], m = [], k = [], C = 0, B = 0; B < 7; B++) {
+      var L = typeof v.effectiveTimesResolver == "function" ? v.effectiveTimesResolver(i.shiftId, B) : null, K = i.startTime || L && L.start || O, W = i.endTime || L && L.end || T;
+      m.push(K), k.push(W);
+      var te = h[B];
+      if (te === "WORK") {
+        C += X;
+        var fe = typeof v.rotationDutyResolver == "function" ? v.rotationDutyResolver(i.id, B) : null, q = s(i, fe, P);
+        p.push(q), _.push(f(i, fe) || "PAX");
       } else
-        y.push("RDO"), c.push("OFF");
+        p.push("RDO"), _.push("OFF");
     }
     return {
-      id: l.id,
-      teamId: f && f.id || "",
-      shiftId: l.shiftId || "",
-      team: e(f && (f.name || f.id) || ""),
-      line: l.lineCode || "",
-      shift: D,
-      start: S,
-      end: C,
-      position: V,
-      emp: P,
-      sex: l.sex === "F" || l.sex === "M" ? l.sex : "",
-      function: l.function || "",
-      certPool: l.certPool || "",
-      rdos: n(l, v),
+      id: i.id,
+      teamId: u && u.id || "",
+      shiftId: i.shiftId || "",
+      team: e(u && (u.name || u.id) || ""),
+      line: i.lineCode || "",
+      shift: F,
+      start: O,
+      end: T,
+      position: M,
+      emp: N,
+      sex: i.sex === "F" || i.sex === "M" ? i.sex : "",
+      function: i.function || "",
+      certPool: i.certPool || "",
+      rdos: n(i, g),
       paid: X,
-      days: y,
-      dayDuties: c,
-      dayStarts: k,
-      dayEnds: m,
-      hours: O
+      days: p,
+      dayDuties: _,
+      dayStarts: m,
+      dayEnds: k,
+      hours: C
     };
-  }, t.getRowModels = function(l, r, _) {
-    return !Array.isArray(l) || !r || typeof r != "object" ? [] : l.map(function(v) {
-      return t.lineToRowModel(v, r, _);
+  }, t.getRowModels = function(i, r, v) {
+    return !Array.isArray(i) || !r || typeof r != "object" ? [] : i.map(function(g) {
+      return t.lineToRowModel(g, r, v);
     }).filter(Boolean);
-  }, t.getLineRowModels = function(l) {
-    var r = t.state && Array.isArray(t.state.lines) ? t.state.lines : [], _ = t.state && t.state.schedule || {}, v = Object.assign({}, l || {});
-    return !v.teamResolver && typeof t.teamMetaForLine == "function" && (v.teamResolver = t.teamMetaForLine), !v.shiftResolver && typeof t.getShift == "function" && (v.shiftResolver = t.getShift), !v.rotationDutyResolver && typeof t.getRotationDuty == "function" && (v.rotationDutyResolver = t.getRotationDuty), !v.effectiveTimesResolver && typeof t.getEffectiveShiftTimes == "function" && (v.effectiveTimesResolver = t.getEffectiveShiftTimes), t.getRowModels(r, _, v);
+  }, t.getLineRowModels = function(i) {
+    var r = t.state && Array.isArray(t.state.lines) ? t.state.lines : [], v = t.state && t.state.schedule || {}, g = Object.assign({}, i || {});
+    return !g.teamResolver && typeof t.teamMetaForLine == "function" && (g.teamResolver = t.teamMetaForLine), !g.shiftResolver && typeof t.getShift == "function" && (g.shiftResolver = t.getShift), !g.rotationDutyResolver && typeof t.getRotationDuty == "function" && (g.rotationDutyResolver = t.getRotationDuty), !g.effectiveTimesResolver && typeof t.getEffectiveShiftTimes == "function" && (g.effectiveTimesResolver = t.getEffectiveShiftTimes), t.getRowModels(r, v, g);
   };
 }
-function Sn(t) {
+function qn(t) {
   if (t = t || window.Scheduler, !t) return;
-  function e(_, v) {
-    var f = t.getRotationDuty ? t.getRotationDuty(_.id, v) : null;
-    return f || _.function || null;
+  function e(v, g) {
+    var u = t.getRotationDuty ? t.getRotationDuty(v.id, g) : null;
+    return u || v.function || null;
   }
   t.dutyFor = e;
-  function n(_) {
-    if (_.shiftLabel) return _.shiftLabel;
-    var v = t.getShift ? t.getShift(_.shiftId) : null;
-    return v && v.start && v.end ? v.start + "–" + v.end : v && v.start ? v.start : "WORK";
+  function n(v) {
+    if (v.shiftLabel) return v.shiftLabel;
+    var g = t.getShift ? t.getShift(v.shiftId) : null;
+    return g && g.start && g.end ? g.start + "–" + g.end : g && g.start ? g.start : "WORK";
   }
-  function a(_) {
-    if (!(!_ || _.function !== "BAG")) {
+  function s(v) {
+    if (!(!v || v.function !== "BAG")) {
       t.state.functionRotation || (t.state.functionRotation = {});
-      var v = String(_.id);
-      t.state.functionRotation[v] || (t.state.functionRotation[v] = []);
-      for (var f = t.state.schedule && (t.state.schedule[_.id] || t.state.schedule[v]) || [], w = Math.max(f.length, (t.state.weekCount || 1) * 7), D = 0; D < w; D++) {
-        for (; t.state.functionRotation[v].length <= D; ) t.state.functionRotation[v].push(null);
-        f[D] === "WORK" && (t.state.functionRotation[v][D] = "BAG");
+      var g = String(v.id);
+      t.state.functionRotation[g] || (t.state.functionRotation[g] = []);
+      for (var u = t.state.schedule && (t.state.schedule[v.id] || t.state.schedule[g]) || [], w = Math.max(u.length, (t.state.weekCount || 1) * 7), F = 0; F < w; F++) {
+        for (; t.state.functionRotation[g].length <= F; ) t.state.functionRotation[g].push(null);
+        u[F] === "WORK" && (t.state.functionRotation[g][F] = "BAG");
       }
     }
   }
-  function u(_) {
-    if (!(!_ || _.function !== "DFO")) {
+  function f(v) {
+    if (!(!v || v.function !== "DFO")) {
       t.state.functionRotation || (t.state.functionRotation = {});
-      var v = String(_.id);
-      t.state.functionRotation[v] || (t.state.functionRotation[v] = []);
-      for (var f = t.state.schedule && (t.state.schedule[_.id] || t.state.schedule[v]) || [], w = Math.max(f.length, (t.state.weekCount || 1) * 7), D = 0; D < w; D++) {
-        for (; t.state.functionRotation[v].length <= D; ) t.state.functionRotation[v].push(null);
-        f[D] === "WORK" && (t.state.functionRotation[v][D] = "DFO");
+      var g = String(v.id);
+      t.state.functionRotation[g] || (t.state.functionRotation[g] = []);
+      for (var u = t.state.schedule && (t.state.schedule[v.id] || t.state.schedule[g]) || [], w = Math.max(u.length, (t.state.weekCount || 1) * 7), F = 0; F < w; F++) {
+        for (; t.state.functionRotation[g].length <= F; ) t.state.functionRotation[g].push(null);
+        u[F] === "WORK" && (t.state.functionRotation[g][F] = "DFO");
       }
     }
   }
-  function l() {
-    var _ = document.getElementById("lines-tbody"), v = _ || document.querySelector(".lines-virtual-root");
-    v && _ && v.querySelectorAll("td.cell-toggle").forEach(function(f) {
-      var w = t.findLineById ? t.findLineById(f.getAttribute("data-line-id")) : null, D = +f.getAttribute("data-day");
-      if (!(!w || isNaN(D))) {
-        var S = (t.state.schedule[w.id] || t.state.schedule[String(w.id)] || [])[D] || "RDO";
-        if (f.style.background = "", f.style.color = "", S !== "WORK") {
-          f.className = "cell-rdo cell-toggle", f.textContent = "RDO", f.style.background = "#000", f.style.color = "#fff", f.style.opacity = "1";
+  function i() {
+    var v = document.getElementById("lines-tbody"), g = v || document.querySelector(".lines-virtual-root");
+    g && v && g.querySelectorAll("td.cell-toggle").forEach(function(u) {
+      var w = t.findLineById ? t.findLineById(u.getAttribute("data-line-id")) : null, F = +u.getAttribute("data-day");
+      if (!(!w || isNaN(F))) {
+        var O = (t.state.schedule[w.id] || t.state.schedule[String(w.id)] || [])[F] || "RDO";
+        if (u.style.background = "", u.style.color = "", O !== "WORK") {
+          u.className = "cell-rdo cell-toggle", u.textContent = "RDO", u.style.background = "#000", u.style.color = "#fff", u.style.opacity = "1";
           return;
         }
-        var C = e(w, D), M = C === "BAG" || C === "BAGS", R = C === "DFO", V = "";
-        M ? V = " cell-function-duty cell-bag" : R && (V = " cell-function-duty cell-dfo"), f.className = "cell-work cell-toggle" + V, f.textContent = n(w);
+        var T = e(w, F), P = T === "BAG" || T === "BAGS", R = T === "DFO", M = "";
+        P ? M = " cell-function-duty cell-bag" : R && (M = " cell-function-duty cell-dfo"), u.className = "cell-work cell-toggle" + M, u.textContent = n(w);
       }
     });
   }
-  t.paintLineColors = l;
-  function r(_) {
-    var v = t[_];
-    if (!(typeof v != "function" || v._lineColorsWrapped)) {
-      var f = function() {
-        if (t.__USE_SVELTE_LINES) return v.apply(this, arguments);
-        var w = v.apply(this, arguments);
-        return setTimeout(l, 0), w;
+  t.paintLineColors = i;
+  function r(v) {
+    var g = t[v];
+    if (!(typeof g != "function" || g._lineColorsWrapped)) {
+      var u = function() {
+        if (t.__USE_SVELTE_LINES) return g.apply(this, arguments);
+        var w = g.apply(this, arguments);
+        return setTimeout(i, 0), w;
       };
-      f._lineColorsWrapped = !0, t[_] = f;
+      u._lineColorsWrapped = !0, t[v] = u;
     }
   }
-  r("renderLines"), r("renderAll"), r("generateFunctionAssignments"), t._lineColorsBound || (t._lineColorsBound = !0, document.addEventListener("change", function(_) {
-    var v = _.target;
-    if (!(!v || v.getAttribute("data-field") !== "function")) {
-      var f = t.findLineById ? t.findLineById(v.getAttribute("data-line-id")) : null;
-      f && (f.function = v.value === "DFO" || v.value === "PAX" || v.value === "BAG" ? v.value : "", f.function === "BAG" && a(f), f.function === "DFO" && u(f), t.renderLines ? t.renderLines() : l());
+  r("renderLines"), r("renderAll"), r("generateFunctionAssignments"), t._lineColorsBound || (t._lineColorsBound = !0, document.addEventListener("change", function(v) {
+    var g = v.target;
+    if (!(!g || g.getAttribute("data-field") !== "function")) {
+      var u = t.findLineById ? t.findLineById(g.getAttribute("data-line-id")) : null;
+      u && (u.function = g.value === "DFO" || g.value === "PAX" || g.value === "BAG" ? g.value : "", u.function === "BAG" && s(u), u.function === "DFO" && f(u), t.renderLines ? t.renderLines() : i());
     }
   }));
 }
-function En(t) {
+function Yn(t) {
   const e = t || window.Scheduler;
   if (!e) return;
-  Tn(e), Sn(e);
+  jn(e), qn(e);
   const n = document.getElementById("lines-table-root");
   if (!n) {
     console.warn("lines-table: #lines-table-root not found");
@@ -1777,51 +1925,51 @@ function En(t) {
   }
   if (n._linesTableMounted) return;
   n._linesTableMounted = !0;
-  function a() {
+  function s() {
     return {
       teamResolver: typeof e.teamMetaForLine == "function" ? e.teamMetaForLine : null,
       shiftResolver: typeof e.getShift == "function" ? e.getShift : null,
-      rotationDutyResolver: typeof e.getRotationDuty == "function" ? e.getRotationDuty : u,
+      rotationDutyResolver: typeof e.getRotationDuty == "function" ? e.getRotationDuty : f,
       effectiveTimesResolver: typeof e.getEffectiveShiftTimes == "function" ? e.getEffectiveShiftTimes : null
     };
   }
-  function u(g, y) {
-    const c = String(g), k = e.state && e.state.functionRotation, m = k && (k[c] || k[g]);
-    if (!Array.isArray(m)) return null;
-    const O = m[y];
-    return O === "BAG" ? "BAG" : O === "DFO" ? "DFO" : O === "PAX" ? "PAX" : null;
+  function f(h, p) {
+    const _ = String(h), m = e.state && e.state.functionRotation, k = m && (m[_] || m[h]);
+    if (!Array.isArray(k)) return null;
+    const C = k[p];
+    return C === "BAG" ? "BAG" : C === "DFO" ? "DFO" : C === "PAX" ? "PAX" : null;
   }
-  function l(g, y, c) {
-    var k = String(g);
-    for (e.state.functionRotation || (e.state.functionRotation = {}), e.state.functionRotation[k] || (e.state.functionRotation[k] = []); e.state.functionRotation[k].length <= y; ) e.state.functionRotation[k].push(null);
-    e.state.functionRotation[k][y] = c;
+  function i(h, p, _) {
+    var m = String(h);
+    for (e.state.functionRotation || (e.state.functionRotation = {}), e.state.functionRotation[m] || (e.state.functionRotation[m] = []); e.state.functionRotation[m].length <= p; ) e.state.functionRotation[m].push(null);
+    e.state.functionRotation[m][p] = _;
   }
-  function r(g) {
-    if (!g) return !1;
-    if (g.function === "DFO") return !0;
-    const y = g.functionEligible;
-    return !!(y && (y.dfo === !0 || y.DFO === !0));
-  }
-  function _() {
-    const g = e.state && Array.isArray(e.state.lines) ? e.state.lines : [], y = typeof e.sortLinesForView == "function" && typeof e.filterLinesForView == "function" ? e.sortLinesForView(e.filterLinesForView(g)) : g, c = e.state && e.state.schedule || {}, k = typeof e.getRowModels == "function" ? e.getRowModels(y, c, a()) : typeof e.getLineRowModels == "function" ? e.getLineRowModels(a()) : [];
-    return Array.isArray(k) ? k : [];
+  function r(h) {
+    if (!h) return !1;
+    if (h.function === "DFO") return !0;
+    const p = h.functionEligible;
+    return !!(p && (p.dfo === !0 || p.DFO === !0));
   }
   function v() {
+    const h = e.state && Array.isArray(e.state.lines) ? e.state.lines : [], p = typeof e.sortLinesForView == "function" && typeof e.filterLinesForView == "function" ? e.sortLinesForView(e.filterLinesForView(h)) : h, _ = e.state && e.state.schedule || {}, m = typeof e.getRowModels == "function" ? e.getRowModels(p, _, s()) : typeof e.getLineRowModels == "function" ? e.getLineRowModels(s()) : [];
+    return Array.isArray(m) ? m : [];
+  }
+  function g() {
     return e.teams && Array.isArray(e.teams.teams) ? e.teams.teams : [];
   }
-  function f() {
+  function u() {
     return e.state && Array.isArray(e.state.shifts) ? e.state.shifts : [];
   }
   function w() {
     return typeof e.getExportStyle == "function" ? e.getExportStyle() : e.state && e.state.exportStyle || null;
   }
-  function D(g) {
-    if (!g || typeof g.$set != "function") return;
-    const y = _();
-    typeof e.applyExportCssVars == "function" && e.applyExportCssVars(), g.$set({
-      rows: Array.isArray(y) ? y : [],
-      shiftOptions: f(),
-      teamOptions: v(),
+  function F(h) {
+    if (!h || typeof h.$set != "function") return;
+    const p = v();
+    typeof e.applyExportCssVars == "function" && e.applyExportCssVars(), h.$set({
+      rows: Array.isArray(p) ? p : [],
+      shiftOptions: u(),
+      teamOptions: g(),
       exportStyle: w(),
       currentSortBy: e.linesView && e.linesView.sortBy || "role",
       currentSortDir: e.linesView && e.linesView.sortDir || "asc",
@@ -1830,106 +1978,104 @@ function En(t) {
       filterTeam: e.linesView && e.linesView.filterTeam || "",
       filterSex: e.linesView && e.linesView.filterSex || "",
       filterDuty: e.linesView && e.linesView.filterDuty || "",
+      filterDay: e.linesView && e.linesView.filterDay || "",
       searchCode: e.linesView && e.linesView.searchCode || ""
     });
   }
-  function S(g) {
-    if (!g) return;
-    const y = e.findLineById ? e.findLineById(g.lineId) : null;
-    if (!y) return;
-    const c = g.field, k = g.value;
-    if (c === "lineCode")
-      y.lineCode = String(k || "").trim() || y.lineCode;
-    else if (c === "sex")
-      y.sex = k === "F" ? "F" : "M";
-    else if (c === "function")
-      y.function = k === "DFO" || k === "PAX" || k === "BAG" ? k : "";
-    else if (c === "certPool") {
-      var m = String(k || "").trim().toUpperCase();
-      y.certPool = m === "A" || m === "B" ? m : "";
-    } else if (c === "emp")
-      e.applyLineEmp && e.applyLineEmp(y, k);
-    else if (c === "position") {
-      var O = !!(y.isExtra || y.extraPositionId), A = String(k ?? "").trim();
-      O ? (A && (y.position = A, y.extraName = A), y.isStso = !1, y.isLtso = !1) : e.applyLineEmp && e.applyLineEmp(y, A);
-    } else if (c === "shift")
-      e.applyLineShift && e.applyLineShift(y, k);
-    else if (c === "team")
-      e.setLineTeam && e.setLineTeam(g.lineId, k);
-    else if (c === "start" || c === "end") {
-      var I = String(k || "").trim();
-      if (e.isValidTimeText && !e.isValidTimeText(I)) return;
-      var W = e.getShift ? e.getShift(y.shiftId) : null;
-      if (!W) {
-        var N = y.shiftId || "SHIFT_" + y.id;
-        y.shiftId = N, e.state.shifts || (e.state.shifts = []), W = e.getShift ? e.getShift(N) : null, W || (W = { id: N, name: N, start: "08:00", end: "16:30", paid: y.paid || 8 }, e.state.shifts.push(W));
-      }
-      c === "start" && (W.start = I), c === "end" && (W.end = I), y.shiftLabel = (W.start || "") + "-" + (W.end || "");
+  function O(h) {
+    if (!h) return;
+    const p = e.findLineById ? e.findLineById(h.lineId) : null;
+    if (!p) return;
+    const _ = h.field, m = h.value;
+    if (_ === "lineCode")
+      p.lineCode = String(m || "").trim() || p.lineCode;
+    else if (_ === "sex")
+      p.sex = m === "F" ? "F" : "M";
+    else if (_ === "function")
+      p.function = m === "DFO" || m === "PAX" || m === "BAG" ? m : "";
+    else if (_ === "certPool") {
+      var k = String(m || "").trim().toUpperCase();
+      p.certPool = k === "A" || k === "B" ? k : "";
+    } else if (_ === "emp")
+      e.applyLineEmp && e.applyLineEmp(p, m);
+    else if (_ === "position") {
+      var C = !!(p.isExtra || p.extraPositionId), B = String(m ?? "").trim();
+      C ? (B && (p.position = B, p.extraName = B), p.isStso = !1, p.isLtso = !1) : e.applyLineEmp && e.applyLineEmp(p, B);
+    } else if (_ === "shift")
+      e.applyLineShift && e.applyLineShift(p, m);
+    else if (_ === "team")
+      e.setLineTeam && e.setLineTeam(h.lineId, m);
+    else if (_ === "start" || _ === "end") {
+      var L = String(m || "").trim();
+      if (e.isValidTimeText && !e.isValidTimeText(L)) return;
+      _ === "start" && (p.startTime = L), _ === "end" && (p.endTime = L);
+      var K = e.getShift ? e.getShift(p.shiftId) : null, W = p.startTime || (K ? K.start : ""), te = p.endTime || (K ? K.end : "");
+      p.shiftLabel = (W || "") + "-" + (te || "");
     }
-    e.updateStatus && e.updateStatus("Updated " + (y.lineCode || g.lineId)), X(), (c === "emp" || c === "position" || c === "shift" || c === "start" || c === "end") && e.renderCoverageBars && e.renderCoverageBars(), c === "team" && e.renderTeams && e.renderTeams(), window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+    e.updateStatus && e.updateStatus("Updated " + (p.lineCode || h.lineId)), X(), (_ === "emp" || _ === "position" || _ === "shift" || _ === "start" || _ === "end") && e.renderCoverageBars && e.renderCoverageBars(), _ === "team" && e.renderTeams && e.renderTeams(), window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
   }
-  function C(g) {
-    if (!g) return;
-    const y = e.findLineById ? e.findLineById(g.lineId) : null, c = Number(g.dayIndex);
-    if (!y || !Number.isInteger(c) || c < 0 || c > 6) return;
-    const k = String(y.id);
+  function T(h) {
+    if (!h) return;
+    const p = e.findLineById ? e.findLineById(h.lineId) : null, _ = Number(h.dayIndex);
+    if (!p || !Number.isInteger(_) || _ < 0 || _ > 6) return;
+    const m = String(p.id);
     e.state.schedule || (e.state.schedule = {});
-    var m = e.state.schedule[k] || e.state.schedule[y.id];
-    for (Array.isArray(m) || (m = []), e.state.schedule[k] = m; e.state.schedule[k].length < 7; ) e.state.schedule[k].push("RDO");
-    e.state.functionRotation || (e.state.functionRotation = {}), !e.state.functionRotation[k] && e.state.functionRotation[y.id] && (e.state.functionRotation[k] = e.state.functionRotation[y.id]);
-    const O = e.state.schedule[k][c] || "RDO", A = y.function === "BAG", I = r(y);
-    if (O !== "WORK")
-      e.state.schedule[k][c] = "WORK", A ? l(k, c, "BAG") : I ? l(k, c, "PAX") : l(k, c, null);
-    else if (A)
-      e.state.schedule[k][c] = "RDO", l(k, c, null);
-    else if (I) {
-      var W = typeof e.getRotationDuty == "function" ? e.getRotationDuty(y.id, c) : u(y.id, c), N = W === "DFO" || W === "PAX" || !W ? "PAX" : W;
-      N === "PAX" ? l(k, c, "BAG") : (e.state.schedule[k][c] = "RDO", l(k, c, null));
+    var k = e.state.schedule[m] || e.state.schedule[p.id];
+    for (Array.isArray(k) || (k = []), e.state.schedule[m] = k; e.state.schedule[m].length < 7; ) e.state.schedule[m].push("RDO");
+    e.state.functionRotation || (e.state.functionRotation = {}), !e.state.functionRotation[m] && e.state.functionRotation[p.id] && (e.state.functionRotation[m] = e.state.functionRotation[p.id]);
+    const C = e.state.schedule[m][_] || "RDO", B = p.function === "BAG", L = r(p);
+    if (C !== "WORK")
+      e.state.schedule[m][_] = "WORK", B ? i(m, _, "BAG") : L ? i(m, _, "PAX") : i(m, _, null);
+    else if (B)
+      e.state.schedule[m][_] = "RDO", i(m, _, null);
+    else if (L) {
+      var K = typeof e.getRotationDuty == "function" ? e.getRotationDuty(p.id, _) : f(p.id, _), W = K === "DFO" || K === "PAX" || !K ? "PAX" : K;
+      W === "PAX" ? i(m, _, "BAG") : (e.state.schedule[m][_] = "RDO", i(m, _, null));
     } else
-      e.state.schedule[k][c] = "RDO", l(k, c, null);
-    e.syncRdoDaysFromSchedule && e.syncRdoDaysFromSchedule(y), X(), e.renderCoverageBars && e.renderCoverageBars(), window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+      e.state.schedule[m][_] = "RDO", i(m, _, null);
+    e.syncRdoDaysFromSchedule && e.syncRdoDaysFromSchedule(p), X(), e.renderCoverageBars && e.renderCoverageBars(), window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
   }
-  function M(g) {
-    if (!g) return;
-    const y = e.findLineById ? e.findLineById(g.lineId) : null, c = Number(g.dayIndex), k = String(g.duty || "").toUpperCase();
-    if (!y || !Number.isInteger(c) || c < 0 || c > 6) return;
-    const m = String(y.id);
-    e.state.schedule || (e.state.schedule = {}), Array.isArray(e.state.schedule[m]) || (e.state.schedule[m] = Array(7).fill("RDO")), k === "OFF" || k === "RDO" || k === "" ? (e.state.schedule[m][c] = "RDO", l(m, c, null)) : (e.state.schedule[m][c] = "WORK", k === "BAG" ? l(m, c, "BAG") : k === "DFO" ? l(m, c, "DFO") : l(m, c, "PAX")), e.syncRdoDaysFromSchedule && e.syncRdoDaysFromSchedule(y), X(), e.renderCoverageBars && e.renderCoverageBars(), window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+  function P(h) {
+    if (!h) return;
+    const p = e.findLineById ? e.findLineById(h.lineId) : null, _ = Number(h.dayIndex), m = String(h.duty || "").toUpperCase();
+    if (!p || !Number.isInteger(_) || _ < 0 || _ > 6) return;
+    const k = String(p.id);
+    e.state.schedule || (e.state.schedule = {}), Array.isArray(e.state.schedule[k]) || (e.state.schedule[k] = Array(7).fill("RDO")), m === "OFF" || m === "RDO" || m === "" ? (e.state.schedule[k][_] = "RDO", i(k, _, null)) : (e.state.schedule[k][_] = "WORK", m === "BAG" ? i(k, _, "BAG") : m === "DFO" ? i(k, _, "DFO") : i(k, _, "PAX")), e.syncRdoDaysFromSchedule && e.syncRdoDaysFromSchedule(p), X(), e.renderCoverageBars && e.renderCoverageBars(), window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
   }
-  function R(g) {
-    if (!g) return;
-    const y = e.findLineById ? e.findLineById(g.lineId) : null, c = Number(g.dayIndex), k = g.field, m = String(g.value || "").trim();
-    if (!(!y || !Number.isInteger(c) || c < 0 || c > 6) && !(e.isValidTimeText && !e.isValidTimeText(m))) {
-      var O = e.getShift ? e.getShift(y.shiftId) : null;
-      if (!O) {
-        var A = y.shiftId || "SHIFT_" + y.id;
-        y.shiftId = A, e.state.shifts || (e.state.shifts = []), O = e.getShift ? e.getShift(A) : null, O || (O = { id: A, name: A, start: "08:00", end: "16:30", paid: y.paid || 8 }, e.state.shifts.push(O));
+  function R(h) {
+    if (!h) return;
+    const p = e.findLineById ? e.findLineById(h.lineId) : null, _ = Number(h.dayIndex), m = h.field, k = String(h.value || "").trim();
+    if (!(!p || !Number.isInteger(_) || _ < 0 || _ > 6) && !(e.isValidTimeText && !e.isValidTimeText(k))) {
+      var C = e.getShift ? e.getShift(p.shiftId) : null;
+      if (!C) {
+        var B = p.shiftId || "SHIFT_" + p.id;
+        p.shiftId = B, e.state.shifts || (e.state.shifts = []), C = e.getShift ? e.getShift(B) : null, C || (C = { id: B, name: B, start: "08:00", end: "16:30", paid: p.paid || 8 }, e.state.shifts.push(C));
       }
-      O.dayTimes || (O.dayTimes = {});
-      var I = String(c), W = O.dayTimes[I] || { start: O.start || "08:00", end: O.end || "16:30" };
-      k === "start" ? O.dayTimes[I] = { start: m, end: W.end } : k === "end" && (O.dayTimes[I] = { start: W.start, end: m }), X(), e.renderCoverageBars && e.renderCoverageBars(), window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+      C.dayTimes || (C.dayTimes = {});
+      var L = String(_), K = C.dayTimes[L] || { start: C.start || "08:00", end: C.end || "16:30" };
+      m === "start" ? C.dayTimes[L] = { start: k, end: K.end } : m === "end" && (C.dayTimes[L] = { start: K.start, end: k }), X(), e.renderCoverageBars && e.renderCoverageBars(), window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
     }
   }
-  function V(g) {
-    g && (e.linesView || (e.linesView = {}), g.sortBy && (e.linesView.sortBy = g.sortBy), g.sortDir && (e.linesView.sortDir = g.sortDir), X());
+  function M(h) {
+    h && (e.linesView || (e.linesView = {}), h.sortBy && (e.linesView.sortBy = h.sortBy), h.sortDir && (e.linesView.sortDir = h.sortDir), X());
   }
-  function P(g) {
-    g && (e.linesView || (e.linesView = {}), g.filterRole !== void 0 && (e.linesView.filterRole = g.filterRole), g.filterShift !== void 0 && (e.linesView.filterShift = g.filterShift), g.filterTeam !== void 0 && (e.linesView.filterTeam = g.filterTeam), g.filterSex !== void 0 && (e.linesView.filterSex = g.filterSex), g.filterDuty !== void 0 && (e.linesView.filterDuty = g.filterDuty), g.searchCode !== void 0 && (e.linesView.searchCode = g.searchCode), X());
+  function N(h) {
+    h && (e.linesView || (e.linesView = {}), h.filterRole !== void 0 && (e.linesView.filterRole = h.filterRole), h.filterShift !== void 0 && (e.linesView.filterShift = h.filterShift), h.filterTeam !== void 0 && (e.linesView.filterTeam = h.filterTeam), h.filterSex !== void 0 && (e.linesView.filterSex = h.filterSex), h.filterDuty !== void 0 && (e.linesView.filterDuty = h.filterDuty), h.filterDay !== void 0 && (e.linesView.filterDay = h.filterDay), h.searchCode !== void 0 && (e.linesView.searchCode = h.searchCode), X());
   }
   const X = () => {
     try {
-      const g = n._linesTableApp;
-      if (g)
-        D(g);
+      const h = n._linesTableApp;
+      if (h)
+        F(h);
       else {
         n.childNodes.length && (n.innerHTML = "");
-        const y = _();
-        typeof e.applyExportCssVars == "function" && e.applyExportCssVars(), n._linesTableApp = new An({
+        const p = v();
+        typeof e.applyExportCssVars == "function" && e.applyExportCssVars(), n._linesTableApp = new Un({
           target: n,
           props: {
-            rows: Array.isArray(y) ? y : [],
-            shiftOptions: f(),
-            teamOptions: v(),
+            rows: Array.isArray(p) ? p : [],
+            shiftOptions: u(),
+            teamOptions: g(),
             exportStyle: w(),
             currentSortBy: e.linesView && e.linesView.sortBy || "role",
             currentSortDir: e.linesView && e.linesView.sortDir || "asc",
@@ -1938,27 +2084,28 @@ function En(t) {
             filterTeam: e.linesView && e.linesView.filterTeam || "",
             filterSex: e.linesView && e.linesView.filterSex || "",
             filterDuty: e.linesView && e.linesView.filterDuty || "",
+            filterDay: e.linesView && e.linesView.filterDay || "",
             searchCode: e.linesView && e.linesView.searchCode || "",
-            onInlineEdit: S,
-            onDayToggle: C,
-            onDayDutyEdit: M,
+            onInlineEdit: O,
+            onDayToggle: T,
+            onDayDutyEdit: P,
             onDayTimeEdit: R,
-            onSort: V,
-            onFilter: P
+            onSort: M,
+            onFilter: N
           }
         });
       }
-    } catch (g) {
-      console.error("lines-table: refresh failed", g);
+    } catch (h) {
+      console.error("lines-table: refresh failed", h);
     }
   };
-  X(), e.bindLinesUI && e.bindLinesUI(), document.addEventListener("click", (g) => {
-    const y = g.target.closest?.(".tab-btn");
-    y && y.dataset.tab === "lines" && X();
-  }), ["lines:request-render", "lines:filter-change", "lines:sort-change", "lines:coverage-refresh"].forEach((g) => {
-    window.addEventListener(g, X);
+  X(), e.bindLinesUI && e.bindLinesUI(), document.addEventListener("click", (h) => {
+    const p = h.target.closest?.(".tab-btn");
+    p && p.dataset.tab === "lines" && X();
+  }), ["lines:request-render", "lines:filter-change", "lines:sort-change", "lines:coverage-refresh"].forEach((h) => {
+    window.addEventListener(h, X);
   }), n.refresh = X;
 }
 export {
-  En as initLinesTable
+  Yn as initLinesTable
 };

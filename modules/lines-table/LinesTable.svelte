@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from 'svelte';
   import { defaultExportStyle, readableTextHex } from '../shared/lines/exportStyle.js';
 
   export let rows = [];
@@ -25,6 +26,7 @@
   export let filterTeam = '';
   export let filterSex = '';
   export let filterDuty = '';
+  export let filterDay = '';
   export let searchCode = '';
 
   const BASE_POSITIONS = ['TSO', 'LTSO', 'STSO'];
@@ -99,6 +101,7 @@
       filterTeam,
       filterSex,
       filterDuty,
+      filterDay,
       searchCode
     });
   }
@@ -107,6 +110,34 @@
     if (currentSortBy !== col) return '';
     return currentSortDir === 'asc' ? ' ▲' : ' ▼';
   }
+
+  /* Virtualization State */
+  const ROW_HEIGHT = 42; // px per row
+  const BUFFER = 8;      // buffer rows above/below
+
+  let scrollTop = 0;
+  let viewportHeight = 600;
+  let scrollContainer;
+
+  function handleScroll(e) {
+    scrollTop = e.target.scrollTop;
+  }
+
+  $: totalRows = rows.length;
+  $: totalHeight = totalRows * ROW_HEIGHT;
+
+  $: startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);
+  $: endIndex = Math.min(totalRows, Math.ceil((scrollTop + viewportHeight) / ROW_HEIGHT) + BUFFER);
+
+  $: visibleRows = rows.slice(startIndex, endIndex);
+  $: offsetY = startIndex * ROW_HEIGHT;
+  $: paddingBottom = Math.max(0, totalHeight - (endIndex * ROW_HEIGHT));
+
+  onMount(() => {
+    if (scrollContainer) {
+      viewportHeight = scrollContainer.clientHeight || 600;
+    }
+  });
 </script>
 
 <div
@@ -165,6 +196,19 @@
           </select>
         </label>
         <label>
+          On Day
+          <select class="filter-select" bind:value={filterDay} on:change={handleFilterChange}>
+            <option value="">Any day</option>
+            <option value="0">Sun</option>
+            <option value="1">Mon</option>
+            <option value="2">Tue</option>
+            <option value="3">Wed</option>
+            <option value="4">Thu</option>
+            <option value="5">Fri</option>
+            <option value="6">Sat</option>
+          </select>
+        </label>
+        <label>
           Sex
           <select class="filter-select" bind:value={filterSex} on:change={handleFilterChange}>
             <option value="">All</option>
@@ -175,7 +219,7 @@
       </div>
     </div>
 
-    <div class="lines-virtual-root">
+    <div class="lines-virtual-root" bind:this={scrollContainer} on:scroll={handleScroll}>
       <table class="data-table lines-editable">
         <thead>
           <tr>
@@ -202,8 +246,11 @@
           </tr>
         </thead>
         <tbody>
-          {#each rows as row (row.id)}
-            <tr data-line-row={row?.id}>
+          {#if offsetY > 0}
+            <tr style="height: {offsetY}px;"><td colspan="20" style="padding:0; border:none;"></td></tr>
+          {/if}
+          {#each visibleRows as row (row.id)}
+            <tr data-line-row={row?.id} style="height: {ROW_HEIGHT}px;">
               <td>
                 <select class="line-edit" data-field="team" data-line-id={row?.id} value={row?.teamId ?? ''} on:change={(e) => emitEdit(row?.id, 'team', e.target.value)}>
                   <option value="">—</option>
@@ -311,6 +358,9 @@
           {:else}
             <tr><td colspan="20" class="muted" style="padding: 1.5rem; text-align: center;">No matching lines found.</td></tr>
           {/each}
+          {#if paddingBottom > 0}
+            <tr style="height: {paddingBottom}px;"><td colspan="20" style="padding:0; border:none;"></td></tr>
+          {/if}
         </tbody>
       </table>
     </div>

@@ -108,6 +108,7 @@ export function initLinesTable(scheduler) {
       filterTeam: (S.linesView && S.linesView.filterTeam) || '',
       filterSex: (S.linesView && S.linesView.filterSex) || '',
       filterDuty: (S.linesView && S.linesView.filterDuty) || '',
+      filterDay: (S.linesView && S.linesView.filterDay) || '',
       searchCode: (S.linesView && S.linesView.searchCode) || ''
     });
   }
@@ -149,20 +150,12 @@ export function initLinesTable(scheduler) {
     } else if (field === "start" || field === "end") {
       var timeVal = String(value || "").trim();
       if (S.isValidTimeText && !S.isValidTimeText(timeVal)) return;
+      if (field === "start") line.startTime = timeVal;
+      if (field === "end") line.endTime = timeVal;
       var shift = S.getShift ? S.getShift(line.shiftId) : null;
-      if (!shift) {
-        var shiftId = line.shiftId || ("SHIFT_" + line.id);
-        line.shiftId = shiftId;
-        if (!S.state.shifts) S.state.shifts = [];
-        shift = S.getShift ? S.getShift(shiftId) : null;
-        if (!shift) {
-          shift = { id: shiftId, name: shiftId, start: "08:00", end: "16:30", paid: line.paid || 8 };
-          S.state.shifts.push(shift);
-        }
-      }
-      if (field === "start") shift.start = timeVal;
-      if (field === "end") shift.end = timeVal;
-      line.shiftLabel = (shift.start || "") + "-" + (shift.end || "");
+      var curStart = line.startTime || (shift ? shift.start : "");
+      var curEnd = line.endTime || (shift ? shift.end : "");
+      line.shiftLabel = (curStart || "") + "-" + (curEnd || "");
     }
     if (S.updateStatus) S.updateStatus("Updated " + (line.lineCode || detail.lineId));
     refresh();
@@ -307,6 +300,7 @@ export function initLinesTable(scheduler) {
     if (detail.filterTeam !== undefined) S.linesView.filterTeam = detail.filterTeam;
     if (detail.filterSex !== undefined) S.linesView.filterSex = detail.filterSex;
     if (detail.filterDuty !== undefined) S.linesView.filterDuty = detail.filterDuty;
+    if (detail.filterDay !== undefined) S.linesView.filterDay = detail.filterDay;
     if (detail.searchCode !== undefined) S.linesView.searchCode = detail.searchCode;
     refresh();
   }
@@ -334,6 +328,7 @@ export function initLinesTable(scheduler) {
             filterTeam: (S.linesView && S.linesView.filterTeam) || '',
             filterSex: (S.linesView && S.linesView.filterSex) || '',
             filterDuty: (S.linesView && S.linesView.filterDuty) || '',
+            filterDay: (S.linesView && S.linesView.filterDay) || '',
             searchCode: (S.linesView && S.linesView.searchCode) || '',
             onInlineEdit: writeInlineEdit,
             onDayToggle: writeDayToggle,

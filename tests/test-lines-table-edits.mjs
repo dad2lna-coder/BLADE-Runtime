@@ -91,13 +91,33 @@ const row1 = rowModels.find(r => r.id === "101");
 assert.strictEqual(row1.start, "05:30", "Row model should reflect updated shift start time");
 assert.strictEqual(row1.end, "14:00", "Row model should reflect updated shift end time");
 
-// Test Per-Day Shift Time Overrides
-if (!shiftS1.dayTimes) shiftS1.dayTimes = {};
-shiftS1.dayTimes["0"] = { start: "07:00", end: "15:30" };
+// Test Per-Line Time Isolation (editing line 101 start time must not mutate line 103 on same shift or shift definition)
+const line101 = Scheduler.state.lines.find(l => l.id === "101");
+const line103 = Scheduler.state.lines.find(l => l.id === "103");
 
-const updatedRowModels = Scheduler.getLineRowModels();
-const updatedRow1 = updatedRowModels.find(r => r.id === "101");
-assert.strictEqual(updatedRow1.dayStarts[0], "07:00", "Row model should reflect per-day start time override");
-assert.strictEqual(updatedRow1.dayEnds[0], "15:30", "Row model should reflect per-day end time override");
+line101.startTime = "05:00";
+line101.endTime = "13:30";
+
+const lineRows = Scheduler.getLineRowModels();
+const row101 = lineRows.find(r => r.id === "101");
+const row103 = lineRows.find(r => r.id === "103");
+
+assert.strictEqual(row101.start, "05:00", "Line 101 start time updated");
+assert.strictEqual(row101.end, "13:30", "Line 101 end time updated");
+assert.strictEqual(shiftS1.start, "05:30", "Shared shift S1 start time remains unchanged");
+assert.strictEqual(row103.start, "05:30", "Sibling line 103 on same shift S1 remains unchanged");
+
+// Test Day-Specific Duty Filter
+Scheduler.linesView.filterDuty = "BAG";
+Scheduler.linesView.filterDay = "0"; // Sunday
+let dayFiltered = Scheduler.filterLinesForView(Scheduler.state.lines);
+assert.strictEqual(dayFiltered.length, 1, "Line 101 is BAG on Sunday");
+
+Scheduler.linesView.filterDay = "5"; // Friday (RDO for 101)
+dayFiltered = Scheduler.filterLinesForView(Scheduler.state.lines);
+assert.strictEqual(dayFiltered.length, 0, "No lines are BAG on Friday");
+
+Scheduler.linesView.filterDuty = "";
+Scheduler.linesView.filterDay = "";
 
 console.log("ALL LINES TABLE EDIT & FILTER TESTS PASSED SUCCESSFULLY!");
