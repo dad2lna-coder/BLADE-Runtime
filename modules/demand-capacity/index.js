@@ -137,10 +137,6 @@ export function refreshStaffCapacity(S) {
   return vi.lastCapacity;
 }
 
-/**
- * Paint Demand charts even if the sub-panel was display:none, then
- * un-hide chart/legend hosts so @media print can capture the SVGs.
- */
 export function prepareDemandCapacityForPrint(S, opts) {
   var scheduler = S && S.renderDemandCapacity ? S : window.Scheduler;
   if (opts && opts.S) scheduler = opts.S;
@@ -234,7 +230,7 @@ async function onImport(S) {
     var bits = ["Imported " + file.name, parsed.rowCount + " flights"];
     if (parsed.skipped) bits.push(parsed.skipped + " skipped");
     bits.push("multiplier " + mult);
-    setStatus(bits.join(" \u00b7 "));
+    setStatus(bits.join(" · "));
     if (S.updateStatus) S.updateStatus("Volume import: " + parsed.rowCount + " flights from " + file.name);
   } catch (err) {
     setStatus("Import failed: " + (err && err.message ? err.message : err));
@@ -255,7 +251,7 @@ function onRefresh(S) {
     setStatus(capLabel + " refreshed from current PAX staffing. Import a volume file to overlay demand.");
     return;
   }
-  setStatus("Refreshed " + capLabel + " \u00b7 " + (vi.rowCount || vi.flights.length) + " flights \u00b7 multiplier " + multiplierFromUi(S));
+  setStatus("Refreshed " + capLabel + " · " + (vi.rowCount || vi.flights.length) + " flights · multiplier " + multiplierFromUi(S));
 }
 
 function onWeightsChange(S) {
@@ -335,17 +331,117 @@ function wrapTab(S) {
   };
 }
 
+function createSchedulerAdapter(context, legacyS) {
+  const contracts = context.contracts || {};
+  const eventBus = context.eventBus;
+  const S = legacyS || window.Scheduler || {};
+  window.Scheduler = window.Scheduler || S;
+
+  const scheduleState = contracts.ScheduleState || {};
+  const adapter = {
+    get state() {
+      return {
+        lines: scheduleState.lines || S.state?.lines || [],
+        schedule: scheduleState.schedule || S.state?.schedule || {},
+        shifts: scheduleState.shifts || S.state?.shifts || [],
+        startDate: scheduleState.startDate || S.state?.startDate || null,
+        weekCount: S.state?.weekCount || 1,
+        functionCoverage: S.state?.functionCoverage || { mode: "none" },
+        extraPositions: S.state?.extraPositions || [],
+        issues: S.state?.issues || [],
+        volumeImport: S.state?.volumeImport || null
+      };
+    },
+    set state(val) {
+      if (S.state) Object.assign(S.state, val);
+      if (scheduleState.setLines && val.lines) scheduleState.setLines(val.lines);
+    },
+    timeToMin: (t) => scheduleState.timeToMin ? scheduleState.timeToMin(t) : S.timeToMin?.(t) || 0,
+    minToTime: (m) => scheduleState.minToTime ? scheduleState.minToTime(m) : S.minToTime?.(m) || "00:00",
+    parseStartDate: S.parseStartDate || ((val) => new Date(val)),
+    toDateInputValue: S.toDateInputValue || ((d) => {
+      var date = adapter.parseStartDate(d);
+      var dd = String(date.getDate()).padStart(2, "0");
+      var mm = String(date.getMonth() + 1).padStart(2, "0");
+      var yyyy = date.getFullYear();
+      return yyyy + "-" + mm + "-" + dd;
+    }),
+    dj: S.dj || ((val) => ({
+      startOf: () => adapter.parseStartDate(val).toISOString().slice(0, 10),
+      format: (fmt) => adapter.parseStartDate(val).toISOString().slice(0, 10),
+      add: (n) => { var d = new Date(adapter.parseStartDate(val)); d.setDate(d.getDate() + n); return d; },
+      day: () => ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][adapter.parseStartDate(val).getDay()],
+      toISODate: () => adapter.parseStartDate(val).toISOString().slice(0, 10),
+      toJSDate: () => adapter.parseStartDate(val)
+    })),
+    $: S.$ || ((id) => document.getElementById(id)),
+    getShift: S.getShift || (() => ({ start: "00:00", end: "00:00" })),
+    getEffectiveShiftTimes: S.getEffectiveShiftTimes || ((shiftId, dow) => {
+      var sh = adapter.getShift(shiftId);
+      return { start: sh.start, end: sh.end };
+    }),
+    lineCoversSlot: S.lineCoversSlot || (() => false),
+    lineRoleKey: S.lineRoleKey || ((line) => line.isStso ? "STSO" : line.isLtso ? "LTSO" : "TSO"),
+    getRotationDuty: S.getRotationDuty || (() => null),
+    shiftBadge: S.shiftBadge || (() => ""),
+    coverageView: S.coverageView || { stso: false, ltso: false, tso: true, funcView: "all" },
+    DAYS: S.DAYS || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    slotLabel: S.slotLabel || ((slot) => {
+      var h = Math.floor(slot / 60);
+      var mm = slot % 60;
+      return String(h).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+    }),
+    renderCoverageBars: S.renderCoverageBars || (() => {}),
+    renderShiftSummary: S.renderShiftSummary || (() => {}),
+    eventBus: eventBus,
+    on: eventBus?.subscribe || (() => () => {}),
+    emit: eventBus?.publish || (() => {}),
+    registerTab: context.registerTab || (() => {}),
+    registerFKey: context.registerFKey || (() => {}),
+    applyCoverageCutsToLines: S.applyCoverageCutsToLines || (() => {}),
+    updateStatus: S.updateStatus || (() => {}),
+    initShiftDayTimes: S.initShiftDayTimes || (() => {}),
+    initFunctionCoverage: S.initFunctionCoverage || (() => {}),
+    fillFunctionCoverageForm: S.fillFunctionCoverageForm || (() => {}),
+    hookConsoleIo: S.hookConsoleIo || (() => {}),
+    renderDemandCapacity: S.renderDemandCapacity || (() => {}),
+    prepareDemandCapacityForPrint: S.prepareDemandCapacityForPrint || (() => {})
+  };
+
+  return adapter;
+}
+
 export async function initDemandCapacity(scheduler) {
-  var S = scheduler || window.Scheduler;
+  const isRuntimeContext = scheduler && (
+    scheduler.contracts ||
+    scheduler.eventBus ||
+    scheduler.registerTab
+  );
+
+  let S;
+  if (isRuntimeContext) {
+    S = createSchedulerAdapter(scheduler, window.Scheduler);
+  } else {
+    S = scheduler || window.Scheduler;
+  }
+
   S.renderDemandCapacity = function () { renderDemandCapacity(S); };
   S.prepareDemandCapacityForPrint = function (opts) {
     prepareDemandCapacityForPrint(S, opts || {});
   };
+
   await ensurePanel();
   bind(S);
   wrapTab(S);
+
   if (S.state && S.state.volumeImport) {
     if (!S.state.volumeImport.lastCapacity) refreshStaffCapacity(S);
     renderDemandCapacity(S);
   }
+
+  if (S.eventBus) {
+    S.eventBus.publish("demand-capacity:ready", { module: "demand-capacity" });
+  }
+
+  return S;
 }
