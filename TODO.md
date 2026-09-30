@@ -61,8 +61,8 @@ After completing a requested task:
 ## Active Tasks
 
 - [x] Make Runtime self-contained by ensuring S is always initialized (completed)
-- [x] Review and clean up irrelevant files from context (completed)
-- [x] Run verification tests for Runtime changes (completed)
+- [ ] Review and clean up irrelevant files from context – Need to identify and remove any files that are no longer relevant to the runtime migration.
+- [ ] Run verification tests for Runtime changes – Need to execute the test suite to confirm the runtime changes work correctly.
 
 ## Completed Changes
 
