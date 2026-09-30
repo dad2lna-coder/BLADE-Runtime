@@ -3,7 +3,7 @@
  *  Extra-position cards named ESTI/MSTI must not build a second PT path.
  */
 
-import { getBandKey } from "./buildLines.js";
+import { getBandKey, createPRNG } from "./buildLines.js";
 
 export var TRAINING_CLASSES = ["ESTI", "MSTI"];
 
@@ -84,6 +84,10 @@ export function buildTrainingClassLines(S) {
   TRAINING_CLASSES.forEach(function (cls, ci) {
     var n = counts[cls] || 0;
     if (!n) return;
+
+    var seed = ((S.state && S.state.activeSeed) || 42) + 4000 + ci * 100;
+    var prng = createPRNG(seed);
+
     var parked = pickShiftQueue(shifts.length ? shifts : [fallback], n);
 
     // Collect slots for this training class
@@ -104,10 +108,11 @@ export function buildTrainingClassLines(S) {
       bands[slot.bandKey].push(slot);
     });
 
-    // Pass 1: Assign RDO seeds per bandKey round-robin
+    // Pass 1: Assign RDO seeds per bandKey round-robin using seeded offset
     Object.keys(bands).forEach(function (bk) {
       var bSlots = bands[bk];
-      var seedIdx = 0;
+      var seedOffset = Math.floor(prng() * 7);
+      var seedIdx = seedOffset;
       bSlots.forEach(function (slot) {
         slot.rdoSeed = seedIdx % 7;
         seedIdx++;

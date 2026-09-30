@@ -137,6 +137,57 @@ test('Extra positions and training classes get balanced band x class RDOs', () =
   assert.equal(trainingLines[0].empClass, 'ESTI');
 });
 
+test('Fixed seed produces identical schedule; different seed can vary schedule', () => {
+  const S1 = {
+    state: {
+      shifts: [{ id: 'S1', name: 'AM1', paid: 8 }],
+      ftM: 5,
+      ftF: 5,
+      activeSeed: 12345,
+      issues: []
+    },
+    targetWorkDays: () => 5,
+    shiftLabel: (s) => s.name,
+    consecutiveRdos: (count, seed) => [seed, (seed + 1) % 7]
+  };
+
+  const S2 = {
+    state: {
+      shifts: [{ id: 'S1', name: 'AM1', paid: 8 }],
+      ftM: 5,
+      ftF: 5,
+      activeSeed: 12345,
+      issues: []
+    },
+    targetWorkDays: () => 5,
+    shiftLabel: (s) => s.name,
+    consecutiveRdos: (count, seed) => [seed, (seed + 1) % 7]
+  };
+
+  const S3 = {
+    state: {
+      shifts: [{ id: 'S1', name: 'AM1', paid: 8 }],
+      ftM: 5,
+      ftF: 5,
+      activeSeed: 99999,
+      issues: []
+    },
+    targetWorkDays: () => 5,
+    shiftLabel: (s) => s.name,
+    consecutiveRdos: (count, seed) => [seed, (seed + 1) % 7]
+  };
+
+  const lines1 = buildLines(S1, { S1: 10 });
+  const lines2 = buildLines(S2, { S1: 10 });
+  const lines3 = buildLines(S3, { S1: 10 });
+
+  // Fixed seed 12345 produces exact same line sex & RDO mapping
+  assert.deepEqual(lines1.map(l => ({ sex: l.sex, rdo: l.rdoDays })), lines2.map(l => ({ sex: l.sex, rdo: l.rdoDays })));
+
+  // Different seed 99999 changes RDO / sex mapping
+  assert.notDeepEqual(lines1.map(l => ({ sex: l.sex, rdo: l.rdoDays })), lines3.map(l => ({ sex: l.sex, rdo: l.rdoDays })));
+});
+
 test('Grouped shift crew shares RDO and sex balance pool for STSO/LTSO', () => {
   const S = {
     state: {

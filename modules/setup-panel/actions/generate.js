@@ -35,6 +35,15 @@ export function generate(S) {
   if (S.collectSetupInputs) S.collectSetupInputs();
   if (S.readShiftsFromDom) S.readShiftsFromDom();
 
+  // Handle active seed for generation
+  var seedInput = String(S.state.generateSeed || "random").trim().toLowerCase();
+  if (!seedInput || seedInput === "random") {
+    S.state.activeSeed = Math.floor(Math.random() * 2147483647);
+  } else {
+    var parsedSeed = parseInt(seedInput, 10);
+    S.state.activeSeed = Number.isFinite(parsedSeed) ? Math.abs(parsedSeed) : 42;
+  }
+
   if (!S.state.shifts || !S.state.shifts.length) {
     S.state.issues.push("Add at least one shift with a start and end time.");
     if (S.renderAll) S.renderAll();
