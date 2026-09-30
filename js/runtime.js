@@ -67,9 +67,7 @@
           var mm = normalized % 60;
           return String(h).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
         },
-        // New contract getters
         getShift: function (id) {
-          // Return a placeholder shift object; actual data would come from schedule
           return {
             id: id,
             start: "00:00",
@@ -78,28 +76,23 @@
           };
         },
         getEffectiveShiftTimes: function (shiftId, dow) {
-          // Return placeholder times; actual logic would use schedule and dow
           return {
             start: "03:30",
             end: "23:00"
           };
         },
         lineCoversSlot: function (line, dow, slotStart) {
-          // Placeholder: assume coverage based on schedule
           return true;
         },
         lineRoleKey: function (line) {
-          // Simple heuristic based on role
           if (line.isStso) return "STSO";
           if (line.isLtso) return "LTSO";
           return "TSO";
         },
         getRotationDuty: function (shiftId) {
-          // Placeholder: assume all shifts cover all days
           return "WORK";
         },
         shiftBadge: function (shiftId) {
-          // Placeholder badge based on shift ID length
           return "S" + String(shiftId).length;
         }
       },
@@ -109,6 +102,9 @@
         setSlots: function (slots) {
           this.slots = slots;
           runtime.eventBus.publish("coverage:slots:updated", slots);
+        },
+        getHourlyByDow: function () {
+          return this.hourlyByDow;
         }
       },
       ThemeState: {
@@ -180,6 +176,11 @@
           if (!S.fkeys) S.fkeys = [];
           S.fkeys.push(fkey);
         }
+      };
+
+      try {
+        initFn.call(mod, context);
+        moduleInstance.initialized = true;
       } catch (e) {
         console.error("Failed to initialize module " + moduleInstance.name + ":", e);
       }
@@ -275,11 +276,5 @@
   } else {
     init();
   }
-})
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init);
-} else {
-  init();
-}
-)();
+})();
