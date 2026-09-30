@@ -188,35 +188,66 @@ test('Fixed seed produces identical schedule; different seed can vary schedule',
   assert.notDeepEqual(lines1.map(l => ({ sex: l.sex, rdo: l.rdoDays })), lines3.map(l => ({ sex: l.sex, rdo: l.rdoDays })));
 });
 
-test('respinSelectedSlices is deterministic with fixed seed', async () => {
+test('respinSelectedSlices reshuffles on each click and options.keepSeed provides determinism', async () => {
   const S = {
     state: {
       activeSeed: 98765,
       generateSeed: "98765",
       lines: [
         { id: 1, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [0, 1] },
-        { id: 2, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [2, 3] }
+        { id: 2, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [2, 3] },
+        { id: 3, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [4, 5] },
+        { id: 4, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [1, 2] }
       ],
-      schedule: { 1: [], 2: [] },
+      schedule: { 1: [], 2: [], 3: [], 4: [] },
       weekCount: 1
     },
     DAYS: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     targetWorkDays: () => 5,
-    consecutiveRdos: (count, seed) => [(seed + 1) % 7, (seed + 2) % 7],
+    consecutiveRdos: (count, seed) => [seed % 7, (seed + 1) % 7],
     buildScheduleForLine: () => ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"]
   };
 
   const mod = await import('../modules/setup-panel/actions/shiftsTable.js');
   mod.attachShiftsTable(S);
 
+  // Consecutive respin calls reshuffle with fresh entropy
   S.respinSelectedSlices(['0330 · STSO · M']);
   const rdoBatch1 = S.state.lines.map(l => l.rdoDays.slice());
 
-  // Respin again with same seed -> produces exact same RDOs
   S.respinSelectedSlices(['0330 · STSO · M']);
   const rdoBatch2 = S.state.lines.map(l => l.rdoDays.slice());
 
-  assert.deepEqual(rdoBatch1, rdoBatch2);
+  assert.notDeepEqual(rdoBatch1, rdoBatch2);
+
+  // When keepSeed: true is passed, result is deterministic
+  S.respinSelectedSlices(['0330 · STSO · M'], { keepSeed: true });
+  const rdoBatch3 = S.state.lines.map(l => l.rdoDays.slice());
+
+  S.respinSelectedSlices(['0330 · STSO · M'], { keepSeed: true });
+  const rdoBatch4 = S.state.lines.map(l => l.rdoDays.slice());
+
+  assert.deepEqual(rdoBatch3, rdoBatch4);
+});
+
+test('renderRdoRespinSlices defaults checkboxes to checked and empty respin warns', async () => {
+  let statusMsg = '';
+  const S = {
+    state: {
+      lines: [
+        { id: 1, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [0, 1] }
+      ],
+      schedule: { 1: [] }
+    },
+    updateStatus: (msg) => { statusMsg = msg; }
+  };
+
+  const mod = await import('../modules/setup-panel/actions/shiftsTable.js');
+  mod.attachShiftsTable(S);
+
+  // Calling respin with empty selection warns user
+  S.respinSelectedSlices([]);
+  assert.equal(statusMsg, "No slices selected for respin.");
 });
 
 test('renderRdoMatrixModal sorts shifts earliest to latest by start time', async () => {
