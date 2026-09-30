@@ -29,7 +29,7 @@
 
 ## Known Areas To Verify
 
-- [ ] Runtime and index.html may both be loading/initializing modules
+- [x] Runtime and index.html may both be loading/initializing modules
 - [ ] Runtime contracts may duplicate existing Scheduler state
 - [ ] Dependency sorting may not actually enforce initialization order
 - [ ] Tabs may still be generated outside Runtime
@@ -60,8 +60,13 @@ After completing a requested task:
 
 ## Active Tasks
 
-- [~] Make Runtime self-contained by ensuring S is always initialized (in_progress)
+- [x] Make Runtime self-contained by ensuring S is always initialized (completed)
 - [ ] Review and clean up irrelevant files from context (pending)
 - [ ] Run verification tests for Runtime changes (pending)
+
+## Completed Changes
+
+- `js/runtime.js`: Added `initCoreSchedulerAPIs()` to ensure `S.switchTab`, `S.renderAll`, `S.switchReportSub`, and `S.state` exist before any module loads.
+- `index.html`: Removed module loading loop from the inline module script; it now only builds tab/report UI from manifest. Module loading is exclusively handled by `js/runtime.js`.
 
 # Discord Watcher Test
