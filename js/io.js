@@ -116,6 +116,7 @@ window.Scheduler = window.Scheduler || {};
         close: S.state.close,
         startDate: startDateValue,
         weekCount: S.state.weekCount,
+        generateSeed: S.state.generateSeed || "random",
         useDynamicHours: !!S.state.useDynamicHours,
         dayHours: S.state.dayHours || null,
         ftM: S.state.ftM, ftF: S.state.ftF,
@@ -176,6 +177,7 @@ window.Scheduler = window.Scheduler || {};
       S.state.stsoF = Math.floor(S.safeNumber(cfg.stsoF, 0, 0, null));
     }
     S.state.startDate = S.parseStartDate(cfg.startDate || payload.startDate || null);
+    S.state.generateSeed = cfg.generateSeed || payload.generateSeed || "random";
     S.state.shifts = Array.isArray(cfg.shifts) && cfg.shifts.length
       ? cfg.shifts.map(S.normalizeShift || function (s) { return s; })
       : (S.defaultShifts ? S.defaultShifts() : []);
@@ -224,6 +226,8 @@ window.Scheduler = window.Scheduler || {};
     }
     var startEl = document.getElementById("cfg-start");
     if (startEl && S.toDateInputValue) startEl.value = S.toDateInputValue(S.state.startDate);
+    var seedEl = document.getElementById("cfg-generate-seed");
+    if (seedEl) seedEl.value = S.state.generateSeed || "random";
     if (S.renderShiftsTable) S.renderShiftsTable();
     if (S.renderAll) S.renderAll();
     if (S.renderCoverageBars) S.renderCoverageBars();

@@ -438,16 +438,28 @@ export function attachShiftsTable(S) {
       }
     });
 
+    // Use active generate seed PRNG or fallback to state generateSeed
+    var seedBase = (S.state && typeof S.state.activeSeed === "number")
+      ? S.state.activeSeed
+      : (S.state && S.state.generateSeed && S.state.generateSeed !== "random" ? parseInt(S.state.generateSeed, 10) : 42);
+    if (!Number.isFinite(seedBase)) seedBase = 42;
+
     var respinCount = 0;
-    Object.keys(targetGroups).forEach(function (key) {
+    Object.keys(targetGroups).forEach(function (key, groupIdx) {
       var gLines = targetGroups[key];
       if (!gLines.length) return;
 
-      // Seeded random seed for this respin batch
-      var seed = Math.floor(Math.random() * 2147483647);
+      // Deterministic PRNG per slice key based on setup seed
+      var prngSeed = (Math.abs(seedBase) + groupIdx * 7919 + 1337) >>> 0;
+      var prng = function () {
+        var t = (prngSeed += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
 
       // Re-assign RDO seeds round-robin / shuffled among this slice's lines
-      var startSeed = Math.floor(Math.random() * 7);
+      var startSeed = Math.floor(prng() * 7);
       gLines.forEach(function (l, idx) {
         var rdoSeed = (startSeed + idx) % 7;
         var workDays = S.targetWorkDays ? S.targetWorkDays(l.shiftId, l.empClass) : ((+l.paid || 8) >= 10 ? 4 : 5);
