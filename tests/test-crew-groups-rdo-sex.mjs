@@ -188,6 +188,37 @@ test('Fixed seed produces identical schedule; different seed can vary schedule',
   assert.notDeepEqual(lines1.map(l => ({ sex: l.sex, rdo: l.rdoDays })), lines3.map(l => ({ sex: l.sex, rdo: l.rdoDays })));
 });
 
+test('respinSelectedSlices is deterministic with fixed seed', async () => {
+  const S = {
+    state: {
+      activeSeed: 98765,
+      generateSeed: "98765",
+      lines: [
+        { id: 1, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [0, 1] },
+        { id: 2, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [2, 3] }
+      ],
+      schedule: { 1: [], 2: [] },
+      weekCount: 1
+    },
+    DAYS: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    targetWorkDays: () => 5,
+    consecutiveRdos: (count, seed) => [(seed + 1) % 7, (seed + 2) % 7],
+    buildScheduleForLine: () => ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"]
+  };
+
+  const mod = await import('../modules/setup-panel/actions/shiftsTable.js');
+  mod.attachShiftsTable(S);
+
+  S.respinSelectedSlices(['0330 · STSO · M']);
+  const rdoBatch1 = S.state.lines.map(l => l.rdoDays.slice());
+
+  // Respin again with same seed -> produces exact same RDOs
+  S.respinSelectedSlices(['0330 · STSO · M']);
+  const rdoBatch2 = S.state.lines.map(l => l.rdoDays.slice());
+
+  assert.deepEqual(rdoBatch1, rdoBatch2);
+});
+
 test('exportAllRdoMatrixCsv exports all sexed position lines and respinSelectedSlices updates target lines', async () => {
   const S = {
     state: {
