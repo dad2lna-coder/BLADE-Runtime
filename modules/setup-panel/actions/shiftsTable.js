@@ -291,12 +291,14 @@ export function attachShiftsTable(S) {
       return;
     }
 
-    // Dynamic position options
+    // Dynamic position options (skipping ESTI/MSTI which have no sex breakdown)
     var posOptions = ["STSO", "LTSO", "TSO", "FT TSO", "PT TSO"];
     lines.forEach(function (l) {
       var name = l.extraName || l.position || l.empClass;
       if (name && posOptions.indexOf(name) === -1 && name !== "FT" && name !== "PT") {
-        posOptions.push(name);
+        if (name !== "ESTI" && name !== "MSTI") {
+          posOptions.push(name);
+        }
       }
     });
 
