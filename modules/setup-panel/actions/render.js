@@ -135,6 +135,10 @@ export function bindSetupActions(S) {
       var key = cb.getAttribute("data-slice-key");
       if (key) selected.push(key);
     });
+    if (!selected.length) {
+      if (S.updateStatus) S.updateStatus("No slices selected for respin.");
+      return;
+    }
     if (S.respinSelectedSlices) S.respinSelectedSlices(selected);
     if (S.closeRdoRespinModal) S.closeRdoRespinModal();
   });

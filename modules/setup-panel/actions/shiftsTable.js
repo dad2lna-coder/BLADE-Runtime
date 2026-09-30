@@ -431,13 +431,14 @@ export function attachShiftsTable(S) {
     listEl.innerHTML = keys.map(function (k) {
       var info = sliceMap[k];
       return '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;cursor:pointer">' +
-        '<input type="checkbox" class="respin-slice-cb" data-slice-key="' + k.replace(/"/g, "&quot;") + '" />' +
+        '<input type="checkbox" class="respin-slice-cb" data-slice-key="' + k.replace(/"/g, "&quot;") + '" checked />' +
         '<span><strong>' + info.key + '</strong> <span class="muted">(' + info.count + ' line' + (info.count > 1 ? 's' : '') + ')</span></span>' +
         '</label>';
     }).join("");
   };
 
-  S.respinSelectedSlices = function (selectedKeys) {
+  S.respinSelectedSlices = function (selectedKeys, opts) {
+    var options = opts || {};
     if (!selectedKeys || !selectedKeys.length) {
       if (S.updateStatus) S.updateStatus("No slices selected for respin.");
       return;
@@ -462,6 +463,11 @@ export function attachShiftsTable(S) {
       }
     });
 
+    if (!options.keepSeed) {
+      S._respinNonce = (S._respinNonce || 0) + 1;
+    }
+    var nonce = options.nonce !== undefined ? options.nonce : (S._respinNonce || 0);
+
     // Use active generate seed PRNG or fallback to state generateSeed
     var seedBase = (S.state && typeof S.state.activeSeed === "number")
       ? S.state.activeSeed
@@ -473,8 +479,8 @@ export function attachShiftsTable(S) {
       var gLines = targetGroups[key];
       if (!gLines.length) return;
 
-      // Deterministic PRNG per slice key based on setup seed
-      var prngSeed = (Math.abs(seedBase) + groupIdx * 7919 + 1337) >>> 0;
+      // PRNG per slice key incorporating respin nonce for fresh entropy on each click
+      var prngSeed = (Math.abs(seedBase) + groupIdx * 7919 + nonce * 10007 + 1337) >>> 0;
       var prng = function () {
         var t = (prngSeed += 0x6d2b79f5);
         t = Math.imul(t ^ (t >>> 15), t | 1);
@@ -482,10 +488,21 @@ export function attachShiftsTable(S) {
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
 
-      // Re-assign RDO seeds round-robin / shuffled among this slice's lines
-      var startSeed = Math.floor(prng() * 7);
+      // Fisher-Yates shuffle seed indices and apply random offset
+      var seedPool = [];
+      for (var sIdx = 0; sIdx < gLines.length; sIdx++) {
+        seedPool.push(sIdx % 7);
+      }
+      for (var i = seedPool.length - 1; i > 0; i--) {
+        var j = Math.floor(prng() * (i + 1));
+        var temp = seedPool[i];
+        seedPool[i] = seedPool[j];
+        seedPool[j] = temp;
+      }
+      var offset = Math.floor(prng() * 7);
+
       gLines.forEach(function (l, idx) {
-        var rdoSeed = (startSeed + idx) % 7;
+        var rdoSeed = (seedPool[idx] + offset) % 7;
         var workDays = S.targetWorkDays ? S.targetWorkDays(l.shiftId, l.empClass) : ((+l.paid || 8) >= 10 ? 4 : 5);
         var rdoCount = Math.max(1, 7 - workDays);
         var hard = Array.isArray(l.rdoHard) && l.rdoHard
