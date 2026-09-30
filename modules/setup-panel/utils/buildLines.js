@@ -116,30 +116,13 @@ export function buildLines(S, counts) {
     bands[slot.bandKey].push(slot);
   });
 
-  // Pass 1: Assign RDO seeds and patterns round-robin within each role x bandKey
+  // Pass 1: Assign RDO seeds round-robin within each role x bandKey
   Object.keys(bands).forEach(function (bk) {
     var bSlots = bands[bk];
     var seedIdx = 0;
     bSlots.forEach(function (slot) {
-      var workDays = S.targetWorkDays(slot.def.id, slot.isLong ? "FT" : "FT");
-      var rdoCount = 7 - workDays;
-      var hard = Array.isArray(slot.def.rdoHard)
-        ? slot.def.rdoHard.map(Number).filter(function (x) { return x >= 0 && x <= 6; })
-        : [];
       slot.rdoSeed = seedIdx % 7;
       seedIdx++;
-      if (hard.length > 0) {
-        slot.rdoDays = hard.slice();
-        if (slot.rdoDays.length < rdoCount) {
-          for (var d = 0; d < 7 && slot.rdoDays.length < rdoCount; d++) {
-            if (slot.rdoDays.indexOf(d) < 0) slot.rdoDays.push(d);
-          }
-        } else if (slot.rdoDays.length > rdoCount) slot.rdoDays = slot.rdoDays.slice(0, rdoCount);
-        slot.rdoHard = true;
-      } else {
-        slot.rdoDays = S.consecutiveRdos(rdoCount, slot.rdoSeed);
-        slot.rdoHard = false;
-      }
     });
   });
 
@@ -189,6 +172,25 @@ export function buildLines(S, counts) {
       }
       placedGlobal[person.sex]++;
       slot.person = person;
+
+      // Compute correct workDays and rdoDays based on assigned empClass (FT vs PT)
+      var workDays = S.targetWorkDays(slot.def.id, person.empClass);
+      var rdoCount = 7 - workDays;
+      var hard = Array.isArray(slot.def.rdoHard)
+        ? slot.def.rdoHard.map(Number).filter(function (x) { return x >= 0 && x <= 6; })
+        : [];
+      if (hard.length > 0) {
+        slot.rdoDays = hard.slice();
+        if (slot.rdoDays.length < rdoCount) {
+          for (var d = 0; d < 7 && slot.rdoDays.length < rdoCount; d++) {
+            if (slot.rdoDays.indexOf(d) < 0) slot.rdoDays.push(d);
+          }
+        } else if (slot.rdoDays.length > rdoCount) slot.rdoDays = slot.rdoDays.slice(0, rdoCount);
+        slot.rdoHard = true;
+      } else {
+        slot.rdoDays = S.consecutiveRdos(rdoCount, slot.rdoSeed);
+        slot.rdoHard = false;
+      }
     });
   });
 

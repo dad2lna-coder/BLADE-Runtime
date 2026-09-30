@@ -269,6 +269,124 @@ export function attachShiftsTable(S) {
     if (S.renderAll) S.renderAll();
   };
 
+  S.openRdoMatrixModal = function () {
+    var modal = document.getElementById("rdo-matrix-modal");
+    if (modal) { modal.style.display = "flex"; modal.setAttribute("aria-hidden", "false"); }
+    S.renderRdoMatrixModal();
+  };
+
+  S.closeRdoMatrixModal = function () {
+    var modal = document.getElementById("rdo-matrix-modal");
+    if (modal) { modal.style.display = "none"; modal.setAttribute("aria-hidden", "true"); }
+  };
+
+  S.renderRdoMatrixModal = function () {
+    var selectEl = document.getElementById("rdo-matrix-pos-select");
+    var tableWrap = document.getElementById("rdo-matrix-table-wrap");
+    if (!tableWrap) return;
+
+    var lines = (S.state && S.state.lines) || [];
+    if (!lines.length) {
+      tableWrap.innerHTML = '<p class="muted">No generated schedule lines available. Click <strong>GENERATE</strong> first.</p>';
+      return;
+    }
+
+    // Dynamic position options
+    var posOptions = ["STSO", "LTSO", "TSO", "FT TSO", "PT TSO"];
+    lines.forEach(function (l) {
+      var name = l.extraName || l.position || l.empClass;
+      if (name && posOptions.indexOf(name) === -1 && name !== "FT" && name !== "PT") {
+        posOptions.push(name);
+      }
+    });
+
+    var currentFilter = selectEl ? selectEl.value : "";
+    if (!currentFilter) currentFilter = "STSO";
+
+    if (selectEl) {
+      selectEl.innerHTML = posOptions.map(function (opt) {
+        var sel = opt === currentFilter ? " selected" : "";
+        return '<option value="' + opt + '"' + sel + '>' + opt + '</option>';
+      }).join("");
+    }
+
+    function lineMatches(l, filter) {
+      var f = (filter || "STSO").toUpperCase();
+      if (f === "STSO") return l.isStso || l.position === "STSO" || l.empClass === "STSO";
+      if (f === "LTSO") return l.isLtso || l.position === "LTSO" || l.empClass === "LTSO";
+      if (f === "TSO") return (l.position === "TSO" || l.empClass === "FT" || l.empClass === "PT") && !l.isExtra && !l.isTraining;
+      if (f === "FT TSO" || f === "FT") return l.empClass === "FT" && !l.isExtra && !l.isTraining;
+      if (f === "PT TSO" || f === "PT") return l.empClass === "PT" && !l.isExtra && !l.isTraining;
+      var lPos = (l.position || l.extraName || l.empClass || "").toUpperCase();
+      return lPos === f;
+    }
+
+    var matchingLines = lines.filter(function (l) { return lineMatches(l, currentFilter); });
+    if (!matchingLines.length) {
+      tableWrap.innerHTML = '<p class="muted">No lines found for position class <strong>' + currentFilter + '</strong>.</p>';
+      return;
+    }
+
+    var days = S.DAYS || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    function formatRdoPattern(rdoDays) {
+      if (!rdoDays || !rdoDays.length) return "None";
+      var sorted = rdoDays.slice().map(Number).sort(function (a, b) { return a - b; });
+      return sorted.map(function (d) { return days[d] || d; }).join("-");
+    }
+
+    // Collect all active RDO patterns across matching lines
+    var rdoPatternsMap = {};
+    matchingLines.forEach(function (l) {
+      var pat = formatRdoPattern(l.rdoDays);
+      rdoPatternsMap[pat] = true;
+    });
+    var rdoPatterns = Object.keys(rdoPatternsMap).sort();
+
+    // Group matching lines by Shift Name
+    var shiftsMap = {};
+    matchingLines.forEach(function (l) {
+      var shiftName = l.shiftName || l.shiftLabel || l.shiftId || "Shift";
+      if (!shiftsMap[shiftName]) shiftsMap[shiftName] = [];
+      shiftsMap[shiftName].push(l);
+    });
+
+    var rowsHtml = [];
+    Object.keys(shiftsMap).forEach(function (shiftName) {
+      var sLines = shiftsMap[shiftName];
+      ["M", "F"].forEach(function (sex) {
+        var sexLines = sLines.filter(function (l) { return (l.sex || "").toUpperCase() === sex; });
+        var countsByPattern = {};
+        sexLines.forEach(function (l) {
+          var pat = formatRdoPattern(l.rdoDays);
+          countsByPattern[pat] = (countsByPattern[pat] || 0) + 1;
+        });
+
+        var cellCts = rdoPatterns.map(function (pat) {
+          var ct = countsByPattern[pat] || 0;
+          return '<td style="text-align:center;' + (ct > 0 ? "font-weight:bold" : "opacity:0.4") + '">' + ct + '</td>';
+        }).join("");
+
+        rowsHtml.push(
+          '<tr>' +
+          '<td><strong>' + shiftName + '</strong></td>' +
+          '<td><span class="badge" style="background:' + (sex === "M" ? "#007bff" : "#e83e8c") + ';color:#fff;padding:0.15rem 0.4rem;border-radius:3px">' + sex + '</span></td>' +
+          cellCts +
+          '</tr>'
+        );
+      });
+    });
+
+    var headerCells = rdoPatterns.map(function (pat) {
+      return '<th style="text-align:center">' + pat + '</th>';
+    }).join("");
+
+    tableWrap.innerHTML =
+      '<table class="data-table" style="width:100%;border-collapse:collapse">' +
+      '<thead><tr><th>Shift</th><th>Sex</th>' + headerCells + '</tr></thead>' +
+      '<tbody>' + rowsHtml.join("") + '</tbody>' +
+      '</table>';
+  };
+
   S.initShiftDayTimes = function () {
     if (S._sdtBound) return;
     S._sdtBound = true;

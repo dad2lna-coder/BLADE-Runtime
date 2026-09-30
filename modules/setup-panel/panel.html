@@ -106,5 +106,22 @@
 </div>
 <div id="crew-groups-list" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem"></div>
 </details>
-<div class="card"><div class="section-title">Shifts</div><div class="toolbar"><button type="button" class="btn" id="btn-add-shift">+ Add shift</button></div><div class="lines-scroll" style="max-height:none"><table class="data-table"><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Phase</th><th>Paid h</th><th>TSO force</th><th>LTSO force</th><th>STSO force</th><th>Hard RDOs (Sun–Sat)</th><th>Day times</th><th>Crew group</th></tr></thead><tbody id="shifts-tbody"></tbody></table></div></div>
+<div class="card"><div class="section-title">Shifts</div><div class="toolbar"><button type="button" class="btn" id="btn-add-shift">+ Add shift</button> <button type="button" class="btn btn-amber" id="btn-rdo-matrix">RDO by sex</button></div><div class="lines-scroll" style="max-height:none"><table class="data-table"><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Phase</th><th>Paid h</th><th>TSO force</th><th>LTSO force</th><th>STSO force</th><th>Hard RDOs (Sun–Sat)</th><th>Day times</th><th>Crew group</th></tr></thead><tbody id="shifts-tbody"></tbody></table></div></div>
 <div id="issues"></div>
+
+<div id="rdo-matrix-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center">
+  <div class="card" style="max-width:90vw;max-height:85vh;overflow:auto;margin:5vh auto;background:var(--bg-card,#fff);padding:1.25rem;border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.25)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:1px solid #ddd;padding-bottom:0.5rem">
+      <h3 style="margin:0;font-size:1.15rem">RDO × Sex Matrix</h3>
+      <button type="button" class="btn btn-red" id="rdo-matrix-close">✕</button>
+    </div>
+    <div class="toolbar" style="margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem">
+      <label style="font-weight:600">Position Class:
+        <select id="rdo-matrix-pos-select" style="padding:0.25rem 0.5rem;font-size:0.9rem"></select>
+      </label>
+    </div>
+    <div id="rdo-matrix-table-wrap" class="lines-scroll" style="max-height:60vh">
+      <p class="muted">No generated schedule available. Click GENERATE first.</p>
+    </div>
+  </div>
+</div>
