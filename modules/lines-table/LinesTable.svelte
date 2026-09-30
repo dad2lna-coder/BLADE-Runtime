@@ -128,6 +128,11 @@
   $: totalRows = rows.length;
   $: totalHeight = totalRows * ROW_HEIGHT;
 
+  $: if (scrollContainer && totalHeight >= 0 && scrollTop > totalHeight) {
+    scrollContainer.scrollTop = Math.max(0, totalHeight - viewportHeight);
+    scrollTop = scrollContainer.scrollTop;
+  }
+
   $: startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);
   $: endIndex = Math.min(totalRows, Math.ceil((scrollTop + viewportHeight) / ROW_HEIGHT) + BUFFER);
 
@@ -250,7 +255,7 @@
         </thead>
         <tbody>
           {#if offsetY > 0}
-            <tr style="height: {offsetY}px;"><td colspan="20" style="padding:0; border:none;"></td></tr>
+            <tr class="spacer-row" style="height: {offsetY}px;"><td colspan="20" class="spacer-cell" style="height: {offsetY}px;"></td></tr>
           {/if}
           {#each visibleRows as row (row.id)}
             <tr data-line-row={row?.id} style="height: {ROW_HEIGHT}px;">
@@ -364,7 +369,7 @@
             <tr><td colspan="20" class="muted" style="padding: 1.5rem; text-align: center;">No matching lines found.</td></tr>
           {/each}
           {#if paddingBottom > 0}
-            <tr style="height: {paddingBottom}px;"><td colspan="20" style="padding:0; border:none;"></td></tr>
+            <tr class="spacer-row" style="height: {paddingBottom}px;"><td colspan="20" class="spacer-cell" style="height: {paddingBottom}px;"></td></tr>
           {/if}
         </tbody>
       </table>
@@ -429,7 +434,24 @@
     border-collapse: collapse;
     font-size: 0.8rem;
     color: var(--text, #e4e4e7);
-    table-layout: auto;
+    table-layout: fixed;
+  }
+  .lines-virtual-root tr {
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
+    box-sizing: border-box;
+  }
+  .lines-virtual-root tr.spacer-row,
+  .lines-virtual-root tr.spacer-row td {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    background: transparent !important;
   }
   .lines-virtual-root th {
     position: sticky;
@@ -444,6 +466,7 @@
     z-index: 2;
     font-size: 0.75rem;
     letter-spacing: 0.03em;
+    box-sizing: border-box;
   }
   .lines-virtual-root th.sortable {
     cursor: pointer;
@@ -460,8 +483,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     height: 42px;
+    min-height: 42px;
+    max-height: 42px;
+    box-sizing: border-box;
     text-align: center;
     font-size: 0.8rem;
+    vertical-align: middle;
   }
   .lines-virtual-root tbody tr:hover {
     background: rgba(125, 125, 125, 0.08);
@@ -477,6 +504,7 @@
     font-family: inherit;
     width: 100%;
     height: 100%;
+    max-height: 40px;
     padding: 0 0.3rem;
     text-align: center;
     box-sizing: border-box;
@@ -517,21 +545,27 @@
     align-items: center;
     justify-content: center;
     height: 100%;
+    max-height: 40px;
     width: 100%;
-    padding: 2px 0;
+    padding: 1px 0;
     box-sizing: border-box;
+    overflow: hidden;
   }
   .day-duty-select {
     background: transparent;
     border: none;
     outline: none;
     color: inherit;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
+    line-height: 1.1;
     font-weight: bold;
     text-align: center;
     cursor: pointer;
     width: 100%;
+    height: 18px;
     padding: 0;
+    margin: 0;
+    box-sizing: border-box;
   }
   .day-duty-select option {
     background: var(--panel, #18181b);
@@ -542,20 +576,26 @@
     align-items: center;
     justify-content: center;
     gap: 1px;
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     width: 100%;
-    margin-top: 1px;
+    height: 16px;
+    margin-top: 0;
+    box-sizing: border-box;
   }
   .day-time-input {
     background: transparent;
     border: none;
     outline: none;
     color: inherit;
-    font-size: 0.68rem;
-    width: 2.8rem;
+    font-size: 0.65rem;
+    height: 16px;
+    line-height: 16px;
+    width: 2.7rem;
     padding: 0;
+    margin: 0;
     text-align: center;
     cursor: pointer;
+    box-sizing: border-box;
   }
   .day-time-input::-webkit-calendar-picker-indicator {
     display: none;
@@ -603,13 +643,13 @@
   }
 
   /* Column Sizing */
-  .col-team { min-width: 4rem; }
-  .col-line { min-width: 5.5rem; }
-  .col-shift { min-width: 6.5rem; }
-  .col-time { min-width: 5rem; }
-  .col-pos { min-width: 4.5rem; }
-  .col-duty { min-width: 4.5rem; }
-  .col-sm { min-width: 3.2rem; }
-  .col-rdos { min-width: 5.5rem; }
-  .col-day { min-width: 6.5rem; }
+  .col-team { width: 4.5rem; min-width: 4rem; }
+  .col-line { width: 5.5rem; min-width: 5.5rem; }
+  .col-shift { width: 7rem; min-width: 6.5rem; }
+  .col-time { width: 5.5rem; min-width: 5rem; }
+  .col-pos { width: 5rem; min-width: 4.5rem; }
+  .col-duty { width: 5.5rem; min-width: 4.5rem; }
+  .col-sm { width: 3.5rem; min-width: 3.2rem; }
+  .col-rdos { width: 6rem; min-width: 5.5rem; }
+  .col-day { width: 7rem; min-width: 6.5rem; }
 </style>
