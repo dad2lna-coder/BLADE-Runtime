@@ -1,4 +1,8 @@
-// BLADE Runtime Shell — Phase 1 + Phase 2 contract fix
+ /**
+ * BLADE Runtime Shell — Phase 1 + Phase 2 contract fix
+ * Orchestrator: manifest parsing, module discovery, lifecycle, contracts, event bus, UI registration.
+ * No business logic.
+ */
 (function () {
   "use strict";
 
@@ -62,6 +66,25 @@
           var h = Math.floor(normalized / 60);
           var mm = normalized % 60;
           return String(h).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+        },
+        // Added missing contract getters
+        getShift: function (id) {
+          return S.getShift ? S.getShift(id) : null;
+        },
+        getEffectiveShiftTimes: function (shiftId, dow) {
+          return S.getEffectiveShiftTimes ? S.getEffectiveShiftTimes(shiftId, dow) : { start: "00:00", end: "00:00" };
+        },
+        lineCoversSlot: function (line, dayIndex, slotMin) {
+          return S.lineCoversSlot ? S.lineCoversSlot(line, dayIndex, slotMin) : false;
+        },
+        lineRoleKey: function (line) {
+          return S.lineRoleKey ? S.lineRoleKey(line) : "TSO";
+        },
+        getRotationDuty: function (lineId, dayIndex) {
+          return S.getRotationDuty ? S.getRotationDuty(lineId, dayIndex) : null;
+        },
+        shiftBadge: function (shiftId) {
+          return S.shiftBadge ? S.shiftBadge(shiftId) : "";
         }
       },
       CoverageState: {
@@ -70,6 +93,10 @@
         setSlots: function (slots) {
           this.slots = slots;
           runtime.eventBus.publish("coverage:slots:updated", slots);
+        },
+        // Added missing getter for hourlyByDow
+        getHourlyByDow: function () {
+          return this.hourlyByDow;
         }
       },
       ThemeState: {
