@@ -35,6 +35,7 @@ export function snapshotPeriod(S) {
 export function applyFte(S, fte) {
   if (!fte) return;
   function put(id, v) {
+    if (typeof document === "undefined") return;
     const el = document.getElementById(id);
     if (el && v != null) el.value = v;
   }
@@ -99,7 +100,8 @@ export function collectSetupInputs(S) {
     extraPositions: setupStore.extraPositions,
     functionCoverage: setupStore.functionCoverage,
     certPool: setupStore.certPool,
-    shifts: (S.state && S.state.shifts) || []
+    shifts: (S.state && S.state.shifts) || [],
+    shiftCrewGroups: (S.state && S.state.shiftCrewGroups) || []
   };
 }
 
@@ -112,13 +114,14 @@ export function exportStaffingConfig(S) {
     fte: snap.fte,
     functionCoverage: snap.functionCoverage,
     extraPositions: snap.extraPositions || [],
-    certPool: snap.certPool || (S.state && S.state.certPool) || null
+    certPool: snap.certPool || (S.state && S.state.certPool) || null,
+    shiftCrewGroups: snap.shiftCrewGroups || []
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const filename = (S.exportFileName && S.exportFileName("Staffing", ".json")) || "staffing.json";
   if (S.saveBlob) {
     S.saveBlob(blob, filename);
-  } else {
+  } else if (typeof document !== "undefined") {
     const a = document.createElement("a");
     const url = URL.createObjectURL(blob);
     a.href = url;

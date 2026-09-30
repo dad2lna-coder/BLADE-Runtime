@@ -49,6 +49,7 @@ export function defaultSetupState() {
     functionRotation: {},
     functionCoverage: defaultFunctionCoverage(),
     shifts: defaultShifts(),
+    shiftCrewGroups: [],
     lines: [],
     schedule: {},
     extraPositions: [],
@@ -78,6 +79,7 @@ export function attachSetupState(S) {
   if (!S.state.certPool) {
     S.state.certPool = { pools: ["A", "B"], targetBPercent: 45, functionMap: { DFO: "B", BAG: "", PAX: "" } };
   }
+  if (!Array.isArray(S.state.shiftCrewGroups)) S.state.shiftCrewGroups = [];
   S.defaultShifts = defaultShifts;
   if (!S.shiftSeq) S.shiftSeq = (S.state.shifts && S.state.shifts.length) || 6;
 }

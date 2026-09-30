@@ -123,6 +123,7 @@ window.Scheduler = window.Scheduler || {};
         ltsoM: S.state.ltsoM, ltsoF: S.state.ltsoF,
         stsoM: S.state.stsoM, stsoF: S.state.stsoF,
         shifts: S.state.shifts,
+        shiftCrewGroups: S.state.shiftCrewGroups || [],
         functionCoverage: S.state.functionCoverage || null,
         extraPositions: S.state.extraPositions || [],
         certPool: S.state.certPool || null
@@ -178,6 +179,9 @@ window.Scheduler = window.Scheduler || {};
     S.state.shifts = Array.isArray(cfg.shifts) && cfg.shifts.length
       ? cfg.shifts.map(S.normalizeShift || function (s) { return s; })
       : (S.defaultShifts ? S.defaultShifts() : []);
+    S.state.shiftCrewGroups = Array.isArray(cfg.shiftCrewGroups || payload.shiftCrewGroups)
+      ? (cfg.shiftCrewGroups || payload.shiftCrewGroups)
+      : [];
     if (cfg.functionCoverage && typeof cfg.functionCoverage === "object") {
       S.state.functionCoverage = Object.assign(S.state.functionCoverage || {}, cfg.functionCoverage);
       if (S.ensureFunctionCoverage) S.ensureFunctionCoverage();

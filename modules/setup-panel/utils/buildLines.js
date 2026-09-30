@@ -1,5 +1,16 @@
 /** Turn allocated headcounts into bid lines. */
 
+export function getBandKey(S, shiftId) {
+  var shifts = (S && S.state && S.state.shifts) || [];
+  var shift = shifts.find(function (s) { return s.id === shiftId; });
+  if (!shift) return shiftId || "default";
+  if (shift.crewGroupId) return "crew_" + shift.crewGroupId;
+  var groups = (S && S.state && S.state.shiftCrewGroups) || [];
+  var group = groups.find(function (g) { return g.shiftIds && g.shiftIds.indexOf(shiftId) !== -1; });
+  if (group) return "crew_" + group.id;
+  return shiftId;
+}
+
 function takeFromPools(S, pools, preferLongFt, placed, preferPt) {
   placed = placed || { M: 0, F: 0 };
   function take(emp, sex) {
@@ -69,7 +80,6 @@ function makeLineFromPerson(S, def, person, id) {
 }
 
 export function buildLines(S, counts) {
-  var lines = [], id = 1;
   var pools = { FTM: S.state.ftM || 0, FTF: S.state.ftF || 0, PTM: S.state.ptM || 0, PTF: S.state.ptF || 0 };
   var placedGlobal = { M: 0, F: 0 };
   var shifts = S.state.shifts || [];
@@ -82,41 +92,130 @@ export function buildLines(S, counts) {
     var need = counts[def.id] || 0;
     if (need > 0 && !(def.force > 0)) order.push(def);
   });
+
+  // Collect line slots per shift
+  var slots = [];
+  order.forEach(function (def) {
+    var need = counts[def.id] || 0;
+    var bandKey = getBandKey(S, def.id);
+    var isLong = (+def.paid || 8) >= 10;
+    for (var i = 0; i < need; i++) {
+      slots.push({
+        def: def,
+        bandKey: bandKey,
+        isLong: isLong,
+        shiftIndex: i
+      });
+    }
+  });
+
+  // Group slots by bandKey
+  var bands = {};
+  slots.forEach(function (slot) {
+    if (!bands[slot.bandKey]) bands[slot.bandKey] = [];
+    bands[slot.bandKey].push(slot);
+  });
+
+  // Pass 1: Assign RDO seeds and patterns round-robin within each role x bandKey
+  Object.keys(bands).forEach(function (bk) {
+    var bSlots = bands[bk];
+    var seedIdx = 0;
+    bSlots.forEach(function (slot) {
+      var workDays = S.targetWorkDays(slot.def.id, slot.isLong ? "FT" : "FT");
+      var rdoCount = 7 - workDays;
+      var hard = Array.isArray(slot.def.rdoHard)
+        ? slot.def.rdoHard.map(Number).filter(function (x) { return x >= 0 && x <= 6; })
+        : [];
+      slot.rdoSeed = seedIdx % 7;
+      seedIdx++;
+      if (hard.length > 0) {
+        slot.rdoDays = hard.slice();
+        if (slot.rdoDays.length < rdoCount) {
+          for (var d = 0; d < 7 && slot.rdoDays.length < rdoCount; d++) {
+            if (slot.rdoDays.indexOf(d) < 0) slot.rdoDays.push(d);
+          }
+        } else if (slot.rdoDays.length > rdoCount) slot.rdoDays = slot.rdoDays.slice(0, rdoCount);
+        slot.rdoHard = true;
+      } else {
+        slot.rdoDays = S.consecutiveRdos(rdoCount, slot.rdoSeed);
+        slot.rdoHard = false;
+      }
+    });
+  });
+
+  // Pass 2: Assign sex and empClass (FT/PT) from pools onto slots across bands
   var remainingNeed = 0;
   order.forEach(function (def) {
     if ((+def.paid || 8) >= 10) return;
     remainingNeed += counts[def.id] || 0;
   });
-  function fillShift(def, need, seatsLeft) {
-    var placed = 0;
-    var isLong = (+def.paid || 8) >= 10;
-    var ptLeft = (pools.PTM || 0) + (pools.PTF || 0);
-    var ptQuota = 0;
-    if (!isLong && seatsLeft > 0) {
-      ptQuota = Math.round(need * ptLeft / seatsLeft);
-      if (ptQuota < 0) ptQuota = 0;
-      if (ptQuota > need) ptQuota = need;
-      if (ptQuota > ptLeft) ptQuota = ptLeft;
+
+  var lines = [], id = 1;
+
+  // Interleave slots by RDO seeds within each band for balanced sex distribution across RDOs
+  Object.keys(bands).forEach(function (bk) {
+    var bSlots = bands[bk];
+    var seedBuckets = {};
+    bSlots.forEach(function (s) {
+      var k = s.rdoSeed;
+      if (!seedBuckets[k]) seedBuckets[k] = [];
+      seedBuckets[k].push(s);
+    });
+
+    var maxLen = 0;
+    Object.keys(seedBuckets).forEach(function (k) {
+      if (seedBuckets[k].length > maxLen) maxLen = seedBuckets[k].length;
+    });
+
+    var orderedSlots = [];
+    for (var i = 0; i < maxLen; i++) {
+      for (var s = 0; s < 7; s++) {
+        if (seedBuckets[s] && seedBuckets[s][i]) {
+          orderedSlots.push(seedBuckets[s][i]);
+        }
+      }
     }
-    var ptPlaced = 0;
-    while (placed < need) {
-      var preferPt = !isLong && ptPlaced < ptQuota;
+
+    // Assign people to orderedSlots
+    orderedSlots.forEach(function (slot) {
+      var def = slot.def;
+      var isLong = slot.isLong;
+      var ptLeft = (pools.PTM || 0) + (pools.PTF || 0);
+      var preferPt = !isLong && ptLeft > 0;
       var person = takeFromPools(S, pools, isLong, placedGlobal, preferPt);
-      if (!person) break;
-      if (person.empClass === "PT") ptPlaced++;
+      if (!person) {
+        S.state.issues.push(def.name + ": pool empty or 4x10 needs FT.");
+        return;
+      }
       placedGlobal[person.sex]++;
-      lines.push(makeLineFromPerson(S, def, person, id));
-      id++; placed++;
-    }
-    if (placed < need) {
-      S.state.issues.push(def.name + ": needed " + need + " people, only placed " + placed + " (pool empty or 4\u00d710 needs FT).");
-    }
-  }
-  order.forEach(function (def) {
-    var need = counts[def.id] || 0;
-    fillShift(def, need, remainingNeed);
-    if ((+def.paid || 8) < 10) remainingNeed -= need;
+      slot.person = person;
+    });
   });
+
+  // Build final lines array in slot order
+  slots.forEach(function (slot) {
+    if (!slot.person) return;
+    lines.push({
+      id: id,
+      lineCode: "Line " + String(id).padStart(3, "0"),
+      shiftId: slot.def.id,
+      shiftName: slot.def.name,
+      shiftLabel: S.shiftLabel(slot.def),
+      empClass: slot.person.empClass,
+      sex: slot.person.sex,
+      function: "",
+      rdoDays: slot.rdoDays,
+      rdoHard: slot.rdoHard,
+      paid: slot.person.empClass === "PT"
+        ? (function () {
+            var hours = +(S.state && S.state.ptHoursPerDay);
+            return Number.isFinite(hours) && hours > 0 ? Math.min(12, hours) : 4;
+          })()
+        : (slot.def.paid || 8)
+    });
+    id++;
+  });
+
   return lines;
 }
 
@@ -138,68 +237,136 @@ function takeSupervisoryFromPools(pools, targetFShare, placed) {
 }
 
 export function buildSupervisoryLines(S, supCounts, supType) {
-  var lines = [];
   var isLtso = supType === "LTSO";
-  var id = isLtso ? 20000 : 10000;
   var pools = {
     M: isLtso ? (S.state.ltsoM || 0) : (S.state.stsoM || 0),
     F: isLtso ? (S.state.ltsoF || 0) : (S.state.stsoF || 0)
   };
-  var totalM = isLtso ? (S.state.ltsoM || 0) : (S.state.stsoM || 0);
-  var totalF = isLtso ? (S.state.ltsoF || 0) : (S.state.stsoF || 0);
+  var totalM = pools.M;
+  var totalF = pools.F;
   var totalSup = totalM + totalF;
   var targetFShare = totalSup > 0 ? totalF / totalSup : 0.5;
   var placedGlobal = { M: 0, F: 0 };
   var forceField = isLtso ? "ltsoForce" : "stsoForce";
 
-  function fill(def, need) {
-    var placed = 0;
-    while (placed < need) {
-      var sex = takeSupervisoryFromPools(pools, targetFShare, placedGlobal);
-      if (!sex) break;
-      placedGlobal[sex]++;
-      var workDays = (+def.paid || 8) >= 10 ? 4 : 5;
-      var rdoCount = 7 - workDays;
-      var hard = Array.isArray(def.rdoHard)
-        ? def.rdoHard.map(Number).filter(function (x) { return x >= 0 && x <= 6; })
-        : [];
-      var rdoDays;
-      if (hard.length > 0) {
-        rdoDays = hard.slice();
-        if (rdoDays.length < rdoCount) {
-          for (var d = 0; d < 7 && rdoDays.length < rdoCount; d++) {
-            if (rdoDays.indexOf(d) < 0) rdoDays.push(d);
-          }
-        } else if (rdoDays.length > rdoCount) rdoDays = rdoDays.slice(0, rdoCount);
-      } else rdoDays = S.consecutiveRdos(rdoCount, (id - 1) % 7);
-      lines.push({
-        id: id,
-        lineCode: supType + " " + String(lines.length + 1).padStart(2, "0"),
-        shiftId: def.id,
-        shiftName: def.name,
-        shiftLabel: S.shiftLabel(def),
-        empClass: supType,
-        position: supType,
-        isLtso: isLtso,
-        isStso: !isLtso,
-        sex: sex,
-        function: "",
-        rdoDays: rdoDays,
-        rdoHard: hard.length > 0,
-        paid: def.paid || 8
-      });
-      id++; placed++;
-    }
-    if (placed < need) S.state.issues.push(def.name + ": " + supType + " needed " + need + ", placed " + placed + ".");
-  }
+  var shifts = S.state.shifts || [];
+  var order = [];
+  shifts.forEach(function (def) {
+    var need = supCounts[def.id] || 0;
+    if (need > 0 && (def[forceField] || 0) > 0) order.push(def);
+  });
+  shifts.forEach(function (def) {
+    var need = supCounts[def.id] || 0;
+    if (need > 0 && !(def[forceField] > 0)) order.push(def);
+  });
 
-  (S.state.shifts || []).forEach(function (def) {
+  // Collect slots
+  var slots = [];
+  order.forEach(function (def) {
     var need = supCounts[def.id] || 0;
-    if (need > 0 && (def[forceField] || 0) > 0) fill(def, need);
+    var bandKey = getBandKey(S, def.id);
+    for (var i = 0; i < need; i++) {
+      slots.push({
+        def: def,
+        bandKey: bandKey
+      });
+    }
   });
-  (S.state.shifts || []).forEach(function (def) {
-    var need = supCounts[def.id] || 0;
-    if (need > 0 && !(def[forceField] > 0)) fill(def, need);
+
+  // Partition by bandKey
+  var bands = {};
+  slots.forEach(function (slot) {
+    if (!bands[slot.bandKey]) bands[slot.bandKey] = [];
+    bands[slot.bandKey].push(slot);
   });
+
+  // Pass 1: Assign RDO seeds per bandKey round-robin
+  Object.keys(bands).forEach(function (bk) {
+    var bSlots = bands[bk];
+    var seedIdx = 0;
+    bSlots.forEach(function (slot) {
+      var workDays = (+slot.def.paid || 8) >= 10 ? 4 : 5;
+      var rdoCount = 7 - workDays;
+      var hard = Array.isArray(slot.def.rdoHard)
+        ? slot.def.rdoHard.map(Number).filter(function (x) { return x >= 0 && x <= 6; })
+        : [];
+      slot.rdoSeed = seedIdx % 7;
+      seedIdx++;
+      if (hard.length > 0) {
+        slot.rdoDays = hard.slice();
+        if (slot.rdoDays.length < rdoCount) {
+          for (var d = 0; d < 7 && slot.rdoDays.length < rdoCount; d++) {
+            if (slot.rdoDays.indexOf(d) < 0) slot.rdoDays.push(d);
+          }
+        } else if (slot.rdoDays.length > rdoCount) slot.rdoDays = slot.rdoDays.slice(0, rdoCount);
+        slot.rdoHard = true;
+      } else {
+        slot.rdoDays = S.consecutiveRdos(rdoCount, slot.rdoSeed);
+        slot.rdoHard = false;
+      }
+    });
+  });
+
+  // Pass 2: Assign sex from M/F pools, interleaving across RDO seeds within each bandKey
+  Object.keys(bands).forEach(function (bk) {
+    var bSlots = bands[bk];
+    var seedBuckets = {};
+    bSlots.forEach(function (s) {
+      var k = s.rdoSeed;
+      if (!seedBuckets[k]) seedBuckets[k] = [];
+      seedBuckets[k].push(s);
+    });
+
+    var maxLen = 0;
+    Object.keys(seedBuckets).forEach(function (k) {
+      if (seedBuckets[k].length > maxLen) maxLen = seedBuckets[k].length;
+    });
+
+    var orderedSlots = [];
+    for (var i = 0; i < maxLen; i++) {
+      for (var s = 0; s < 7; s++) {
+        if (seedBuckets[s] && seedBuckets[s][i]) {
+          orderedSlots.push(seedBuckets[s][i]);
+        }
+      }
+    }
+
+    orderedSlots.forEach(function (slot) {
+      var sex = takeSupervisoryFromPools(pools, targetFShare, placedGlobal);
+      if (!sex) {
+        S.state.issues.push(slot.def.name + ": " + supType + " pool empty.");
+        return;
+      }
+      placedGlobal[sex]++;
+      slot.sex = sex;
+    });
+  });
+
+  // Build lines
+  var lines = [];
+  var startId = isLtso ? 20000 : 10000;
+  var id = startId;
+
+  slots.forEach(function (slot) {
+    if (!slot.sex) return;
+    lines.push({
+      id: id,
+      lineCode: supType + " " + String(lines.length + 1).padStart(2, "0"),
+      shiftId: slot.def.id,
+      shiftName: slot.def.name,
+      shiftLabel: S.shiftLabel(slot.def),
+      empClass: supType,
+      position: supType,
+      isLtso: isLtso,
+      isStso: !isLtso,
+      sex: slot.sex,
+      function: "",
+      rdoDays: slot.rdoDays,
+      rdoHard: slot.rdoHard,
+      paid: slot.def.paid || 8
+    });
+    id++;
+  });
+
   return lines;
 }

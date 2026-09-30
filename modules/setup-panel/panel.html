@@ -98,5 +98,13 @@
 </label>
 </div>
 </details>
-<div class="card"><div class="section-title">Shifts</div><div class="toolbar"><button type="button" class="btn" id="btn-add-shift">+ Add shift</button></div><div class="lines-scroll" style="max-height:none"><table class="data-table"><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Phase</th><th>Paid h</th><th>TSO force</th><th>LTSO force</th><th>STSO force</th><th>Hard RDOs (Sun–Sat)</th><th>Day times</th></tr></thead><tbody id="shifts-tbody"></tbody></table></div></div>
+<details class="card setup-fold" id="card-crew-groups"><summary class="section-title">Shift crew groups</summary>
+<p class="muted" style="margin:0 0 0.65rem">Group near shifts into a crew band to share RDO and sex balance pools per role (STSO, LTSO, TSO). Ungrouped shifts default to their own individual shift band.</p>
+<div class="toolbar" style="gap:0.5rem;flex-wrap:wrap">
+<input type="text" id="cg-name-input" placeholder="Group name (e.g. AM Crew)" style="width:12rem" />
+<button type="button" class="btn" id="btn-add-crew-group">+ Add group</button>
+</div>
+<div id="crew-groups-list" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem"></div>
+</details>
+<div class="card"><div class="section-title">Shifts</div><div class="toolbar"><button type="button" class="btn" id="btn-add-shift">+ Add shift</button></div><div class="lines-scroll" style="max-height:none"><table class="data-table"><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Phase</th><th>Paid h</th><th>TSO force</th><th>LTSO force</th><th>STSO force</th><th>Hard RDOs (Sun–Sat)</th><th>Day times</th><th>Crew group</th></tr></thead><tbody id="shifts-tbody"></tbody></table></div></div>
 <div id="issues"></div>
