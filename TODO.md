@@ -58,4 +58,10 @@ After completing a requested task:
 3. Print the remaining unchecked items.
 4. Stop.
 
+## Active Tasks
+
+- [~] Make Runtime self-contained by ensuring S is always initialized (in_progress)
+- [ ] Review and clean up irrelevant files from context (pending)
+- [ ] Run verification tests for Runtime changes (pending)
+
 # Discord Watcher Test
