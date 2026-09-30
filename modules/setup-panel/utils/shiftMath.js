@@ -99,11 +99,24 @@ export function normalizeShift(S, raw, index) {
   }
   var phase = (raw && raw.phase) || "auto";
   if (["auto", "opening", "am", "pm", "closing"].indexOf(phase) < 0) phase = "auto";
+  var crewGroupId = raw && raw.crewGroupId ? String(raw.crewGroupId) : "";
   return {
     id: id, name: name, start: start, end: end, paid: paid,
     force: force, ltsoForce: ltsoForce, stsoForce: stsoForce, rdoHard: rdoHard,
-    dayTimes: dayTimes, phase: phase
+    dayTimes: dayTimes, phase: phase, crewGroupId: crewGroupId
   };
+}
+
+export function getBandKey(S, shiftId) {
+  var s = getShift(S, shiftId);
+  if (!s) return String(shiftId || "");
+  if (s.crewGroupId && S && S.state && Array.isArray(S.state.shiftCrewGroups)) {
+    var grp = S.state.shiftCrewGroups.find(function (g) { return g && g.id === s.crewGroupId; });
+    if (grp && Array.isArray(grp.shiftIds) && grp.shiftIds.indexOf(s.id) >= 0) {
+      return grp.id;
+    }
+  }
+  return s.id;
 }
 
 export function attachShiftMath(S) {
@@ -119,4 +132,5 @@ export function attachShiftMath(S) {
   S.consecutiveRdos = consecutiveRdos;
   S.rdoCountForShift = function (shift, empClass) { return rdoCountForShift(S, shift, empClass); };
   S.normalizeShift = function (raw, index) { return normalizeShift(S, raw, index); };
+  S.getBandKey = function (shiftId) { return getBandKey(S, shiftId); };
 }

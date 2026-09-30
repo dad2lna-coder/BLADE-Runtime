@@ -5,6 +5,7 @@ import { paintFunctionCoverage } from "./paint.js";
 export function renderAll(S) {
   syncHoursFromAirfield(S);
   paintFunctionCoverage(S);
+  if (S.renderCrewGroupsUI) S.renderCrewGroupsUI();
   if (S.renderShiftsTable) S.renderShiftsTable();
   if (S.renderExtraPositions) S.renderExtraPositions();
 }
@@ -78,6 +79,18 @@ export function bindSetupActions(S) {
   bindOnce(document.getElementById("btn-add-shift"), "click", function (e) {
     e.preventDefault();
     if (S.addShift) S.addShift();
+  });
+  bindOnce(document.getElementById("btn-add-crew-group"), "click", function (e) {
+    e.preventDefault();
+    var input = document.getElementById("cg-name-input");
+    var name = input ? input.value.trim() : "";
+    if (!name) name = "Group " + ((S.state.shiftCrewGroups || []).length + 1);
+    var id = "cg_" + Date.now();
+    S.state.shiftCrewGroups = S.state.shiftCrewGroups || [];
+    S.state.shiftCrewGroups.push({ id: id, name: name, shiftIds: [] });
+    if (input) input.value = "";
+    if (S.renderCrewGroupsUI) S.renderCrewGroupsUI();
+    if (S.renderShiftsTable) S.renderShiftsTable();
   });
   bindOnce(document.getElementById("btn-save-staffing"), "click", function () {
     if (S.exportStaffingConfig) S.exportStaffingConfig();

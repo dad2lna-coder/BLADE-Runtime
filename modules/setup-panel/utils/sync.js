@@ -1,6 +1,7 @@
 /** DOM and scheduling sync helpers */
 
 export function val(id, fallback) {
+  if (typeof document === "undefined") return fallback;
   const el = document.getElementById(id);
   return el && el.value != null && el.value !== "" ? el.value : fallback;
 }

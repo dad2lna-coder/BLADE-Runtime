@@ -39,23 +39,93 @@ export function attachShiftsTable(S) {
       var dayTimes = existing && existing.dayTimes ? existing.dayTimes : null;
       var phaseEl = tr.querySelector("[data-f=phase]");
       var phase = (phaseEl && phaseEl.value) || (existing && existing.phase) || "auto";
+      var cgEl = tr.querySelector("[data-f=crewGroupId]");
+      var crewGroupId = (cgEl && cgEl.value) || (existing && existing.crewGroupId) || "";
       next.push({
         id: id, name: name, start: start, end: end, paid: paid,
         force: force, ltsoForce: ltsoForce, stsoForce: stsoForce, rdoHard: rdoHard,
-        dayTimes: dayTimes, phase: phase
+        dayTimes: dayTimes, phase: phase, crewGroupId: crewGroupId
       });
     });
     S.state.shifts = next;
     return next;
   };
 
+  S.renderCrewGroupsUI = function () {
+    var container = document.getElementById("crew-groups-list");
+    if (!container) return;
+    var groups = S.state.shiftCrewGroups || [];
+    var shifts = S.state.shifts || [];
+    if (!groups.length) {
+      container.innerHTML = '<p class="muted" style="margin:0">No crew groups defined. Shifts default to individual shift bands.</p>';
+      return;
+    }
+    container.innerHTML = groups.map(function (cg) {
+      var memberCheckboxes = shifts.map(function (s) {
+        var isChecked = (s.crewGroupId === cg.id) || (cg.shiftIds && cg.shiftIds.indexOf(s.id) !== -1);
+        return '<label style="display:inline-flex;align-items:center;gap:0.25rem;margin-right:0.75rem;font-size:0.85rem">' +
+          '<input type="checkbox" class="cg-shift-cb" data-cg-id="' + cg.id + '" data-shift-id="' + s.id + '"' + (isChecked ? ' checked' : '') + ' />' +
+          (s.name || s.id) + '</label>';
+      }).join('');
+
+      return '<div class="card" style="margin:0;padding:0.5rem 0.75rem;background:var(--bg-subtle, #f8f9fa)">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">' +
+          '<strong>' + (cg.name || cg.id) + '</strong>' +
+          '<button type="button" class="btn btn-red btn-cg-del" data-cg-id="' + cg.id + '" style="padding:0.1rem 0.4rem;font-size:0.75rem">Delete group</button>' +
+        '</div>' +
+        '<div>' + memberCheckboxes + '</div>' +
+      '</div>';
+    }).join('');
+
+    container.querySelectorAll('.btn-cg-del').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var cgId = btn.getAttribute('data-cg-id');
+        S.state.shiftCrewGroups = (S.state.shiftCrewGroups || []).filter(function (g) { return g.id !== cgId; });
+        (S.state.shifts || []).forEach(function (s) {
+          if (s.crewGroupId === cgId) s.crewGroupId = '';
+        });
+        S.renderCrewGroupsUI();
+        S.renderShiftsTable();
+      });
+    });
+
+    container.querySelectorAll('.cg-shift-cb').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var cgId = cb.getAttribute('data-cg-id');
+        var sId = cb.getAttribute('data-shift-id');
+        var shift = (S.state.shifts || []).find(function (s) { return s.id === sId; });
+        if (shift) {
+          if (cb.checked) {
+            shift.crewGroupId = cgId;
+          } else if (shift.crewGroupId === cgId) {
+            shift.crewGroupId = '';
+          }
+        }
+        var group = (S.state.shiftCrewGroups || []).find(function (g) { return g.id === cgId; });
+        if (group) {
+          group.shiftIds = (S.state.shifts || [])
+            .filter(function (s) { return s.crewGroupId === cgId; })
+            .map(function (s) { return s.id; });
+        }
+        S.renderShiftsTable();
+      });
+    });
+  };
+
   S.renderShiftsTable = function () {
     var tbody = document.getElementById("shifts-tbody");
     if (!tbody) return;
+    var groups = S.state.shiftCrewGroups || [];
     tbody.innerHTML = (S.state.shifts || []).map(function (s) {
       var hasDyn = S.shiftHasDayOverrides && S.shiftHasDayOverrides(s.id);
       var daysCls = hasDyn ? "btn btn-amber" : "btn";
       var daysTitle = hasDyn ? "Has per-day time overrides" : "Set different start/end per day of week";
+
+      var cgOptions = '<option value="">(None / Solo)</option>' + groups.map(function (g) {
+        var sel = (s.crewGroupId === g.id) ? ' selected' : '';
+        return '<option value="' + g.id + '"' + sel + '>' + (g.name || g.id) + '</option>';
+      }).join('');
+
       return (
         '<tr data-shift-id="' + s.id + '">' +
         '<td><input type="text" data-f="name" value="' + String(s.name).replace(/"/g, "&quot;") + '" style="width:5.5rem" /></td>' +
@@ -76,9 +146,18 @@ export function attachShiftsTable(S) {
         '<td style="white-space:nowrap">' +
           '<button type="button" class="' + daysCls + '" data-day-times="' + s.id + '" title="' + daysTitle + '">Day times…</button> ' +
           '<button type="button" class="btn btn-red" data-remove="' + s.id + '">✕</button>' +
-        '</td></tr>'
+        '</td>' +
+        '<td><select data-f="crewGroupId">' + cgOptions + '</select></td>' +
+        '</tr>'
       );
     }).join("");
+
+    tbody.querySelectorAll("select[data-f=crewGroupId]").forEach(function (sel) {
+      sel.addEventListener("change", function () {
+        S.readShiftsFromDom();
+        S.renderCrewGroupsUI();
+      });
+    });
 
     tbody.querySelectorAll("[data-remove]").forEach(function (btn) {
       btn.addEventListener("click", function () {
