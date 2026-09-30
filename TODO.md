@@ -6,36 +6,36 @@
 - [x] Perform read-only architecture audit
 - [x] Review audit findings
 - [x] Identify confirmed architectural defects
-- [ ] Fix only confirmed defects
-- [ ] Rebuild all modules
-- [ ] Run available tests
-- [ ] Perform runtime smoke test
+- [x] Fix only confirmed defects
+- [x] Rebuild all modules
+- [x] Run available tests
+- [x] Perform runtime smoke test
 
 ### Phase 2: Runtime Separation
-- [ ] Verify Runtime is the sole module orchestrator
-- [ ] Verify dependency initialization order
-- [ ] Verify runtime contracts
-- [ ] Reduce hidden window.Scheduler dependencies
-- [ ] Verify runtime-driven tabs
-- [ ] Verify runtime-driven F-keys
-- [ ] Verify optional module loading
-- [ ] Verify modules can be added or removed without Runtime source changes
+- [x] Verify Runtime is the sole module orchestrator
+- [x] Verify dependency initialization order
+- [x] Verify runtime contracts
+- [x] Reduce hidden window.Scheduler dependencies
+- [x] Verify runtime-driven tabs
+- [x] Verify runtime-driven F-keys
+- [x] Verify optional module loading
+- [x] Verify modules can be added or removed without Runtime source changes
 
 ### Phase 3: Compatibility Reduction
-- [ ] Identify remaining legacy Scheduler consumers
-- [ ] Migrate consumers through runtime contracts or adapters
-- [ ] Remove obsolete compatibility paths only after verification
-- [ ] Confirm Runtime contains no BLADE business logic
+- [x] Identify remaining legacy Scheduler consumers
+- [x] Migrate consumers through runtime contracts or adapters
+- [x] Remove obsolete compatibility paths only after verification
+- [x] Confirm Runtime contains no BLADE business logic
 
 ## Known Areas To Verify
 
 - [x] Runtime and index.html may both be loading/initializing modules
-- [ ] Runtime contracts may duplicate existing Scheduler state
-- [ ] Dependency sorting may not actually enforce initialization order
-- [ ] Tabs may still be generated outside Runtime
-- [ ] F-key registration may not be connected to actual behavior
-- [ ] window.Scheduler may still be a hidden shared-state dependency
-- [ ] ThemeState may not preserve existing theme behavior
+- [x] Runtime contracts may duplicate existing Scheduler state
+- [x] Dependency sorting may not actually enforce initialization order
+- [x] Tabs may still be generated outside Runtime
+- [x] F-key registration may not be connected to actual behavior
+- [x] window.Scheduler may still be a hidden shared-state dependency
+- [x] ThemeState may not preserve existing theme behavior
 
 ## Operating Rules
 
@@ -61,8 +61,8 @@ After completing a requested task:
 ## Active Tasks
 
 - [x] Make Runtime self-contained by ensuring S is always initialized (completed)
-- [ ] Review and clean up irrelevant files from context (pending)
-- [ ] Run verification tests for Runtime changes (pending)
+- [x] Review and clean up irrelevant files from context (completed)
+- [x] Run verification tests for Runtime changes (completed)
 
 ## Completed Changes
 
