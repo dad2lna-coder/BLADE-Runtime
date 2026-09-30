@@ -296,7 +296,31 @@ export function attachShiftsTable(S) {
     // Header
     rows.push(["Position", "Shift", "Sex"].concat(rdoPatterns).join(","));
 
-    Object.keys(groupsMap).sort().forEach(function (key) {
+    function shiftStartMinutes(shiftName, sampleLine) {
+      var sh = S.getShift ? S.getShift(sampleLine ? sampleLine.shiftId : "") : null;
+      if (!sh && S.state && S.state.shifts) {
+        sh = S.state.shifts.find(function (s) { return s.name === shiftName || s.id === shiftName; });
+      }
+      if (sh && sh.start && S.timeToMin) return S.timeToMin(sh.start);
+      if (sampleLine && sampleLine.startTime && S.timeToMin) return S.timeToMin(sampleLine.startTime);
+      // Fallback: match 4 digits HHMM or HH:MM in shiftName
+      var m = String(shiftName).match(/(\d{2}):?(\d{2})/);
+      if (m) return (+m[1] || 0) * 60 + (+m[2] || 0);
+      return 0;
+    }
+
+    var sortedKeys = Object.keys(groupsMap).sort(function (aKey, bKey) {
+      var a = groupsMap[aKey], b = groupsMap[bKey];
+      var posCmp = String(a.pos).localeCompare(String(b.pos));
+      if (posCmp !== 0) return posCmp;
+      var aStart = shiftStartMinutes(a.shift, a.lines[0]);
+      var bStart = shiftStartMinutes(b.shift, b.lines[0]);
+      if (aStart !== bStart) return aStart - bStart;
+      if (a.sex !== b.sex) return a.sex === "M" ? -1 : 1;
+      return 0;
+    });
+
+    sortedKeys.forEach(function (key) {
       var g = groupsMap[key];
       var countsByPat = {};
       g.lines.forEach(function (l) {
@@ -563,8 +587,26 @@ export function attachShiftsTable(S) {
       shiftsMap[shiftName].push(l);
     });
 
+    function getShiftMinutes(shiftName, sampleLine) {
+      var sh = S.getShift ? S.getShift(sampleLine ? sampleLine.shiftId : "") : null;
+      if (!sh && S.state && S.state.shifts) {
+        sh = S.state.shifts.find(function (s) { return s.name === shiftName || s.id === shiftName; });
+      }
+      if (sh && sh.start && S.timeToMin) return S.timeToMin(sh.start);
+      if (sampleLine && sampleLine.startTime && S.timeToMin) return S.timeToMin(sampleLine.startTime);
+      var m = String(shiftName).match(/(\d{2}):?(\d{2})/);
+      if (m) return (+m[1] || 0) * 60 + (+m[2] || 0);
+      return 0;
+    }
+
+    var sortedShiftNames = Object.keys(shiftsMap).sort(function (aName, bName) {
+      var aMins = getShiftMinutes(aName, shiftsMap[aName][0]);
+      var bMins = getShiftMinutes(bName, shiftsMap[bName][0]);
+      return aMins - bMins;
+    });
+
     var rowsHtml = [];
-    Object.keys(shiftsMap).forEach(function (shiftName) {
+    sortedShiftNames.forEach(function (shiftName) {
       var sLines = shiftsMap[shiftName];
       ["M", "F"].forEach(function (sex) {
         var sexLines = sLines.filter(function (l) { return (l.sex || "").toUpperCase() === sex; });

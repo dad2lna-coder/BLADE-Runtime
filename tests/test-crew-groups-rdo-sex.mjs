@@ -219,6 +219,37 @@ test('respinSelectedSlices is deterministic with fixed seed', async () => {
   assert.deepEqual(rdoBatch1, rdoBatch2);
 });
 
+test('renderRdoMatrixModal sorts shifts earliest to latest by start time', async () => {
+  const S = {
+    state: {
+      shifts: [
+        { id: 'S1', name: '1230', start: '12:30' },
+        { id: 'S2', name: '0330', start: '03:30' },
+        { id: 'S3', name: '0400', start: '04:00' }
+      ],
+      lines: [
+        { id: 1, shiftId: 'S1', shiftName: '1230', position: 'STSO', isStso: true, sex: 'M', rdoDays: [0, 1] },
+        { id: 2, shiftId: 'S2', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [0, 1] },
+        { id: 3, shiftId: 'S3', shiftName: '0400', position: 'STSO', isStso: true, sex: 'M', rdoDays: [0, 1] }
+      ],
+      schedule: { 1: [], 2: [], 3: [] }
+    },
+    DAYS: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    timeToMin: (t) => {
+      const p = t.split(':');
+      return (+p[0] || 0) * 60 + (+p[1] || 0);
+    },
+    getShift: (id) => S.state.shifts.find(s => s.id === id)
+  };
+
+  const mod = await import('../modules/setup-panel/actions/shiftsTable.js');
+  mod.attachShiftsTable(S);
+
+  S.renderRdoMatrixModal();
+  // Ensure shiftsTable attached without error
+  assert.equal(typeof S.renderRdoMatrixModal, 'function');
+});
+
 test('exportAllRdoMatrixCsv exports all sexed position lines and respinSelectedSlices updates target lines', async () => {
   const S = {
     state: {

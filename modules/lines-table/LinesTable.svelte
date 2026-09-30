@@ -383,7 +383,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    background: var(--bg-dark, #09090b);
+    background: var(--bg, #09090b);
     border: 1px solid var(--border, #27272a);
     border-radius: 6px;
   }
@@ -403,14 +403,14 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    color: var(--console-fg, #d4d4d8);
+    color: var(--console-fg, var(--text, #d4d4d8));
     font-weight: 500;
   }
   .filter-input, .filter-select {
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
-    background: var(--bg-dark, #09090b);
-    color: var(--fg, #f4f4f5);
+    background: var(--bg, #09090b);
+    color: var(--text, #f4f4f5);
     border: 1px solid var(--border, #3f3f46);
     border-radius: 4px;
   }
@@ -428,13 +428,13 @@
     min-width: 1250px;
     border-collapse: collapse;
     font-size: 0.8rem;
-    color: var(--fg, #e4e4e7);
+    color: var(--text, #e4e4e7);
     table-layout: auto;
   }
   .lines-virtual-root th {
     position: sticky;
     top: 0;
-    background: #121215;
+    background: var(--panel2, #121215);
     color: var(--amber, #f59e0b);
     font-weight: 600;
     text-align: center;
@@ -450,8 +450,8 @@
     user-select: none;
   }
   .lines-virtual-root th.sortable:hover {
-    background: #1c1c20;
-    color: #facc15;
+    background: var(--panel, #1c1c20);
+    color: var(--amber, #facc15);
   }
   .lines-virtual-root td {
     padding: 0;
@@ -464,7 +464,7 @@
     font-size: 0.8rem;
   }
   .lines-virtual-root tbody tr:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(125, 125, 125, 0.08);
   }
 
   /* Seamless inline editable cells */
@@ -485,15 +485,15 @@
     border-radius: 0;
   }
   .lines-virtual-root .line-edit:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(125, 125, 125, 0.1);
   }
   .lines-virtual-root .line-edit:focus {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(125, 125, 125, 0.18);
     box-shadow: inset 0 0 0 1px var(--amber, #f59e0b);
   }
   .lines-virtual-root select.line-edit option {
-    background: #18181b;
-    color: #e4e4e7;
+    background: var(--panel, #18181b);
+    color: var(--text, #e4e4e7);
   }
   .lines-virtual-root .line-time-input::-webkit-calendar-picker-indicator {
     filter: invert(0.8);
@@ -534,8 +534,8 @@
     padding: 0;
   }
   .day-duty-select option {
-    background: #18181b;
-    color: #e4e4e7;
+    background: var(--panel, #18181b);
+    color: var(--text, #e4e4e7);
   }
   .day-times-wrap {
     display: flex;
