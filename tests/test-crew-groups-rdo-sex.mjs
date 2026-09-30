@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getBandKey, buildLines, buildSupervisoryLines } from '../modules/setup-panel/utils/buildLines.js';
+import { buildExtraPositionLines } from '../modules/setup-panel/utils/extraPositions.js';
+import { buildTrainingClassLines } from '../modules/setup-panel/utils/trainingClasses.js';
 
 test('getBandKey defaults to shiftId when ungrouped', () => {
   const S = {
@@ -71,6 +73,68 @@ test('RDO assignment is round-robin within band and decoupled from sex', () => {
 
   // Sexes are interleaved across RDO seed buckets
   assert.notEqual(lines[0].sex, lines[1].sex);
+});
+
+test('PT TSO lines get correct RDO count based on PT targetWorkDays', () => {
+  const S = {
+    state: {
+      shifts: [
+        { id: 'S1', name: 'AM1', paid: 4 }
+      ],
+      ftM: 0,
+      ftF: 0,
+      ptM: 2,
+      ptF: 2,
+      ptHoursPerDay: 4,
+      issues: []
+    },
+    targetWorkDays: (shiftId, empClass) => empClass === 'PT' ? 3 : 5,
+    shiftLabel: (s) => s.name,
+    consecutiveRdos: (count, seed) => {
+      const res = [];
+      for (let i = 0; i < count; i++) res.push((seed + i) % 7);
+      return res;
+    }
+  };
+
+  const lines = buildLines(S, { S1: 4 });
+
+  assert.equal(lines.length, 4);
+  lines.forEach(l => {
+    assert.equal(l.empClass, 'PT');
+    // PT workDays = 3 => rdoCount = 7 - 3 = 4
+    assert.equal(l.rdoDays.length, 4);
+  });
+});
+
+test('Extra positions and training classes get balanced band x class RDOs', () => {
+  const S = {
+    state: {
+      shifts: [
+        { id: 'S1', name: 'AM1', paid: 8 }
+      ],
+      extraPositions: [
+        { id: 'ex1', name: 'MSTI', m: 2, f: 2, opsFte: true, bands: [{ start: '04:00', end: '12:00', min: 1 }] }
+      ],
+      esti: 2,
+      msti: 0,
+      issues: []
+    },
+    targetWorkDays: () => 5,
+    shiftLabel: (s) => s.name,
+    consecutiveRdos: (count, seed) => [seed, (seed + 1) % 7]
+  };
+
+  const extraLines = buildExtraPositionLines(S);
+  assert.equal(extraLines.length, 4);
+  const extraM = extraLines.filter(l => l.sex === 'M').length;
+  const extraF = extraLines.filter(l => l.sex === 'F').length;
+  assert.equal(extraM, 2);
+  assert.equal(extraF, 2);
+
+  const trainingLines = buildTrainingClassLines(S);
+  assert.equal(trainingLines.length, 2);
+  assert.equal(trainingLines[0].empClass, 'ESTI');
 });
 
 test('Grouped shift crew shares RDO and sex balance pool for STSO/LTSO', () => {

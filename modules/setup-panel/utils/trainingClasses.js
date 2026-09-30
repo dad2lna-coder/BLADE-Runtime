@@ -3,6 +3,8 @@
  *  Extra-position cards named ESTI/MSTI must not build a second PT path.
  */
 
+import { getBandKey } from "./buildLines.js";
+
 export var TRAINING_CLASSES = ["ESTI", "MSTI"];
 
 export function isTrainingClassName(name) {
@@ -78,21 +80,53 @@ export function buildTrainingClassLines(S) {
   var counts = trainingHeadcount(S);
   var shifts = (S.state && S.state.shifts) || [];
   var fallback = shifts[0] || { id: "", name: "Shift", start: "04:00", end: "20:30", paid: 8, rdoHard: [] };
+
   TRAINING_CLASSES.forEach(function (cls, ci) {
     var n = counts[cls] || 0;
     if (!n) return;
     var parked = pickShiftQueue(shifts.length ? shifts : [fallback], n);
-    var idBase = 40000 + ci * 1000;
+
+    // Collect slots for this training class
+    var slots = [];
     for (var idx = 0; idx < n; idx++) {
       var def = parked[idx] || fallback;
-      var workDays = S.targetWorkDays ? S.targetWorkDays(def.id, "FT") : ((+def.paid || 8) >= 10 ? 4 : 5);
-      var rdo = rdoDaysFor(S, def, workDays, (idBase + idx) % 7);
+      var bandKey = getBandKey(S, def.id);
+      slots.push({
+        def: def,
+        bandKey: bandKey
+      });
+    }
+
+    // Partition by bandKey
+    var bands = {};
+    slots.forEach(function (slot) {
+      if (!bands[slot.bandKey]) bands[slot.bandKey] = [];
+      bands[slot.bandKey].push(slot);
+    });
+
+    // Pass 1: Assign RDO seeds per bandKey round-robin
+    Object.keys(bands).forEach(function (bk) {
+      var bSlots = bands[bk];
+      var seedIdx = 0;
+      bSlots.forEach(function (slot) {
+        slot.rdoSeed = seedIdx % 7;
+        seedIdx++;
+        var workDays = S.targetWorkDays ? S.targetWorkDays(slot.def.id, "FT") : ((+slot.def.paid || 8) >= 10 ? 4 : 5);
+        var rdo = rdoDaysFor(S, slot.def, workDays, slot.rdoSeed);
+        slot.rdoDays = rdo.rdoDays;
+        slot.rdoHard = rdo.hard;
+      });
+    });
+
+    // Build lines
+    var idBase = 40000 + ci * 1000;
+    slots.forEach(function (slot, idx) {
       out.push({
         id: idBase + idx + 1,
         lineCode: cls + " " + String(idx + 1).padStart(2, "0"),
-        shiftId: def.id,
-        shiftName: def.name,
-        shiftLabel: S.shiftLabel ? S.shiftLabel(def) : ((def.start || "") + "-" + (def.end || "")),
+        shiftId: slot.def.id,
+        shiftName: slot.def.name,
+        shiftLabel: S.shiftLabel ? S.shiftLabel(slot.def) : ((slot.def.start || "") + "-" + (slot.def.end || "")),
         empClass: cls,
         position: cls,
         role: cls,
@@ -106,12 +140,13 @@ export function buildTrainingClassLines(S) {
         opsFte: false,
         sex: "",
         function: "TRAINING",
-        rdoDays: rdo.rdoDays,
-        rdoHard: rdo.hard,
-        paid: def.paid || 8
+        rdoDays: slot.rdoDays,
+        rdoHard: slot.rdoHard,
+        paid: slot.def.paid || 8
       });
-    }
+    });
   });
+
   return out;
 }
 

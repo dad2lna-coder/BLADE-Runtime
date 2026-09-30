@@ -8,6 +8,7 @@ export function renderAll(S) {
   if (S.renderCrewGroupsUI) S.renderCrewGroupsUI();
   if (S.renderShiftsTable) S.renderShiftsTable();
   if (S.renderExtraPositions) S.renderExtraPositions();
+  if (S.renderRdoMatrixModal) S.renderRdoMatrixModal();
 }
 
 function addFcBandClassic(S) {
@@ -91,6 +92,17 @@ export function bindSetupActions(S) {
     if (input) input.value = "";
     if (S.renderCrewGroupsUI) S.renderCrewGroupsUI();
     if (S.renderShiftsTable) S.renderShiftsTable();
+  });
+  bindOnce(document.getElementById("btn-rdo-matrix"), "click", function (e) {
+    e.preventDefault();
+    if (S.openRdoMatrixModal) S.openRdoMatrixModal();
+  });
+  bindOnce(document.getElementById("rdo-matrix-close"), "click", function (e) {
+    e.preventDefault();
+    if (S.closeRdoMatrixModal) S.closeRdoMatrixModal();
+  });
+  bindOnce(document.getElementById("rdo-matrix-pos-select"), "change", function () {
+    if (S.renderRdoMatrixModal) S.renderRdoMatrixModal();
   });
   bindOnce(document.getElementById("btn-save-staffing"), "click", function () {
     if (S.exportStaffingConfig) S.exportStaffingConfig();
