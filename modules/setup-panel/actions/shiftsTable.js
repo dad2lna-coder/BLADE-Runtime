@@ -247,6 +247,87 @@ export function attachShiftsTable(S) {
     });
   };
 
+  S.exportAllRdoMatrixCsv = function () {
+    var lines = (S.state && S.state.lines) || [];
+    if (!lines.length) {
+      if (S.updateStatus) S.updateStatus("No generated lines to export.");
+      return;
+    }
+
+    var days = S.DAYS || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    function formatRdoPattern(rdoDays) {
+      if (!rdoDays || !rdoDays.length) return "None";
+      var sorted = rdoDays.slice().map(Number).sort(function (a, b) { return a - b; });
+      return sorted.map(function (d) { return days[d] || d; }).join("-");
+    }
+
+    // Filter to sexed lines (skip ESTI/MSTI or lines without sex)
+    var sexedLines = lines.filter(function (l) {
+      if (l.isTraining || (l.empClass === "ESTI" || l.empClass === "MSTI")) return false;
+      var s = (l.sex || "").toUpperCase();
+      return s === "M" || s === "F";
+    });
+
+    if (!sexedLines.length) {
+      if (S.updateStatus) S.updateStatus("No sexed position lines available for CSV export.");
+      return;
+    }
+
+    // Collect all active RDO patterns across all sexed lines
+    var rdoPatternsMap = {};
+    sexedLines.forEach(function (l) {
+      var pat = formatRdoPattern(l.rdoDays);
+      rdoPatternsMap[pat] = true;
+    });
+    var rdoPatterns = Object.keys(rdoPatternsMap).sort();
+
+    // Group lines by Position x Shift x Sex
+    var groupsMap = {};
+    sexedLines.forEach(function (l) {
+      var pos = l.extraName || (l.isStso ? "STSO" : (l.isLtso ? "LTSO" : (l.empClass === "PT" ? "PT TSO" : "FT TSO")));
+      var shiftName = l.shiftName || l.shiftLabel || l.shiftId || "Shift";
+      var sex = (l.sex || "").toUpperCase();
+      var key = pos + "||" + shiftName + "||" + sex;
+      if (!groupsMap[key]) groupsMap[key] = { pos: pos, shift: shiftName, sex: sex, lines: [] };
+      groupsMap[key].lines.push(l);
+    });
+
+    var rows = [];
+    // Header
+    rows.push(["Position", "Shift", "Sex"].concat(rdoPatterns).join(","));
+
+    Object.keys(groupsMap).sort().forEach(function (key) {
+      var g = groupsMap[key];
+      var countsByPat = {};
+      g.lines.forEach(function (l) {
+        var pat = formatRdoPattern(l.rdoDays);
+        countsByPat[pat] = (countsByPat[pat] || 0) + 1;
+      });
+      var lineRow = ['"' + g.pos + '"', '"' + g.shift + '"', g.sex];
+      rdoPatterns.forEach(function (pat) {
+        lineRow.push(countsByPat[pat] || 0);
+      });
+      rows.push(lineRow.join(","));
+    });
+
+    var csvText = rows.join("\n");
+    var blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+    var filename = "RDO_Sex_Matrix_All.csv";
+    if (S.saveBlob) {
+      S.saveBlob(blob, filename);
+    } else if (typeof document !== "undefined") {
+      var a = document.createElement("a");
+      var url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    if (S.updateStatus) S.updateStatus("Exported unfiltered RDO x Sex matrix CSV.");
+  };
+
   S.saveShiftDayTimes = function () {
     var s = S.getShift(S._editingDayTimesShiftId);
     if (!s) { S.closeShiftDayTimesModal(); return; }
@@ -270,19 +351,137 @@ export function attachShiftsTable(S) {
   };
 
   S.openRdoMatrixModal = function () {
-    var modal = document.getElementById("rdo-matrix-modal");
+    var modal = typeof document !== "undefined" ? document.getElementById("rdo-matrix-modal") : null;
     if (modal) { modal.style.display = "flex"; modal.setAttribute("aria-hidden", "false"); }
     S.renderRdoMatrixModal();
   };
 
   S.closeRdoMatrixModal = function () {
-    var modal = document.getElementById("rdo-matrix-modal");
+    var modal = typeof document !== "undefined" ? document.getElementById("rdo-matrix-modal") : null;
     if (modal) { modal.style.display = "none"; modal.setAttribute("aria-hidden", "true"); }
   };
 
+  S.openRdoRespinModal = function () {
+    var modal = typeof document !== "undefined" ? document.getElementById("rdo-respin-modal") : null;
+    if (modal) { modal.style.display = "flex"; modal.setAttribute("aria-hidden", "false"); }
+    S.renderRdoRespinSlices();
+  };
+
+  S.closeRdoRespinModal = function () {
+    var modal = typeof document !== "undefined" ? document.getElementById("rdo-respin-modal") : null;
+    if (modal) { modal.style.display = "none"; modal.setAttribute("aria-hidden", "true"); }
+  };
+
+  S.renderRdoRespinSlices = function () {
+    var listEl = document.getElementById("rdo-respin-slices-list");
+    if (!listEl) return;
+    var lines = (S.state && S.state.lines) || [];
+    if (!lines.length) {
+      listEl.innerHTML = '<p class="muted" style="margin:0">No generated lines available.</p>';
+      return;
+    }
+
+    var sexedLines = lines.filter(function (l) {
+      if (l.isTraining || (l.empClass === "ESTI" || l.empClass === "MSTI")) return false;
+      var s = (l.sex || "").toUpperCase();
+      return s === "M" || s === "F";
+    });
+
+    // Group slices by Position x Shift x Sex
+    var sliceMap = {};
+    sexedLines.forEach(function (l) {
+      var pos = l.extraName || (l.isStso ? "STSO" : (l.isLtso ? "LTSO" : (l.empClass === "PT" ? "PT TSO" : "FT TSO")));
+      var shiftName = l.shiftName || l.shiftLabel || l.shiftId || "Shift";
+      var sex = (l.sex || "").toUpperCase();
+      var key = shiftName + " · " + pos + " · " + sex;
+      if (!sliceMap[key]) sliceMap[key] = { key: key, count: 0 };
+      sliceMap[key].count++;
+    });
+
+    var keys = Object.keys(sliceMap).sort();
+    if (!keys.length) {
+      listEl.innerHTML = '<p class="muted" style="margin:0">No slices available.</p>';
+      return;
+    }
+
+    listEl.innerHTML = keys.map(function (k) {
+      var info = sliceMap[k];
+      return '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;cursor:pointer">' +
+        '<input type="checkbox" class="respin-slice-cb" data-slice-key="' + k.replace(/"/g, "&quot;") + '" />' +
+        '<span><strong>' + info.key + '</strong> <span class="muted">(' + info.count + ' line' + (info.count > 1 ? 's' : '') + ')</span></span>' +
+        '</label>';
+    }).join("");
+  };
+
+  S.respinSelectedSlices = function (selectedKeys) {
+    if (!selectedKeys || !selectedKeys.length) {
+      if (S.updateStatus) S.updateStatus("No slices selected for respin.");
+      return;
+    }
+    var selectedSet = new Set(selectedKeys);
+    var lines = (S.state && S.state.lines) || [];
+    if (!lines.length) return;
+
+    var days = (S.state && S.state.weekCount ? S.state.weekCount * 7 : 7);
+
+    // Group target lines by selected slice key
+    var targetGroups = {};
+    lines.forEach(function (l) {
+      if (l.isTraining || (l.empClass === "ESTI" || l.empClass === "MSTI")) return;
+      var pos = l.extraName || (l.isStso ? "STSO" : (l.isLtso ? "LTSO" : (l.empClass === "PT" ? "PT TSO" : "FT TSO")));
+      var shiftName = l.shiftName || l.shiftLabel || l.shiftId || "Shift";
+      var sex = (l.sex || "").toUpperCase();
+      var key = shiftName + " · " + pos + " · " + sex;
+      if (selectedSet.has(key)) {
+        if (!targetGroups[key]) targetGroups[key] = [];
+        targetGroups[key].push(l);
+      }
+    });
+
+    var respinCount = 0;
+    Object.keys(targetGroups).forEach(function (key) {
+      var gLines = targetGroups[key];
+      if (!gLines.length) return;
+
+      // Seeded random seed for this respin batch
+      var seed = Math.floor(Math.random() * 2147483647);
+
+      // Re-assign RDO seeds round-robin / shuffled among this slice's lines
+      var startSeed = Math.floor(Math.random() * 7);
+      gLines.forEach(function (l, idx) {
+        var rdoSeed = (startSeed + idx) % 7;
+        var workDays = S.targetWorkDays ? S.targetWorkDays(l.shiftId, l.empClass) : ((+l.paid || 8) >= 10 ? 4 : 5);
+        var rdoCount = Math.max(1, 7 - workDays);
+        var hard = Array.isArray(l.rdoHard) && l.rdoHard
+          ? (Array.isArray(l.rdoHard) ? l.rdoHard : [])
+          : [];
+
+        if (l.rdoHard && Array.isArray(l.rdoDays) && l.rdoDays.length > 0) {
+          // Hard RDOs set, preserve
+        } else if (S.consecutiveRdos) {
+          l.rdoDays = S.consecutiveRdos(rdoCount, rdoSeed);
+        } else {
+          l.rdoDays = [(rdoSeed) % 7, (rdoSeed + 1) % 7];
+        }
+
+        // Update schedule array for this line
+        if (S.buildScheduleForLine) {
+          S.state.schedule[l.id] = S.buildScheduleForLine(l, days);
+        }
+        respinCount++;
+      });
+    });
+
+    // Refresh UI & Matrix
+    if (S.renderRdoMatrixModal) S.renderRdoMatrixModal();
+    if (S.renderAll) S.renderAll();
+    if (S.renderLines) S.renderLines();
+    if (S.updateStatus) S.updateStatus("Respun RDOs for " + respinCount + " line(s) across " + Object.keys(targetGroups).length + " slice(s).");
+  };
+
   S.renderRdoMatrixModal = function () {
-    var selectEl = document.getElementById("rdo-matrix-pos-select");
-    var tableWrap = document.getElementById("rdo-matrix-table-wrap");
+    var selectEl = typeof document !== "undefined" ? document.getElementById("rdo-matrix-pos-select") : null;
+    var tableWrap = typeof document !== "undefined" ? document.getElementById("rdo-matrix-table-wrap") : null;
     if (!tableWrap) return;
 
     var lines = (S.state && S.state.lines) || [];

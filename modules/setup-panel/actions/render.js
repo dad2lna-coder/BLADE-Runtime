@@ -104,6 +104,40 @@ export function bindSetupActions(S) {
   bindOnce(document.getElementById("rdo-matrix-pos-select"), "change", function () {
     if (S.renderRdoMatrixModal) S.renderRdoMatrixModal();
   });
+  bindOnce(document.getElementById("btn-rdo-export-all"), "click", function (e) {
+    e.preventDefault();
+    if (S.exportAllRdoMatrixCsv) S.exportAllRdoMatrixCsv();
+  });
+  bindOnce(document.getElementById("btn-rdo-respin-open"), "click", function (e) {
+    e.preventDefault();
+    if (S.openRdoRespinModal) S.openRdoRespinModal();
+  });
+  bindOnce(document.getElementById("rdo-respin-close"), "click", function (e) {
+    e.preventDefault();
+    if (S.closeRdoRespinModal) S.closeRdoRespinModal();
+  });
+  bindOnce(document.getElementById("btn-respin-cancel"), "click", function (e) {
+    e.preventDefault();
+    if (S.closeRdoRespinModal) S.closeRdoRespinModal();
+  });
+  bindOnce(document.getElementById("btn-respin-select-all"), "click", function (e) {
+    e.preventDefault();
+    document.querySelectorAll(".respin-slice-cb").forEach(function (cb) { cb.checked = true; });
+  });
+  bindOnce(document.getElementById("btn-respin-clear-all"), "click", function (e) {
+    e.preventDefault();
+    document.querySelectorAll(".respin-slice-cb").forEach(function (cb) { cb.checked = false; });
+  });
+  bindOnce(document.getElementById("btn-do-respin"), "click", function (e) {
+    e.preventDefault();
+    var selected = [];
+    document.querySelectorAll(".respin-slice-cb:checked").forEach(function (cb) {
+      var key = cb.getAttribute("data-slice-key");
+      if (key) selected.push(key);
+    });
+    if (S.respinSelectedSlices) S.respinSelectedSlices(selected);
+    if (S.closeRdoRespinModal) S.closeRdoRespinModal();
+  });
   bindOnce(document.getElementById("btn-save-staffing"), "click", function () {
     if (S.exportStaffingConfig) S.exportStaffingConfig();
   });
