@@ -85,6 +85,26 @@
     })();
   });
 
+  // Resolve module load order from manifest dependencies (topological sort)
+  function resolveDependencies(man) {
+    var sorted = [], visited = {}, visiting = {};
+    function visit(name) {
+      if (visited[name]) return;
+      if (visiting[name]) {
+        console.warn("Circular dependency detected involving " + name);
+        return;
+      }
+      visiting[name] = true;
+      var deps = (man[name] && man[name].dependencies) || [];
+      deps.forEach(visit);
+      visiting[name] = false;
+      visited[name] = true;
+      sorted.push(name);
+    }
+    Object.keys(man).forEach(visit);
+    return sorted;
+  }
+
   function tabModules(man) {
     const list = [];
     for (const [name, raw] of Object.entries(man)) {
@@ -217,7 +237,11 @@
   buildNav(ownedTabs);
   buildReportHost(reportSubModules(manifest));
 
-  for (const [name, raw] of Object.entries(manifest)) {
+  // Load modules in dependency order (topological sort from manifest dependencies)
+  const loadOrder = resolveDependencies(manifest);
+
+  for (const name of loadOrder) {
+    const raw = manifest[name];
     const cfg = typeof raw === "string" ? { entry: raw, init: "initTeamBuilder" } : raw;
     try {
       for (const href of cfg.css || []) {
