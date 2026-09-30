@@ -188,6 +188,36 @@ test('Fixed seed produces identical schedule; different seed can vary schedule',
   assert.notDeepEqual(lines1.map(l => ({ sex: l.sex, rdo: l.rdoDays })), lines3.map(l => ({ sex: l.sex, rdo: l.rdoDays })));
 });
 
+test('exportAllRdoMatrixCsv exports all sexed position lines and respinSelectedSlices updates target lines', async () => {
+  const S = {
+    state: {
+      lines: [
+        { id: 1, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'M', rdoDays: [0, 1] },
+        { id: 2, shiftId: 'S1', shiftName: '0330', position: 'STSO', isStso: true, sex: 'F', rdoDays: [2, 3] },
+        { id: 3, shiftId: 'S2', shiftName: '0400', position: 'TSO', empClass: 'FT', sex: 'M', rdoDays: [4, 5] },
+        { id: 4, shiftId: 'S3', shiftName: '0400', position: 'ESTI', empClass: 'ESTI', sex: '', rdoDays: [0, 6], isTraining: true }
+      ],
+      schedule: { 1: [], 2: [], 3: [], 4: [] },
+      weekCount: 1
+    },
+    DAYS: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    targetWorkDays: () => 5,
+    consecutiveRdos: (count, seed) => [(seed + 1) % 7, (seed + 2) % 7],
+    buildScheduleForLine: () => ["WORK", "WORK", "WORK", "WORK", "WORK", "RDO", "RDO"]
+  };
+
+  const mod = await import('../modules/setup-panel/actions/shiftsTable.js');
+  mod.attachShiftsTable(S);
+  assert.equal(typeof S.exportAllRdoMatrixCsv, 'function');
+  assert.equal(typeof S.respinSelectedSlices, 'function');
+
+  // Test selective respin on '0330 · STSO · M'
+  S.respinSelectedSlices(['0330 · STSO · M']);
+  // Line 1 should be updated while line 2 (F) and line 3 (TSO) remain unchanged in sex/position
+  assert.equal(S.state.lines[0].sex, 'M');
+  assert.equal(S.state.lines[1].sex, 'F');
+});
+
 test('Grouped shift crew shares RDO and sex balance pool for STSO/LTSO', () => {
   const S = {
     state: {
