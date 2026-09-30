@@ -204,7 +204,7 @@ function rdoDaysFor(S, def, workDays, seed) {
   return { rdoDays: rdoDays, hard: hard.length > 0 };
 }
 
-import { getBandKey } from "./buildLines.js";
+import { getBandKey, createPRNG, seededShuffle } from "./buildLines.js";
 
 export function buildExtraPositionLines(S) {
   var out = [];
@@ -220,6 +220,10 @@ export function buildExtraPositionLines(S) {
     if (!pos.bands || !pos.bands.length) {
       if (S.state && S.state.issues) S.state.issues.push((pos.name || "Position") + ": no coverage bands.");
     }
+
+    var seed = ((S.state && S.state.activeSeed) || 42) + 3000 + pi * 100;
+    var prng = createPRNG(seed);
+
     var typeName = extraTypeName(pos);
     var parked = pickShiftQueue(pos, shifts.length ? shifts : [fallback], total);
 
@@ -241,17 +245,18 @@ export function buildExtraPositionLines(S) {
       bands[slot.bandKey].push(slot);
     });
 
-    // Pass 1: Assign RDO seeds per bandKey round-robin
+    // Pass 1: Assign RDO seeds per bandKey round-robin using seeded offset
     Object.keys(bands).forEach(function (bk) {
       var bSlots = bands[bk];
-      var seedIdx = 0;
+      var seedOffset = Math.floor(prng() * 7);
+      var seedIdx = seedOffset;
       bSlots.forEach(function (slot) {
         slot.rdoSeed = seedIdx % 7;
         seedIdx++;
       });
     });
 
-    // Pass 2: Assign sex from M/F pools onto ordered slots across seed buckets
+    // Pass 2: Assign sex from M/F pools onto ordered slots across seed buckets using seeded shuffle
     var poolM = males, poolF = females;
     var targetFShare = total > 0 ? females / total : 0.5;
     var placedGlobal = { M: 0, F: 0 };
@@ -286,9 +291,11 @@ export function buildExtraPositionLines(S) {
         if (seedBuckets[k].length > maxLen) maxLen = seedBuckets[k].length;
       });
 
+      var seedOrder = seededShuffle([0, 1, 2, 3, 4, 5, 6], prng);
       var orderedSlots = [];
       for (var i = 0; i < maxLen; i++) {
-        for (var s = 0; s < 7; s++) {
+        for (var sIdx = 0; sIdx < 7; sIdx++) {
+          var s = seedOrder[sIdx];
           if (seedBuckets[s] && seedBuckets[s][i]) {
             orderedSlots.push(seedBuckets[s][i]);
           }

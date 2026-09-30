@@ -26,7 +26,8 @@ export function snapshotPeriod(S) {
     open: val("cfg-open", (S.state && S.state.open) || "03:30"),
     close: val("cfg-close", (S.state && S.state.close) || "23:00"),
     weeks: Math.max(1, Math.min(8, +(val("cfg-weeks", S.state && S.state.weekCount) || 1))),
-    start: val("cfg-start", "")
+    start: val("cfg-start", ""),
+    generateSeed: val("cfg-generate-seed", (S.state && S.state.generateSeed) || "random")
   };
   setupStore.period = period;
   return period;
@@ -91,6 +92,7 @@ export function collectSetupInputs(S) {
     S.state.open = period.open;
     S.state.close = period.close;
     S.state.weekCount = period.weeks;
+    S.state.generateSeed = period.generateSeed;
     if (S.parseStartDate) S.state.startDate = S.parseStartDate(period.start || null);
   }
   readSetupCompanions(S);

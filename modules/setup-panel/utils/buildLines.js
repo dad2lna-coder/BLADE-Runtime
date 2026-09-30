@@ -1,5 +1,26 @@
 /** Turn allocated headcounts into bid lines. */
 
+export function createPRNG(seed) {
+  var s = (seed >>> 0) || 1;
+  return function () {
+    var t = (s += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function seededShuffle(arr, prng) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(prng() * (i + 1));
+    var tmp = a[i];
+    a[i] = a[j];
+    a[j] = tmp;
+  }
+  return a;
+}
+
 export function getBandKey(S, shiftId) {
   var shifts = (S && S.state && S.state.shifts) || [];
   var shift = shifts.find(function (s) { return s.id === shiftId; });
@@ -93,6 +114,9 @@ export function buildLines(S, counts) {
     if (need > 0 && !(def.force > 0)) order.push(def);
   });
 
+  var hasActiveSeed = S.state && typeof S.state.activeSeed === "number";
+  var prng = hasActiveSeed ? createPRNG(S.state.activeSeed + 500) : null;
+
   // Collect line slots per shift
   var slots = [];
   order.forEach(function (def) {
@@ -116,10 +140,11 @@ export function buildLines(S, counts) {
     bands[slot.bandKey].push(slot);
   });
 
-  // Pass 1: Assign RDO seeds round-robin within each role x bandKey
+  // Pass 1: Assign RDO seeds round-robin within each role x bandKey using seeded offset
   Object.keys(bands).forEach(function (bk) {
     var bSlots = bands[bk];
-    var seedIdx = 0;
+    var seedOffset = prng ? Math.floor(prng() * 7) : 0;
+    var seedIdx = seedOffset;
     bSlots.forEach(function (slot) {
       slot.rdoSeed = seedIdx % 7;
       seedIdx++;
@@ -135,7 +160,7 @@ export function buildLines(S, counts) {
 
   var lines = [], id = 1;
 
-  // Interleave slots by RDO seeds within each band for balanced sex distribution across RDOs
+  // Interleave slots by RDO seeds within each band using seeded bucket shuffle
   Object.keys(bands).forEach(function (bk) {
     var bSlots = bands[bk];
     var seedBuckets = {};
@@ -150,9 +175,11 @@ export function buildLines(S, counts) {
       if (seedBuckets[k].length > maxLen) maxLen = seedBuckets[k].length;
     });
 
+    var seedOrder = prng ? seededShuffle([0, 1, 2, 3, 4, 5, 6], prng) : [0, 1, 2, 3, 4, 5, 6];
     var orderedSlots = [];
     for (var i = 0; i < maxLen; i++) {
-      for (var s = 0; s < 7; s++) {
+      for (var sIdx = 0; sIdx < 7; sIdx++) {
+        var s = seedOrder[sIdx];
         if (seedBuckets[s] && seedBuckets[s][i]) {
           orderedSlots.push(seedBuckets[s][i]);
         }
@@ -251,6 +278,9 @@ export function buildSupervisoryLines(S, supCounts, supType) {
   var placedGlobal = { M: 0, F: 0 };
   var forceField = isLtso ? "ltsoForce" : "stsoForce";
 
+  var hasActiveSeed = S.state && typeof S.state.activeSeed === "number";
+  var prng = hasActiveSeed ? createPRNG(S.state.activeSeed + (isLtso ? 2000 : 1000)) : null;
+
   var shifts = S.state.shifts || [];
   var order = [];
   shifts.forEach(function (def) {
@@ -282,10 +312,11 @@ export function buildSupervisoryLines(S, supCounts, supType) {
     bands[slot.bandKey].push(slot);
   });
 
-  // Pass 1: Assign RDO seeds per bandKey round-robin
+  // Pass 1: Assign RDO seeds per bandKey round-robin using seeded offset
   Object.keys(bands).forEach(function (bk) {
     var bSlots = bands[bk];
-    var seedIdx = 0;
+    var seedOffset = prng ? Math.floor(prng() * 7) : 0;
+    var seedIdx = seedOffset;
     bSlots.forEach(function (slot) {
       var workDays = (+slot.def.paid || 8) >= 10 ? 4 : 5;
       var rdoCount = 7 - workDays;
@@ -309,7 +340,7 @@ export function buildSupervisoryLines(S, supCounts, supType) {
     });
   });
 
-  // Pass 2: Assign sex from M/F pools, interleaving across RDO seeds within each bandKey
+  // Pass 2: Assign sex from M/F pools, interleaving across RDO seeds within each bandKey using seeded shuffle
   Object.keys(bands).forEach(function (bk) {
     var bSlots = bands[bk];
     var seedBuckets = {};
@@ -324,9 +355,11 @@ export function buildSupervisoryLines(S, supCounts, supType) {
       if (seedBuckets[k].length > maxLen) maxLen = seedBuckets[k].length;
     });
 
+    var seedOrder = prng ? seededShuffle([0, 1, 2, 3, 4, 5, 6], prng) : [0, 1, 2, 3, 4, 5, 6];
     var orderedSlots = [];
     for (var i = 0; i < maxLen; i++) {
-      for (var s = 0; s < 7; s++) {
+      for (var sIdx = 0; sIdx < 7; sIdx++) {
+        var s = seedOrder[sIdx];
         if (seedBuckets[s] && seedBuckets[s][i]) {
           orderedSlots.push(seedBuckets[s][i]);
         }
