@@ -384,3 +384,128 @@ test('Proportional PT placement distributes PT across multiple non-long shifts a
   const ptShiftsWithPt = new Set(ptLines.map(l => l.shiftId));
   assert.ok(ptShiftsWithPt.size >= 2, `Expected PT on >= 2 distinct non-long shifts, got ${ptShiftsWithPt.size}`);
 });
+
+test('rebalancePtTsoShifts redistributes PT TSO lines across non-long shifts preserving FT, PT paid, rdoDays, sex, function, certPool, and ids', async () => {
+  const { rebalancePtTsoShifts, attachRebalancePt } = await import('../modules/setup-panel/utils/rebalancePt.js');
+
+  const S = {
+    state: {
+      open: '03:30',
+      close: '23:00',
+      shifts: [
+        { id: 'S1', name: 'AM1', start: '05:00', end: '13:30', paid: 8 },
+        { id: 'S2', name: 'PM1', start: '13:00', end: '21:30', paid: 8 },
+        { id: 'S3', name: 'Long1', start: '06:00', end: '16:30', paid: 10 }
+      ],
+      lines: [
+        { id: 1, lineCode: 'Line 001', shiftId: 'S1', shiftName: 'AM1', empClass: 'PT', sex: 'M', paid: 4, rdoDays: [0, 1], schedule: ['RDO', 'RDO', 'WORK', 'WORK', 'WORK', 'WORK', 'WORK'], function: 'DFO', certPool: 'B' },
+        { id: 2, lineCode: 'Line 002', shiftId: 'S1', shiftName: 'AM1', empClass: 'PT', sex: 'F', paid: 4, rdoDays: [1, 2], schedule: ['WORK', 'RDO', 'RDO', 'WORK', 'WORK', 'WORK', 'WORK'], function: 'BAG', certPool: 'A' },
+        { id: 3, lineCode: 'Line 003', shiftId: 'S1', shiftName: 'AM1', empClass: 'PT', sex: 'M', paid: 4, rdoDays: [2, 3], schedule: ['WORK', 'WORK', 'RDO', 'RDO', 'WORK', 'WORK', 'WORK'], function: '', certPool: 'A' },
+        { id: 4, lineCode: 'Line 004', shiftId: 'S1', shiftName: 'AM1', empClass: 'PT', sex: 'F', paid: 4, rdoDays: [3, 4], schedule: ['WORK', 'WORK', 'WORK', 'RDO', 'RDO', 'WORK', 'WORK'], function: 'PAX', certPool: 'B' },
+        { id: 5, lineCode: 'Line 005', shiftId: 'S1', shiftName: 'AM1', empClass: 'FT', sex: 'M', paid: 8, rdoDays: [0, 6] },
+        { id: 6, lineCode: 'Line 006', shiftId: 'S2', shiftName: 'PM1', empClass: 'FT', sex: 'F', paid: 8, rdoDays: [0, 6] },
+        { id: 7, lineCode: 'STSO 01', shiftId: 'S1', shiftName: 'AM1', empClass: 'STSO', isStso: true, sex: 'M', paid: 8, rdoDays: [0, 6] }
+      ],
+      issues: []
+    },
+    shiftLabel: (s) => s.name,
+    timeToMin: (t) => {
+      const p = String(t).split(':');
+      return (+p[0] || 0) * 60 + (+p[1] || 0);
+    }
+  };
+
+  attachRebalancePt(S);
+  assert.equal(typeof S.rebalancePtTsoShifts, 'function');
+
+  const result = S.rebalancePtTsoShifts();
+  assert.equal(result, true);
+
+  // PT lines should now be on >= 2 distinct non-long shifts (S1 and S2)
+  const ptLines = S.state.lines.filter(l => l.empClass === 'PT');
+  assert.equal(ptLines.length, 4);
+  const ptShifts = new Set(ptLines.map(l => l.shiftId));
+  assert.ok(ptShifts.size >= 2, `Expected PT on >= 2 shifts, got ${ptShifts.size}`);
+  assert.ok(!ptShifts.has('S3'), 'Long shift S3 must remain closed to PT');
+
+  // Check FT and STSO lines are untouched
+  assert.equal(S.state.lines.find(l => l.id === 5).shiftId, 'S1');
+  assert.equal(S.state.lines.find(l => l.id === 6).shiftId, 'S2');
+  assert.equal(S.state.lines.find(l => l.id === 7).shiftId, 'S1');
+
+  // Check PT line 1 fields preserved
+  const l1 = S.state.lines.find(l => l.id === 1);
+  assert.equal(l1.id, 1);
+  assert.equal(l1.lineCode, 'Line 001');
+  assert.equal(l1.empClass, 'PT');
+  assert.equal(l1.sex, 'M');
+  assert.equal(l1.paid, 4);
+  assert.deepEqual(l1.rdoDays, [0, 1]);
+  assert.equal(l1.function, 'DFO');
+  assert.equal(l1.certPool, 'B');
+});
+
+test('rebalancePtTsoShifts handles hard RDO constraints and edge cases', async () => {
+  const { rebalancePtTsoShifts } = await import('../modules/setup-panel/utils/rebalancePt.js');
+
+  // Hard RDO constraint test
+  const S_hard = {
+    state: {
+      open: '03:30',
+      close: '23:00',
+      shifts: [
+        { id: 'S1', name: 'AM1', start: '05:00', end: '13:30', paid: 8, rdoHard: [] },
+        { id: 'S2', name: 'PM1', start: '13:00', end: '21:30', paid: 8, rdoHard: [0, 6] }
+      ],
+      lines: [
+        { id: 1, lineCode: 'Line 001', shiftId: 'S1', shiftName: 'AM1', empClass: 'PT', sex: 'M', paid: 4, rdoDays: [1, 2] },
+        { id: 2, lineCode: 'Line 002', shiftId: 'S1', shiftName: 'AM1', empClass: 'PT', sex: 'F', paid: 4, rdoDays: [1, 2] }
+      ],
+      issues: []
+    },
+    shiftLabel: (s) => s.name,
+    timeToMin: (t) => {
+      const p = String(t).split(':');
+      return (+p[0] || 0) * 60 + (+p[1] || 0);
+    }
+  };
+
+  rebalancePtTsoShifts(S_hard);
+  // Line 2 cannot move to S2 due to hard RDO mismatch ([1, 2] doesn't cover [0, 6])
+  // So an issue should be logged about Line 002
+  assert.ok(S_hard.state.issues.some(i => i.includes('Line 002') || i.includes('hard RDO')));
+
+  // 0 PT lines edge case
+  const S_no_pt = {
+    state: {
+      shifts: [
+        { id: 'S1', name: 'AM1', paid: 8 },
+        { id: 'S2', name: 'PM1', paid: 8 }
+      ],
+      lines: [
+        { id: 1, lineCode: 'Line 001', shiftId: 'S1', empClass: 'FT', sex: 'M', paid: 8 }
+      ],
+      issues: []
+    }
+  };
+  const resNoPt = rebalancePtTsoShifts(S_no_pt);
+  assert.equal(resNoPt, false);
+  assert.ok(S_no_pt.state.issues.some(i => i.includes('No eligible PT TSO lines')));
+
+  // < 2 eligible non-long shifts edge case
+  const S_one_shift = {
+    state: {
+      shifts: [
+        { id: 'S1', name: 'AM1', paid: 8 },
+        { id: 'S2', name: 'Long1', paid: 10 }
+      ],
+      lines: [
+        { id: 1, lineCode: 'Line 001', shiftId: 'S1', empClass: 'PT', sex: 'M', paid: 4 }
+      ],
+      issues: []
+    }
+  };
+  const resOneShift = rebalancePtTsoShifts(S_one_shift);
+  assert.equal(resOneShift, false);
+  assert.ok(S_one_shift.state.issues.some(i => i.includes('At least 2 non-long shifts required')));
+});
