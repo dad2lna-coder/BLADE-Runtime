@@ -27,6 +27,15 @@ export function initSetupPanel(scheduler) {
     if (S && S.updateStatus) S.updateStatus("Setup generate failed to attach — check console.");
     throw err;
   }
+
+  var origRenderAll = S.renderAll;
+  S.renderAll = function () {
+    renderAll(S);
+    if (typeof origRenderAll === "function" && origRenderAll !== S.renderAll) {
+      try { origRenderAll.apply(this, arguments); } catch (e) {}
+    }
+  };
+
   seedStartDate(S);
 
   if (!_boundDomContentLoaded) {

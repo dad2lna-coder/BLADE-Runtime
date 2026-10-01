@@ -525,6 +525,78 @@ test('rebalancePtTsoShifts with AM-heavy weights and totalPt >= 2 still places >
   assert.ok(ptShifts.size >= 2, `Seeding rule must ensure PT placed on >= 2 shifts even with AM-heavy weights, got ${ptShifts.size}`);
 });
 
+test('rebalancePtTsoShifts rebalances a TESTING23-shaped roster (13 PT on 0330 across 4 short shifts)', async () => {
+  const { rebalancePtTsoShifts } = await import('../modules/setup-panel/utils/rebalancePt.js');
+
+  let updatedStatus = '';
+  const S = {
+    state: {
+      open: '03:30',
+      close: '23:00',
+      shifts: [
+        { id: 'S1', name: '0330', start: '03:30', end: '12:00', paid: 8 },
+        { id: 'S2', name: '0400', start: '04:00', end: '12:30', paid: 8 },
+        { id: 'S3', name: '1145', start: '11:45', end: '20:15', paid: 8 },
+        { id: 'S4', name: '1345', start: '13:45', end: '22:15', paid: 8 }
+      ],
+      lines: [],
+      issues: []
+    },
+    updateStatus: (msg) => { updatedStatus = msg; },
+    shiftLabel: (s) => s.name,
+    timeToMin: (t) => {
+      const p = String(t).split(':');
+      return (+p[0] || 0) * 60 + (+p[1] || 0);
+    }
+  };
+
+  // Build 13 PT TSO lines all on S1 (0330)
+  for (let i = 1; i <= 13; i++) {
+    S.state.lines.push({
+      id: i,
+      lineCode: `Line ${String(i).padStart(3, '0')}`,
+      shiftId: 'S1',
+      shiftName: '0330',
+      empClass: 'PT',
+      sex: i % 2 === 0 ? 'F' : 'M',
+      paid: 4,
+      rdoDays: [i % 7, (i + 1) % 7]
+    });
+  }
+
+  // Add 4 FT lines on S1, S2, S3, S4
+  for (let i = 14; i <= 17; i++) {
+    const sId = `S${i - 13}`;
+    S.state.lines.push({
+      id: i,
+      lineCode: `Line ${String(i).padStart(3, '0')}`,
+      shiftId: sId,
+      shiftName: S.state.shifts.find(s => s.id === sId).name,
+      empClass: 'FT',
+      sex: i % 2 === 0 ? 'F' : 'M',
+      paid: 8,
+      rdoDays: [0, 6]
+    });
+  }
+
+  const res = rebalancePtTsoShifts(S);
+  assert.equal(res, true);
+
+  const ptLines = S.state.lines.filter(l => l.empClass === 'PT');
+  const distinctShifts = new Set(ptLines.map(l => l.shiftId));
+  assert.equal(distinctShifts.size, 4, '13 PT lines should be force-spread across all 4 short shifts');
+
+  // Verify status string contains before->after count format
+  assert.ok(updatedStatus.includes('0330: 13→'), `Expected status to show 0330 before->after count, got: "${updatedStatus}"`);
+  assert.ok(updatedStatus.includes('moved'), 'Expected status to report moved count');
+
+  // FT lines 14..17 shiftIds must be unchanged
+  assert.equal(S.state.lines.find(l => l.id === 14).shiftId, 'S1');
+  assert.equal(S.state.lines.find(l => l.id === 15).shiftId, 'S2');
+  assert.equal(S.state.lines.find(l => l.id === 16).shiftId, 'S3');
+  assert.equal(S.state.lines.find(l => l.id === 17).shiftId, 'S4');
+});
+
 test('rebalancePtTsoShifts handles hard RDO constraints and edge cases', async () => {
   const { rebalancePtTsoShifts } = await import('../modules/setup-panel/utils/rebalancePt.js');
 
