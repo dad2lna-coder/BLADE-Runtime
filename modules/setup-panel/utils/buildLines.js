@@ -152,10 +152,9 @@ export function buildLines(S, counts) {
   });
 
   // Pass 2: Assign sex and empClass (FT/PT) from pools onto slots across bands
-  var remainingNeed = 0;
-  order.forEach(function (def) {
-    if ((+def.paid || 8) >= 10) return;
-    remainingNeed += counts[def.id] || 0;
+  var remainingNonLongSeats = 0;
+  slots.forEach(function (slot) {
+    if (!slot.isLong) remainingNonLongSeats++;
   });
 
   var lines = [], id = 1;
@@ -186,16 +185,40 @@ export function buildLines(S, counts) {
       }
     }
 
+    // Calculate PT quota for this band fill across non-long seats
+    var fillNeed = 0;
+    orderedSlots.forEach(function (s) {
+      if (!s.isLong) fillNeed++;
+    });
+    var ptLeft = (pools.PTM || 0) + (pools.PTF || 0);
+    var ptQuota = 0;
+    if (fillNeed > 0 && remainingNonLongSeats > 0 && ptLeft > 0) {
+      ptQuota = Math.round((fillNeed * ptLeft) / remainingNonLongSeats);
+      ptQuota = Math.max(0, Math.min(fillNeed, Math.min(ptLeft, ptQuota)));
+    }
+    var ptPlacedInFill = 0;
+
     // Assign people to orderedSlots
     orderedSlots.forEach(function (slot) {
       var def = slot.def;
       var isLong = slot.isLong;
-      var ptLeft = (pools.PTM || 0) + (pools.PTF || 0);
-      var preferPt = !isLong && ptLeft > 0;
+      var preferPt = false;
+      if (!isLong) {
+        preferPt = ptPlacedInFill < ptQuota;
+      }
       var person = takeFromPools(S, pools, isLong, placedGlobal, preferPt);
       if (!person) {
         S.state.issues.push(def.name + ": pool empty or 4x10 needs FT.");
+        if (!isLong) {
+          remainingNonLongSeats = Math.max(0, remainingNonLongSeats - 1);
+        }
         return;
+      }
+      if (!isLong) {
+        if (person.empClass === "PT") {
+          ptPlacedInFill++;
+        }
+        remainingNonLongSeats = Math.max(0, remainingNonLongSeats - 1);
       }
       placedGlobal[person.sex]++;
       slot.person = person;
