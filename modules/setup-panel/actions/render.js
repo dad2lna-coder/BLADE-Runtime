@@ -14,16 +14,16 @@ export function renderAll(S) {
     var elShifts = S.getEligiblePtShifts ? S.getEligiblePtShifts(S.state.shifts) : [];
     var reason = "";
     if (ptLines.length === 0) {
-      reason = "Need at least 1 PT TSO line generated.";
+      reason = "need at least 1 PT TSO line generated.";
     } else if (elShifts.length < 2) {
-      reason = "Need at least 2 non-long shifts (paid < 10h).";
+      reason = "need at least 2 non-long shifts (paid < 10h).";
     }
-    var titleText = reason ? "Rebalance PT TSO shifts disabled: " + reason : "Rebalance PT TSO shifts across non-long shifts.";
+    var titleText = reason ? "Rebalance PT TSO shifts: " + reason : "Rebalance PT TSO shifts across non-long shifts.";
     ["btn-rebalance-pt", "btn-rebalance-pt-modal"].forEach(function (id) {
       var btn = document.getElementById(id);
       if (btn) {
         btn.title = titleText;
-        btn.disabled = !!reason;
+        btn.disabled = false;
       }
     });
   }
