@@ -13,6 +13,7 @@ import { attachSetupState } from "../stores/setupStore.js";
 import { attachExportBoard } from "./exportBoard.js";
 import { attachCertPools } from "../utils/certs.js";
 import { attachRebalancePt } from "../utils/rebalancePt.js";
+import { attachRebalanceFt } from "../utils/rebalanceFt.js";
 
 function safeAttach(name, fn) {
   try {
@@ -36,6 +37,7 @@ export function bridgeScheduler(S) {
   safeAttach("attachAirportStub", function () { attachAirportStub(S); });
   safeAttach("attachExportBoard", function () { attachExportBoard(S); });
   safeAttach("attachRebalancePt", function () { attachRebalancePt(S); });
+  safeAttach("attachRebalanceFt", function () { attachRebalanceFt(S); });
 
   safeAttach("rebuildSetupTab", function () {
     S.rebuildSetupTab = function () {
