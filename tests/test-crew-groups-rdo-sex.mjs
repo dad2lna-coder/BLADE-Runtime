@@ -343,3 +343,44 @@ test('Grouped shift crew shares RDO and sex balance pool for STSO/LTSO', () => {
   assert.equal(mCount, 2);
   assert.equal(fCount, 2);
 });
+
+test('Proportional PT placement distributes PT across multiple non-long shifts and keeps long shifts FT-only', () => {
+  const S = {
+    state: {
+      shifts: [
+        { id: 'S1', name: 'AM1', paid: 8 },
+        { id: 'S2', name: 'AM2', paid: 8 },
+        { id: 'S3', name: 'PM1', paid: 8 },
+        { id: 'S4', name: 'Long1', paid: 10 }
+      ],
+      ftM: 7,
+      ftF: 6,
+      ptM: 3,
+      ptF: 3,
+      ptHoursPerDay: 4,
+      issues: []
+    },
+    targetWorkDays: (shiftId, empClass) => empClass === 'PT' ? 3 : 5,
+    shiftLabel: (s) => s.name,
+    consecutiveRdos: (count, seed) => [seed % 7, (seed + 1) % 7]
+  };
+
+  const counts = { S1: 5, S2: 5, S3: 5, S4: 4 };
+  const lines = buildLines(S, counts);
+
+  assert.equal(lines.length, 19);
+
+  // Long shift S4 must be FT-only
+  const s4Lines = lines.filter(l => l.shiftId === 'S4');
+  assert.equal(s4Lines.length, 4);
+  s4Lines.forEach(l => {
+    assert.equal(l.empClass, 'FT');
+  });
+
+  // PT placement across non-long shifts S1, S2, S3
+  const ptLines = lines.filter(l => l.empClass === 'PT');
+  assert.equal(ptLines.length, 6);
+
+  const ptShiftsWithPt = new Set(ptLines.map(l => l.shiftId));
+  assert.ok(ptShiftsWithPt.size >= 2, `Expected PT on >= 2 distinct non-long shifts, got ${ptShiftsWithPt.size}`);
+});
