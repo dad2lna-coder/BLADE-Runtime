@@ -9,6 +9,15 @@ export function renderAll(S) {
   if (S.renderShiftsTable) S.renderShiftsTable();
   if (S.renderExtraPositions) S.renderExtraPositions();
   if (S.renderRdoMatrixModal) S.renderRdoMatrixModal();
+  if (S && S.state) {
+    var ptLines = S.selectPtTsoLines ? S.selectPtTsoLines(S.state.lines) : [];
+    var elShifts = S.getEligiblePtShifts ? S.getEligiblePtShifts(S.state.shifts) : [];
+    var canRebalance = ptLines.length > 0 && elShifts.length >= 2;
+    ["btn-rebalance-pt", "btn-rebalance-pt-modal"].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn) btn.disabled = !canRebalance;
+    });
+  }
 }
 
 function addFcBandClassic(S) {
@@ -107,6 +116,14 @@ export function bindSetupActions(S) {
   bindOnce(document.getElementById("btn-rdo-export-all"), "click", function (e) {
     e.preventDefault();
     if (S.exportAllRdoMatrixCsv) S.exportAllRdoMatrixCsv();
+  });
+  bindOnce(document.getElementById("btn-rebalance-pt"), "click", function (e) {
+    e.preventDefault();
+    if (S.rebalancePtTsoShifts) S.rebalancePtTsoShifts();
+  });
+  bindOnce(document.getElementById("btn-rebalance-pt-modal"), "click", function (e) {
+    e.preventDefault();
+    if (S.rebalancePtTsoShifts) S.rebalancePtTsoShifts();
   });
   bindOnce(document.getElementById("btn-rdo-respin-open"), "click", function (e) {
     e.preventDefault();
