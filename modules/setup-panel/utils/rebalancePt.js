@@ -52,22 +52,46 @@ export function computePtQuotas(S, eligibleShifts, totalPt) {
   });
 
   var totalWeight = weights.reduce(function (a, b) { return a + b; }, 0) || 1;
+  var numShifts = eligibleShifts.length;
+  var quotas = eligibleShifts.map(function () { return 0; });
+  var poolToAllocate = totalPt;
 
-  var rawQuotas = eligibleShifts.map(function (s, i) {
-    return (totalPt * weights[i]) / totalWeight;
-  });
+  // Seed each eligible shift with 1 if totalPt >= eligibleShifts.length, or top totalPt shifts if totalPt >= 2
+  if (totalPt >= numShifts) {
+    for (var i = 0; i < numShifts; i++) {
+      quotas[i] = 1;
+    }
+    poolToAllocate = totalPt - numShifts;
+  } else if (totalPt >= 2 && numShifts >= 2) {
+    var indices = eligibleShifts.map(function (s, idx) { return { index: idx, w: weights[idx] }; });
+    indices.sort(function (a, b) { return b.w - a.w; });
+    for (var k = 0; k < totalPt; k++) {
+      quotas[indices[k].index] = 1;
+    }
+    poolToAllocate = 0;
+  }
 
-  var quotas = rawQuotas.map(function (rq) { return Math.floor(rq); });
-  var assigned = quotas.reduce(function (a, b) { return a + b; }, 0);
-  var rem = totalPt - assigned;
-
-  if (rem > 0) {
-    var remainders = rawQuotas.map(function (rq, i) {
-      return { index: i, rem: rq - quotas[i] };
+  if (poolToAllocate > 0) {
+    var rawExtra = eligibleShifts.map(function (s, i) {
+      return (poolToAllocate * weights[i]) / totalWeight;
     });
-    remainders.sort(function (a, b) { return b.rem - a.rem; });
-    for (var k = 0; k < rem; k++) {
-      quotas[remainders[k].index]++;
+
+    var extraQuotas = rawExtra.map(function (rq) { return Math.floor(rq); });
+    var assignedExtra = extraQuotas.reduce(function (a, b) { return a + b; }, 0);
+    var rem = poolToAllocate - assignedExtra;
+
+    if (rem > 0) {
+      var remainders = rawExtra.map(function (rq, i) {
+        return { index: i, rem: rq - extraQuotas[i] };
+      });
+      remainders.sort(function (a, b) { return b.rem - a.rem; });
+      for (var k = 0; k < rem; k++) {
+        extraQuotas[remainders[k].index]++;
+      }
+    }
+
+    for (var j = 0; j < numShifts; j++) {
+      quotas[j] += extraQuotas[j];
     }
   }
 
@@ -117,24 +141,42 @@ export function rebalancePtTsoShifts(S) {
   var assignedCounts = {};
   eligibleShifts.forEach(function (s) { assignedCounts[s.id] = 0; });
 
+  function findMaxDeficitShift(candidates, originalShiftId) {
+    if (!candidates || !candidates.length) return null;
+    var maxDeficit = -Infinity;
+    candidates.forEach(function (s) {
+      var def = (quotas[s.id] || 0) - (assignedCounts[s.id] || 0);
+      if (def > maxDeficit) maxDeficit = def;
+    });
+    var tied = candidates.filter(function (s) {
+      return ((quotas[s.id] || 0) - (assignedCounts[s.id] || 0)) === maxDeficit;
+    });
+    var orig = tied.find(function (s) { return s.id === originalShiftId; });
+    return orig || tied[0];
+  }
+
   var movedCount = 0;
   ptLines.forEach(function (line) {
     var originalShiftId = line.shiftId;
     var currentShift = eligibleShifts.find(function (s) { return s.id === originalShiftId; });
 
-    // Shifts that still have remaining quota
-    var shiftsWithQuota = eligibleShifts.filter(function (s) {
-      return (assignedCounts[s.id] || 0) < (quotas[s.id] || 0);
-    });
-
-    // Shifts with quota that satisfy line's RDO vs shift's hard RDO
-    var compatibleShiftsWithQuota = shiftsWithQuota.filter(function (s) {
+    var compatibleShifts = eligibleShifts.filter(function (s) {
       return canLineMoveToShift(line, s);
     });
 
-    if (compatibleShiftsWithQuota.length > 0) {
-      // Prefer current shift if compatible and has quota
-      var targetShift = compatibleShiftsWithQuota.find(function (s) { return s.id === originalShiftId; }) || compatibleShiftsWithQuota[0];
+    var compatibleWithDeficit = compatibleShifts.filter(function (s) {
+      return (quotas[s.id] || 0) - (assignedCounts[s.id] || 0) > 0;
+    });
+
+    var targetShift = null;
+    if (compatibleWithDeficit.length > 0) {
+      targetShift = findMaxDeficitShift(compatibleWithDeficit, originalShiftId);
+    } else if (compatibleShifts.length > 0) {
+      // Hard-RDO fallback: preferred deficit shift was blocked, pick max-deficit compatible shift (soft overshoot OK)
+      targetShift = findMaxDeficitShift(compatibleShifts, originalShiftId);
+    }
+
+    if (targetShift) {
       assignedCounts[targetShift.id] = (assignedCounts[targetShift.id] || 0) + 1;
       if (line.shiftId !== targetShift.id) {
         line.shiftId = targetShift.id;
@@ -146,8 +188,12 @@ export function rebalancePtTsoShifts(S) {
         if (line.end !== undefined) line.end = targetShift.end;
         movedCount++;
       }
+      if (assignedCounts[targetShift.id] > (quotas[targetShift.id] || 0)) {
+        var note = "PT line " + (line.lineCode || line.id) + " assigned to shift " + (targetShift.name || targetShift.id) + " (quota overflow: " + assignedCounts[targetShift.id] + "/" + (quotas[targetShift.id] || 0) + ").";
+        S.state.issues.push(note);
+      }
     } else {
-      // Could not move to any target shift with quota due to hard RDO constraints
+      // All non-long shifts blocked by hard RDO
       assignedCounts[originalShiftId] = (assignedCounts[originalShiftId] || 0) + 1;
       var currentShiftName = currentShift ? currentShift.name : (line.shiftName || line.shiftId);
       var issueNote = "PT line " + (line.lineCode || line.id) + " kept on shift " + currentShiftName + " due to hard RDO constraints.";
@@ -169,6 +215,9 @@ export function rebalancePtTsoShifts(S) {
   }
 
   var msg = "Rebalanced " + ptLines.length + " PT TSO line(s) across " + eligibleShifts.length + " non-long shift(s) (" + movedCount + " line(s) moved).";
+  if (movedCount === 0 && ptLines.length > 0) {
+    msg = "PT TSO shifts rebalanced: all " + ptLines.length + " line(s) are already optimally distributed across " + eligibleShifts.length + " shift(s).";
+  }
   if (S.updateStatus) S.updateStatus(msg);
   return true;
 }
