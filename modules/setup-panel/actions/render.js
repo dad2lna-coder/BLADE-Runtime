@@ -12,10 +12,19 @@ export function renderAll(S) {
   if (S && S.state) {
     var ptLines = S.selectPtTsoLines ? S.selectPtTsoLines(S.state.lines) : [];
     var elShifts = S.getEligiblePtShifts ? S.getEligiblePtShifts(S.state.shifts) : [];
-    var canRebalance = ptLines.length > 0 && elShifts.length >= 2;
+    var reason = "";
+    if (ptLines.length === 0) {
+      reason = "Need at least 1 PT TSO line generated.";
+    } else if (elShifts.length < 2) {
+      reason = "Need at least 2 non-long shifts (paid < 10h).";
+    }
+    var titleText = reason ? "Rebalance PT TSO shifts disabled: " + reason : "Rebalance PT TSO shifts across non-long shifts.";
     ["btn-rebalance-pt", "btn-rebalance-pt-modal"].forEach(function (id) {
       var btn = document.getElementById(id);
-      if (btn) btn.disabled = !canRebalance;
+      if (btn) {
+        btn.title = titleText;
+        btn.disabled = !!reason;
+      }
     });
   }
 }
@@ -117,14 +126,33 @@ export function bindSetupActions(S) {
     e.preventDefault();
     if (S.exportAllRdoMatrixCsv) S.exportAllRdoMatrixCsv();
   });
-  bindOnce(document.getElementById("btn-rebalance-pt"), "click", function (e) {
-    e.preventDefault();
-    if (S.rebalancePtTsoShifts) S.rebalancePtTsoShifts();
-  });
-  bindOnce(document.getElementById("btn-rebalance-pt-modal"), "click", function (e) {
-    e.preventDefault();
-    if (S.rebalancePtTsoShifts) S.rebalancePtTsoShifts();
-  });
+  function handleRebalanceClick(e) {
+    if (e) e.preventDefault();
+    if (typeof S.rebalancePtTsoShifts !== "function") {
+      var err = "Setup rebalance PT failed to attach — check console.";
+      if (S.updateStatus) S.updateStatus(err);
+      if (typeof window !== "undefined" && window.alert) window.alert(err);
+      return;
+    }
+    var ptLines = S.selectPtTsoLines ? S.selectPtTsoLines(S.state ? S.state.lines : []) : [];
+    var elShifts = S.getEligiblePtShifts ? S.getEligiblePtShifts(S.state ? S.state.shifts : []) : [];
+    if (ptLines.length === 0) {
+      var r1 = "Rebalance PT TSO shifts: Need at least 1 PT TSO line generated.";
+      if (S.updateStatus) S.updateStatus(r1);
+      if (typeof window !== "undefined" && window.alert) window.alert(r1);
+      return;
+    }
+    if (elShifts.length < 2) {
+      var r2 = "Rebalance PT TSO shifts: Need at least 2 non-long shifts (paid < 10h).";
+      if (S.updateStatus) S.updateStatus(r2);
+      if (typeof window !== "undefined" && window.alert) window.alert(r2);
+      return;
+    }
+    S.rebalancePtTsoShifts();
+  }
+
+  bindOnce(document.getElementById("btn-rebalance-pt"), "click", handleRebalanceClick);
+  bindOnce(document.getElementById("btn-rebalance-pt-modal"), "click", handleRebalanceClick);
   bindOnce(document.getElementById("btn-rdo-respin-open"), "click", function (e) {
     e.preventDefault();
     if (S.openRdoRespinModal) S.openRdoRespinModal();
