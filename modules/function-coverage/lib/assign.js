@@ -161,6 +161,75 @@ export function applyShiftFunctionRequirements(fc) {
   return { diagnostics: diagnostics, configured: configured };
 }
 
+export function resolveBagDuties(fc, days) {
+  if (api.readFunctionCoverageFromDom) api.readFunctionCoverageFromDom();
+  fc = fc || ensureFunctionCoverage();
+  days = days || (api.state && api.state.weekCount ? api.state.weekCount * 7 : 7);
+
+  var lines = (api.state && api.state.lines) || [];
+  if (!lines.length) {
+    if (api.updateStatus) api.updateStatus("Generate lines first.");
+    return { diagnostics: [], shortfalls: ["No lines generated."] };
+  }
+
+  // Clear BAG/DFO day duties on DFO-eligible (!bag && dfo) lines only
+  lines.forEach(function (l) {
+    if (l.isExtra || l.extraPositionId) return;
+    var el = ensureEligible(l);
+    if (!el.bag && el.dfo) {
+      for (var d = 0; d < days; d++) {
+        if (worksDay(l, d)) setDuty(l.id, d, null);
+      }
+    }
+  });
+
+  // Rotate shift BAG duties on DFO lines for each day
+  var rotated = rotateShiftBagDuties(fc, days);
+
+  // Fill remaining work days on DFO lines with "DFO"
+  lines.forEach(function (l) {
+    if (l.isExtra || l.extraPositionId) return;
+    var el = ensureEligible(l);
+    if (!el.bag && el.dfo) {
+      for (var d = 0; d < days; d++) {
+        if (!worksDay(l, d)) continue;
+        if (!getDuty(l.id, d)) setDuty(l.id, d, "DFO");
+      }
+    }
+  });
+
+  var applied = applyShiftFunctionRequirements(fc);
+  var diagnostics = applied.diagnostics || [];
+  if (rotated && rotated.length) {
+    diagnostics.forEach(function (row) {
+      for (var i = 0; i < rotated.length; i++) {
+        if (rotated[i].role !== row.role || rotated[i].shiftId !== row.shiftId) continue;
+        row.assigned = rotated[i].assigned;
+        if (rotated[i].status === "SHORT") row.status = "SHORT";
+      }
+    });
+  }
+
+  var shortfalls = [];
+  diagnostics.forEach(function (row) {
+    if (row.status !== "SHORT") return;
+    var label = row.shiftStart || row.shiftLabel || row.shiftId;
+    var msg = row.role + " " + label + " shift: " + row.assigned + " / " + row.requiredMin;
+    shortfalls.push(msg);
+  });
+
+  paintAfterAssign();
+
+  var statusMsg = "Resolved baggage days.";
+  if (shortfalls.length) statusMsg += " Shortfalls: " + shortfalls.join("; ");
+  if (api.updateStatus) api.updateStatus(statusMsg);
+  if (shortfalls.length && typeof window !== "undefined" && window.alert) {
+    window.alert("Resolved baggage days with shortfalls:\n" + shortfalls.join("\n"));
+  }
+
+  return { diagnostics: diagnostics, shortfalls: shortfalls };
+}
+
 /**
  * Rotate BAG work days across DFO-eligible lines on each configured
  * role×shift. Bag-block (eligible.bag) lines are left alone — they stay

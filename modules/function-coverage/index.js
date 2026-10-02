@@ -30,7 +30,7 @@ import {
 
 import {
   bindAssignApi, generateFunctionAssignments, markDfo, markBag,
-  applyShiftFunctionRequirements
+  applyShiftFunctionRequirements, rotateShiftBagDuties, resolveBagDuties
 } from "./lib/assign.js";
 
 import {
@@ -76,6 +76,8 @@ export function initFunctionCoverage(scheduler) {
   scheduler.buildCertifiedPools = buildCertifiedPools;
   scheduler.generateFunctionAssignments = generateFunctionAssignments;
   scheduler.applyShiftFunctionRequirements = applyShiftFunctionRequirements;
+  scheduler.rotateShiftBagDuties = rotateShiftBagDuties;
+  scheduler.resolveBagDuties = resolveBagDuties;
   scheduler.getConfiguredFunctionShifts = getConfiguredFunctionShifts;
   scheduler.getShiftRequirement = getShiftRequirement;
   scheduler.getEligibleLinesForShift = getEligibleLinesForShift;
@@ -145,6 +147,8 @@ export {
   markDfo,
   markBag,
   applyShiftFunctionRequirements,
+  rotateShiftBagDuties,
+  resolveBagDuties,
 } from "./lib/assign.js";
 
 export {

@@ -527,6 +527,22 @@ export function bindSetupActions(S) {
     S.openDfoRebalanceModal();
   }
 
+  bindOnce(document.getElementById("btn-resolve-bag"), "click", function (e) {
+    e.preventDefault();
+    if (S.readFunctionCoverageFromDom) S.readFunctionCoverageFromDom();
+    var fc = S.ensureFunctionCoverage ? S.ensureFunctionCoverage() : (S.state && S.state.functionCoverage);
+    var days = (S.state && S.state.weekCount ? S.state.weekCount * 7 : 7);
+    if (!S.state || !S.state.lines || !S.state.lines.length) {
+      var msgNoLines = "Generate lines first.";
+      if (S.updateStatus) S.updateStatus(msgNoLines);
+      if (typeof window !== "undefined" && window.alert) window.alert(msgNoLines);
+      return;
+    }
+    if (S.resolveBagDuties) {
+      S.resolveBagDuties(fc, days);
+    }
+  });
+
   bindOnce(document.getElementById("btn-rebalance-dfo"), "click", handleDfoRebalanceClick);
   bindOnce(document.getElementById("btn-rebalance-dfo-modal"), "click", handleDfoRebalanceClick);
   bindOnce(document.getElementById("dfo-rebalance-close"), "click", function (e) {
