@@ -143,9 +143,12 @@ export function renderShiftSummary(S) {
       (s.force > 0 ? " TSO×" + s.force : "") +
       (s.ltsoForce > 0 ? " LTSO×" + s.ltsoForce : "") +
       (s.stsoForce > 0 ? " STSO×" + s.stsoForce : "");
+    var windowText = (s.segments && s.segments.length === 2)
+      ? (s.segments[0].start + "–" + s.segments[0].end + " / " + s.segments[1].start + "–" + s.segments[1].end)
+      : (s.start + "–" + s.end);
     rows.push(
       "<tr><td><span class=\"badge " + S.shiftBadge(s.id) + "\">" + s.name + "</span></td><td>" +
-      s.start + "–" + s.end + "</td>" +
+      windowText + "</td>" +
       '<td><span class="sex-m">' + ftm + '</span>/<span class="sex-f">' + ftf + "</span></td>" +
       '<td><span class="sex-m">' + ptm + '</span>/<span class="sex-f">' + ptf + "</span></td>" +
       '<td><span class="sex-m">' + ltm + '</span>/<span class="sex-f">' + ltf + "</span></td>" +

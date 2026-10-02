@@ -30,6 +30,9 @@ function dayDutyForExport(S, line, dayIndex) {
 
 function workLabelForLine(line, sh) {
   if (line.shiftLabel) return line.shiftLabel;
+  if (sh && sh.segments && Array.isArray(sh.segments) && sh.segments.length === 2) {
+    return sh.segments[0].start + "\u2013" + sh.segments[0].end + " / " + sh.segments[1].start + "\u2013" + sh.segments[1].end;
+  }
   if (sh && sh.start && sh.end) return sh.start + "\u2013" + sh.end;
   if (sh && sh.start) return sh.start;
   return "WORK";
