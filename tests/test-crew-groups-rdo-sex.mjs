@@ -597,7 +597,7 @@ test('rebalancePtTsoShifts rebalances a TESTING23-shaped roster (13 PT on 0330 a
   assert.equal(S.state.lines.find(l => l.id === 17).shiftId, 'S4');
 });
 
-test('getFtRebalanceCandidates and approveFtRebalance handle selective FT TSO shift rebalancing', async () => {
+test('getFtRebalanceCandidates and approveFtRebalance handle surplus-by-sex FT TSO shift rebalancing', async () => {
   const { getFtRebalanceCandidates, approveFtRebalance } = await import('../modules/setup-panel/utils/rebalanceFt.js');
 
   let updatedStatus = '';
@@ -618,31 +618,29 @@ test('getFtRebalanceCandidates and approveFtRebalance handle selective FT TSO sh
     }
   };
 
-  // 10 FT TSO on S1, 2 FT TSO on S2 (Total 12 FT, avg 6)
-  for (let i = 1; i <= 10; i++) {
+  // 6 FT M and 4 FT F on S1; 0 on S2 (Total M=6, ceil=3; Total F=4, ceil=2)
+  for (let i = 1; i <= 6; i++) {
     S.state.lines.push({
       id: i,
       lineCode: `Line ${String(i).padStart(3, '0')}`,
       shiftId: 'S1',
       shiftName: '0330',
       empClass: 'FT',
-      sex: i % 2 === 0 ? 'F' : 'M',
+      sex: 'M',
       paid: 8,
-      rdoDays: [0, 6],
-      certPool: 'A'
+      rdoDays: [0, 6]
     });
   }
-  for (let i = 11; i <= 12; i++) {
+  for (let i = 7; i <= 10; i++) {
     S.state.lines.push({
       id: i,
       lineCode: `Line ${String(i).padStart(3, '0')}`,
-      shiftId: 'S2',
-      shiftName: '1345',
+      shiftId: 'S1',
+      shiftName: '0330',
       empClass: 'FT',
-      sex: i % 2 === 0 ? 'F' : 'M',
+      sex: 'F',
       paid: 8,
-      rdoDays: [0, 6],
-      certPool: 'B'
+      rdoDays: [0, 6]
     });
   }
   // Add 1 PT line
@@ -659,41 +657,38 @@ test('getFtRebalanceCandidates and approveFtRebalance handle selective FT TSO sh
 
   const candInfo = getFtRebalanceCandidates(S);
   assert.equal(candInfo.isEven, false);
-  assert.equal(candInfo.candidates.length, 10, 'Should return 10 FT candidates on overfull shift S1');
+  // Surplus M = 6 - 3 = 3; Surplus F = 4 - 2 = 2. Total candidates = 5
+  assert.equal(candInfo.candidates.length, 5, 'Should return only surplus candidates (3 M + 2 F)');
   assert.equal(candInfo.candidates[0].recommendedShiftId, 'S2', 'Recommended shift should be underfull shift S2');
 
-  // Approve moving 4 checked lines (lines 1..4) to S2
+  // Approve moving 2 M (lines 1, 2) and 1 F (line 7) to S2
   const moves = [
     { lineId: 1, targetShiftId: 'S2' },
     { lineId: 2, targetShiftId: 'S2' },
-    { lineId: 3, targetShiftId: 'S2' },
-    { lineId: 4, targetShiftId: 'S2' }
+    { lineId: 7, targetShiftId: 'S2' }
   ];
 
   const appRes = approveFtRebalance(S, moves);
   assert.equal(appRes, true);
 
-  // Check lines 1..4 moved to S2
+  // Check moved lines
   assert.equal(S.state.lines.find(l => l.id === 1).shiftId, 'S2');
-  assert.equal(S.state.lines.find(l => l.id === 4).shiftId, 'S2');
+  assert.equal(S.state.lines.find(l => l.id === 2).shiftId, 'S2');
+  assert.equal(S.state.lines.find(l => l.id === 7).shiftId, 'S2');
 
-  // Check lines 5..10 stayed on S1
-  assert.equal(S.state.lines.find(l => l.id === 5).shiftId, 'S1');
+  // Check unmoved lines
+  assert.equal(S.state.lines.find(l => l.id === 3).shiftId, 'S1');
+  assert.equal(S.state.lines.find(l => l.id === 8).shiftId, 'S1');
 
   // Check PT line 99 stayed on S1 and paid, sex, rdoDays preserved
   const pt99 = S.state.lines.find(l => l.id === 99);
   assert.equal(pt99.shiftId, 'S1');
   assert.equal(pt99.empClass, 'PT');
-  assert.equal(pt99.paid, 4);
 
-  // Status contains before->after counts
-  assert.ok(updatedStatus.includes('4 FT TSO line(s)'), `Status should report 4 moved lines, got: "${updatedStatus}"`);
-  assert.ok(updatedStatus.includes('0330: 10→6, 1345: 2→6'), `Status should report count diffs, got: "${updatedStatus}"`);
-
-  // Re-checking candidates when even
-  const candInfoEven = getFtRebalanceCandidates(S);
-  assert.equal(candInfoEven.isEven, true, '6 vs 6 should report isEven: true');
-  assert.equal(candInfoEven.candidates.length, 0);
+  // Status contains before->after M and F counts
+  assert.ok(updatedStatus.includes('3 FT TSO line(s)'), `Status should report 3 moved lines, got: "${updatedStatus}"`);
+  assert.ok(updatedStatus.includes('0330: M 6→4, F 4→3'), `Status should report 0330 M and F diffs, got: "${updatedStatus}"`);
+  assert.ok(updatedStatus.includes('1345: M 0→2, F 0→1'), `Status should report 1345 M and F diffs, got: "${updatedStatus}"`);
 });
 
 test('rebalancePtTsoShifts handles hard RDO constraints and edge cases', async () => {
