@@ -63,6 +63,7 @@
   </select>
 </label>
 <button type="button" class="btn" id="fc-add-band">+ Add shift</button>
+<button type="button" class="btn btn-amber" id="btn-resolve-bag">Resolve baggage days</button>
 </div>
 <div id="fc-bands-wrap" class="lines-scroll" style="max-height:40vh;margin-top:0.75rem"><table class="data-table"><thead><tr><th>Shift</th><th>Start</th><th>End</th><th>STSO min</th><th>STSO max</th><th>LTSO min</th><th>LTSO max</th><th>TSO min</th><th>TSO max</th><th></th></tr></thead><tbody id="fc-bands-tbody"></tbody></table></div>
 <p class="muted" id="fc-preview" style="margin-top:0.75rem"></p>
@@ -106,7 +107,7 @@
 </div>
 <div id="crew-groups-list" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem"></div>
 </details>
-<div class="card"><div class="section-title">Shifts</div><div class="toolbar"><button type="button" class="btn" id="btn-add-shift">+ Add shift</button> <button type="button" class="btn btn-amber" id="btn-rdo-matrix">RDO by sex</button> <button type="button" class="btn btn-amber" id="btn-rebalance-pt">Rebalance PT TSO shifts</button> <button type="button" class="btn btn-amber" id="btn-rebalance-ft">Rebalance shifts…</button></div><div class="lines-scroll" style="max-height:none"><table class="data-table"><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Phase</th><th>Paid h</th><th>TSO force</th><th>LTSO force</th><th>STSO force</th><th>Hard RDOs (Sun–Sat)</th><th>Day times</th><th>Crew group</th></tr></thead><tbody id="shifts-tbody"></tbody></table></div></div>
+<div class="card"><div class="section-title">Shifts</div><div class="toolbar"><button type="button" class="btn" id="btn-add-shift">+ Add shift</button> <button type="button" class="btn btn-amber" id="btn-rdo-matrix">RDO by sex</button> <button type="button" class="btn btn-amber" id="btn-rebalance-pt">Rebalance PT TSO shifts</button> <button type="button" class="btn btn-amber" id="btn-rebalance-ft">Rebalance shifts…</button> <button type="button" class="btn btn-amber" id="btn-rebalance-dfo">Rebalance DFO…</button> <button type="button" class="btn btn-amber" id="btn-swap-sex">Swap M/F between shifts…</button></div><div class="lines-scroll" style="max-height:none"><table class="data-table"><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Phase</th><th>Paid h</th><th>TSO force</th><th>LTSO force</th><th>STSO force</th><th>Hard RDOs (Sun–Sat)</th><th>Day times</th><th>Crew group</th></tr></thead><tbody id="shifts-tbody"></tbody></table></div></div>
 <div id="issues"></div>
 
 <div id="rdo-matrix-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center">
@@ -124,6 +125,8 @@
         <button type="button" class="btn btn-amber" id="btn-rdo-respin-open">Respin RDOs…</button>
         <button type="button" class="btn btn-amber" id="btn-rebalance-pt-modal">Rebalance PT TSO shifts</button>
         <button type="button" class="btn btn-amber" id="btn-rebalance-ft-modal">Rebalance shifts…</button>
+        <button type="button" class="btn btn-amber" id="btn-rebalance-dfo-modal">Rebalance DFO…</button>
+        <button type="button" class="btn btn-amber" id="btn-swap-sex-modal">Swap M/F between shifts…</button>
       </div>
     </div>
     <div id="rdo-matrix-table-wrap" class="lines-scroll" style="max-height:60vh">
@@ -192,6 +195,121 @@
     <div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem">
       <button type="button" class="btn" id="btn-ft-cancel">Cancel</button>
       <button type="button" class="btn btn-amber" id="btn-do-ft-rebalance">Approve</button>
+    </div>
+  </div>
+</div>
+
+<div id="dfo-rebalance-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100000;align-items:center;justify-content:center">
+  <div class="card" style="max-width:85vw;max-height:85vh;overflow:auto;margin:6vh auto;background:var(--bg-card,#fff);padding:1.25rem;border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;border-bottom:1px solid #ddd;padding-bottom:0.5rem">
+      <h3 style="margin:0;font-size:1.1rem">Rebalance DFO…</h3>
+      <button type="button" class="btn btn-red" id="dfo-rebalance-close">✕</button>
+    </div>
+    <div style="margin-bottom:0.75rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+      <label style="font-weight:600">Class:
+        <select id="dfo-rebalance-class-select" style="padding:0.25rem 0.5rem;font-size:0.9rem"></select>
+      </label>
+    </div>
+    <div class="lines-scroll" style="max-height:35vh;border:1px solid #ddd;padding:0.5rem;border-radius:4px;margin-bottom:0.75rem">
+      <table class="data-table" style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr>
+            <th>Shift</th>
+            <th style="text-align:center">Band min</th>
+            <th style="text-align:center">DFO Count M</th>
+            <th style="text-align:center">DFO Count F</th>
+            <th style="text-align:center">Total</th>
+            <th style="text-align:center">F%</th>
+            <th style="text-align:center">Delta</th>
+          </tr>
+        </thead>
+        <tbody id="dfo-rebalance-bands-tbody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <span id="dfo-rebalance-delta-net" style="font-weight:600;font-size:0.9rem;color:var(--muted)">Net delta: 0</span>
+      <button type="button" class="btn btn-amber btn-sm" id="btn-dfo-rebalance-propose">Propose moves</button>
+    </div>
+    <div id="dfo-rebalance-proposal-wrap" style="display:none;margin-top:0.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+        <h4 style="margin:0;font-size:0.95rem">Proposed Moves</h4>
+        <div style="display:flex;gap:0.5rem">
+          <button type="button" class="btn btn-sm" id="btn-dfo-select-all">Select All</button>
+          <button type="button" class="btn btn-sm" id="btn-dfo-clear-all">Clear All</button>
+        </div>
+      </div>
+      <div class="lines-scroll" style="max-height:30vh;border:1px solid #ddd;padding:0.5rem;border-radius:4px">
+        <table class="data-table" style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th style="width:2.5rem;text-align:center"></th>
+              <th>Line</th>
+              <th>Sex</th>
+              <th>From shift</th>
+              <th>To shift</th>
+              <th>RDO before</th>
+              <th>RDO after</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="dfo-rebalance-proposal-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem">
+      <button type="button" class="btn" id="btn-dfo-cancel">Cancel</button>
+      <button type="button" class="btn btn-amber" id="btn-do-dfo-rebalance">Approve</button>
+    </div>
+  </div>
+</div>
+
+<div id="swap-sex-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100000;align-items:center;justify-content:center">
+  <div class="card" style="max-width:85vw;max-height:85vh;overflow:auto;margin:6vh auto;background:var(--bg-card,#fff);padding:1.25rem;border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;border-bottom:1px solid #ddd;padding-bottom:0.5rem">
+      <h3 style="margin:0;font-size:1.1rem">Swap M/F between shifts…</h3>
+      <button type="button" class="btn btn-red" id="swap-sex-close">✕</button>
+    </div>
+    <div style="margin-bottom:0.75rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+      <label style="font-weight:600">Class:
+        <select id="swap-sex-class-select" style="padding:0.25rem 0.5rem;font-size:0.9rem"></select>
+      </label>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <button type="button" class="btn btn-sm" id="btn-swap-sex-select-all-shifts">Select All Shifts</button>
+        <button type="button" class="btn btn-sm" id="btn-swap-sex-clear-all-shifts">Clear All Shifts</button>
+      </div>
+    </div>
+    <div style="margin-bottom:0.75rem">
+      <label style="font-weight:600;display:block;margin-bottom:0.35rem">Select Shifts to Swap Between (need ≥2):</label>
+      <div id="swap-sex-shifts-list" style="display:flex;flex-wrap:wrap;gap:0.5rem 1rem;max-height:20vh;overflow-y:auto;border:1px solid #ddd;padding:0.5rem;border-radius:4px"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem">
+      <button type="button" class="btn btn-amber btn-sm" id="btn-swap-sex-propose">Propose swaps</button>
+    </div>
+    <div id="swap-sex-proposal-wrap" style="display:none;margin-top:0.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+        <h4 style="margin:0;font-size:0.95rem">Proposed 1:1 Swap Pairs</h4>
+        <div style="display:flex;gap:0.5rem">
+          <button type="button" class="btn btn-sm" id="btn-swap-sex-select-all">Select All</button>
+          <button type="button" class="btn btn-sm" id="btn-swap-sex-clear-all">Clear All</button>
+        </div>
+      </div>
+      <div class="lines-scroll" style="max-height:30vh;border:1px solid #ddd;padding:0.5rem;border-radius:4px">
+        <table class="data-table" style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th style="width:2.5rem;text-align:center"></th>
+              <th>M Line (from → to)</th>
+              <th>F Line (from → to)</th>
+              <th>Notes / RDO Changes</th>
+            </tr>
+          </thead>
+          <tbody id="swap-sex-proposal-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem">
+      <button type="button" class="btn" id="btn-swap-sex-cancel">Cancel</button>
+      <button type="button" class="btn btn-amber" id="btn-do-swap-sex">Approve Swaps</button>
     </div>
   </div>
 </div>
