@@ -125,6 +125,7 @@ window.Scheduler = window.Scheduler || {};
         stsoM: S.state.stsoM, stsoF: S.state.stsoF,
         shifts: S.state.shifts,
         shiftCrewGroups: S.state.shiftCrewGroups || [],
+        scheduleLocks: S.state.scheduleLocks || [],
         functionCoverage: S.state.functionCoverage || null,
         extraPositions: S.state.extraPositions || [],
         certPool: S.state.certPool || null
@@ -183,6 +184,9 @@ window.Scheduler = window.Scheduler || {};
       : (S.defaultShifts ? S.defaultShifts() : []);
     S.state.shiftCrewGroups = Array.isArray(cfg.shiftCrewGroups || payload.shiftCrewGroups)
       ? (cfg.shiftCrewGroups || payload.shiftCrewGroups)
+      : [];
+    S.state.scheduleLocks = Array.isArray(cfg.scheduleLocks || payload.scheduleLocks)
+      ? (cfg.scheduleLocks || payload.scheduleLocks)
       : [];
     if (cfg.functionCoverage && typeof cfg.functionCoverage === "object") {
       S.state.functionCoverage = Object.assign(S.state.functionCoverage || {}, cfg.functionCoverage);

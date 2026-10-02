@@ -190,7 +190,7 @@ function rdoDaysFor(S, def, workDays, seed) {
       for (var d = 0; d < 7 && rdoDays.length < rdoCount; d++) {
         if (rdoDays.indexOf(d) < 0) rdoDays.push(d);
       }
-    } else if (rdoDays.length > rdoCount) rdoDays = rdoDays.slice(0, rdoCount);
+    }
   } else if (S && S.consecutiveRdos) {
     rdoDays = S.consecutiveRdos(rdoCount, seed);
   } else {

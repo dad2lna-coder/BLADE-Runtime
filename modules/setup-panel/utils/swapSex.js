@@ -27,7 +27,7 @@ export function proposeSexSwaps(S, classKey, selectedShiftIds) {
   }
 
   var classLines = getLinesForSwapClass(lines, classKey).filter(function (l) {
-    return selectedShiftIds.indexOf(l.shiftId) >= 0;
+    return selectedShiftIds.indexOf(l.shiftId) >= 0 && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
   });
 
   if (!classLines.length) {

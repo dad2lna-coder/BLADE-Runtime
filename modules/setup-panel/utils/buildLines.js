@@ -78,7 +78,7 @@ function makeLineFromPerson(S, def, person, id) {
       for (var d = 0; d < 7 && rdoDays.length < rdoCount; d++) {
         if (rdoDays.indexOf(d) < 0) rdoDays.push(d);
       }
-    } else if (rdoDays.length > rdoCount) rdoDays = rdoDays.slice(0, rdoCount);
+    }
   } else rdoDays = S.consecutiveRdos(rdoCount, seed);
   return {
     id: id,
@@ -235,7 +235,7 @@ export function buildLines(S, counts) {
           for (var d = 0; d < 7 && slot.rdoDays.length < rdoCount; d++) {
             if (slot.rdoDays.indexOf(d) < 0) slot.rdoDays.push(d);
           }
-        } else if (slot.rdoDays.length > rdoCount) slot.rdoDays = slot.rdoDays.slice(0, rdoCount);
+        }
         slot.rdoHard = true;
       } else {
         slot.rdoDays = S.consecutiveRdos(rdoCount, slot.rdoSeed);
@@ -354,7 +354,7 @@ export function buildSupervisoryLines(S, supCounts, supType) {
           for (var d = 0; d < 7 && slot.rdoDays.length < rdoCount; d++) {
             if (slot.rdoDays.indexOf(d) < 0) slot.rdoDays.push(d);
           }
-        } else if (slot.rdoDays.length > rdoCount) slot.rdoDays = slot.rdoDays.slice(0, rdoCount);
+        }
         slot.rdoHard = true;
       } else {
         slot.rdoDays = S.consecutiveRdos(rdoCount, slot.rdoSeed);
