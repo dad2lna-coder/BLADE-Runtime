@@ -217,6 +217,145 @@ export function bindSetupActions(S) {
     }).join("");
   };
 
+  S._dfoRebalanceDeltas = {};
+  S._dfoRebalanceCurrentClass = "TSO_ALL";
+  S._dfoRebalanceProposal = null;
+
+  S.openDfoRebalanceModal = function () {
+    var modal = typeof document !== "undefined" ? document.getElementById("dfo-rebalance-modal") : null;
+    if (modal) { modal.style.display = "flex"; modal.setAttribute("aria-hidden", "false"); }
+    S._dfoRebalanceDeltas = {};
+    S._dfoRebalanceProposal = null;
+    S.renderDfoRebalanceClassSelect();
+    S.renderDfoRebalanceModal();
+  };
+
+  S.closeDfoRebalanceModal = function () {
+    var modal = typeof document !== "undefined" ? document.getElementById("dfo-rebalance-modal") : null;
+    if (modal) { modal.style.display = "none"; modal.setAttribute("aria-hidden", "true"); }
+    S._dfoRebalanceDeltas = {};
+    S._dfoRebalanceProposal = null;
+  };
+
+  S.renderDfoRebalanceClassSelect = function () {
+    var selectEl = typeof document !== "undefined" ? document.getElementById("dfo-rebalance-class-select") : null;
+    if (!selectEl) return;
+    var options = S.getDfoAvailableClasses ? S.getDfoAvailableClasses() : [];
+    if (!S._dfoRebalanceCurrentClass) S._dfoRebalanceCurrentClass = "TSO_ALL";
+    selectEl.innerHTML = options.map(function (opt) {
+      var sel = opt.key === S._dfoRebalanceCurrentClass ? " selected" : "";
+      return '<option value="' + opt.key + '"' + sel + '>' + opt.label + '</option>';
+    }).join("");
+  };
+
+  S.renderDfoRebalanceModal = function () {
+    var tbody = typeof document !== "undefined" ? document.getElementById("dfo-rebalance-bands-tbody") : null;
+    if (!tbody) return;
+
+    var classKey = S._dfoRebalanceCurrentClass || "TSO_ALL";
+    var lines = (S.state && S.state.lines) || [];
+    var classLines = S.getDfoLinesForClass ? S.getDfoLinesForClass(classKey) : [];
+    var shifts = (S.state && S.state.shifts) || [];
+
+    var countsM = {};
+    var countsF = {};
+    shifts.forEach(function (s) { countsM[s.id] = 0; countsF[s.id] = 0; });
+    classLines.forEach(function (l) {
+      if (l.sex === "F") countsF[l.shiftId] = (countsF[l.shiftId] || 0) + 1;
+      else countsM[l.shiftId] = (countsM[l.shiftId] || 0) + 1;
+    });
+
+    var deltas = S._dfoRebalanceDeltas || {};
+    var netDelta = 0;
+
+    tbody.innerHTML = shifts.map(function (s) {
+      var cM = countsM[s.id] || 0;
+      var cF = countsF[s.id] || 0;
+      var total = cM + cF;
+      var fPct = total > 0 ? Math.round((cF / total) * 100) + "%" : "—";
+      var minVal = S.getDfoBandMin ? S.getDfoBandMin(s, classKey) : "—";
+      var dVal = deltas[s.id] || 0;
+      netDelta += dVal;
+
+      var labelTime = (s.start || "") + (s.end ? "–" + s.end : "");
+      var shiftDisp = "<strong>" + (s.name || s.id) + "</strong>" + (labelTime ? ' <span class="muted">(' + labelTime + ")</span>" : "");
+
+      return '<tr data-shift-id="' + s.id + '">' +
+        '<td>' + shiftDisp + '</td>' +
+        '<td style="text-align:center">' + minVal + '</td>' +
+        '<td style="text-align:center">' + cM + '</td>' +
+        '<td style="text-align:center">' + cF + '</td>' +
+        '<td style="text-align:center"><strong>' + total + '</strong></td>' +
+        '<td style="text-align:center">' + fPct + '</td>' +
+        '<td style="text-align:center;white-space:nowrap">' +
+          '<button type="button" class="btn btn-sm btn-dfo-delta-down" data-shift-id="' + s.id + '" style="padding:0.1rem 0.4rem;margin-right:0.25rem">▼</button>' +
+          '<span class="delta-val" style="display:inline-block;width:2rem;font-weight:bold">' + (dVal > 0 ? "+" + dVal : dVal) + '</span>' +
+          '<button type="button" class="btn btn-sm btn-dfo-delta-up" data-shift-id="' + s.id + '" style="padding:0.1rem 0.4rem;margin-left:0.25rem">▲</button>' +
+        '</td>' +
+        '</tr>';
+    }).join("");
+
+    var netEl = document.getElementById("dfo-rebalance-delta-net");
+    if (netEl) {
+      netEl.textContent = "Net delta: " + (netDelta > 0 ? "+" + netDelta : netDelta);
+      netEl.style.color = netDelta === 0 ? "var(--green, #28a745)" : "var(--red, #dc3545)";
+    }
+
+    tbody.querySelectorAll(".btn-dfo-delta-up").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var sId = btn.getAttribute("data-shift-id");
+        S._dfoRebalanceDeltas[sId] = (S._dfoRebalanceDeltas[sId] || 0) + 1;
+        S._dfoRebalanceProposal = null;
+        S.renderDfoRebalanceModal();
+      });
+    });
+
+    tbody.querySelectorAll(".btn-dfo-delta-down").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var sId = btn.getAttribute("data-shift-id");
+        S._dfoRebalanceDeltas[sId] = (S._dfoRebalanceDeltas[sId] || 0) - 1;
+        S._dfoRebalanceProposal = null;
+        S.renderDfoRebalanceModal();
+      });
+    });
+
+    S.renderDfoProposalTable();
+  };
+
+  S.renderDfoProposalTable = function () {
+    var wrap = typeof document !== "undefined" ? document.getElementById("dfo-rebalance-proposal-wrap") : null;
+    var tbody = typeof document !== "undefined" ? document.getElementById("dfo-rebalance-proposal-tbody") : null;
+    if (!wrap || !tbody) return;
+
+    var propInfo = S._dfoRebalanceProposal;
+    if (!propInfo || !propInfo.proposals || !propInfo.proposals.length) {
+      wrap.style.display = "none";
+      tbody.innerHTML = "";
+      return;
+    }
+
+    wrap.style.display = "block";
+    tbody.innerHTML = propInfo.proposals.map(function (p, idx) {
+      var l = p.line;
+      var fromName = p.fromShift ? (p.fromShift.name || p.fromShift.id) : "";
+      var toName = p.toShift ? (p.toShift.name || p.toShift.id) : "";
+      var rBefore = S.formatRdos ? S.formatRdos(p.rdoBefore) : (p.rdoBefore || []).join("-");
+      var rAfter = S.formatRdos ? S.formatRdos(p.rdoAfter) : (p.rdoAfter || []).join("-");
+      var rAfterJson = JSON.stringify(p.rdoAfter);
+
+      return '<tr data-proposal-idx="' + idx + '" data-line-id="' + l.id + '" data-to-shift-id="' + p.toShift.id + '" data-rdo-after=\'' + rAfterJson + '\'>' +
+        '<td style="text-align:center"><input type="checkbox" class="dfo-proposal-move-cb" checked /></td>' +
+        '<td><strong>' + (l.lineCode || l.id) + '</strong></td>' +
+        '<td><span class="badge" style="background:' + (l.sex === "M" ? "#007bff" : "#e83e8c") + ';color:#fff;padding:0.15rem 0.4rem;border-radius:3px">' + (l.sex || "—") + '</span></td>' +
+        '<td>' + fromName + '</td>' +
+        '<td><strong>' + toName + '</strong></td>' +
+        '<td>' + rBefore + '</td>' +
+        '<td><strong style="color:var(--amber, #d97706)">' + rAfter + '</strong></td>' +
+        '<td><span class="muted">' + (p.note || "") + '</span></td>' +
+        '</tr>';
+    }).join("");
+  };
+
   function bindOnce(el, type, fn) {
     if (!el || el._spBound) return;
     el._spBound = true;
@@ -373,6 +512,90 @@ export function bindSetupActions(S) {
         S._rebalanceDeltas = {};
         S._rebalanceProposal = null;
         S.renderFtRebalanceModal();
+      }
+    }
+  });
+
+  function handleDfoRebalanceClick(e) {
+    if (e) e.preventDefault();
+    if (typeof S.openDfoRebalanceModal !== "function") {
+      var err = "Setup rebalance DFO failed to attach — check console.";
+      if (S.updateStatus) S.updateStatus(err);
+      if (typeof window !== "undefined" && window.alert) window.alert(err);
+      return;
+    }
+    S.openDfoRebalanceModal();
+  }
+
+  bindOnce(document.getElementById("btn-rebalance-dfo"), "click", handleDfoRebalanceClick);
+  bindOnce(document.getElementById("btn-rebalance-dfo-modal"), "click", handleDfoRebalanceClick);
+  bindOnce(document.getElementById("dfo-rebalance-close"), "click", function (e) {
+    e.preventDefault();
+    if (S.closeDfoRebalanceModal) S.closeDfoRebalanceModal();
+  });
+  bindOnce(document.getElementById("btn-dfo-cancel"), "click", function (e) {
+    e.preventDefault();
+    if (S.closeDfoRebalanceModal) S.closeDfoRebalanceModal();
+  });
+
+  bindOnce(document.getElementById("dfo-rebalance-class-select"), "change", function (e) {
+    S._dfoRebalanceCurrentClass = e.target.value;
+    S._dfoRebalanceDeltas = {};
+    S._dfoRebalanceProposal = null;
+    S.renderDfoRebalanceModal();
+  });
+
+  bindOnce(document.getElementById("btn-dfo-rebalance-propose"), "click", function (e) {
+    e.preventDefault();
+    var classKey = S._dfoRebalanceCurrentClass || "TSO_ALL";
+    var deltas = S._dfoRebalanceDeltas || {};
+    if (S.proposeDfoMoves) {
+      var res = S.proposeDfoMoves(classKey, deltas);
+      if (res.error) {
+        if (S.updateStatus) S.updateStatus(res.error);
+        if (typeof window !== "undefined" && window.alert) window.alert(res.error);
+        return;
+      }
+      S._dfoRebalanceProposal = res;
+      S.renderDfoProposalTable();
+    }
+  });
+
+  bindOnce(document.getElementById("btn-dfo-select-all"), "click", function (e) {
+    e.preventDefault();
+    document.querySelectorAll(".dfo-proposal-move-cb").forEach(function (cb) { cb.checked = true; });
+  });
+  bindOnce(document.getElementById("btn-dfo-clear-all"), "click", function (e) {
+    e.preventDefault();
+    document.querySelectorAll(".dfo-proposal-move-cb").forEach(function (cb) { cb.checked = false; });
+  });
+
+  bindOnce(document.getElementById("btn-do-dfo-rebalance"), "click", function (e) {
+    e.preventDefault();
+    var moves = [];
+    document.querySelectorAll("#dfo-rebalance-proposal-tbody tr[data-line-id]").forEach(function (tr) {
+      var cb = tr.querySelector(".dfo-proposal-move-cb");
+      if (cb && cb.checked) {
+        var rdoAfterRaw = tr.getAttribute("data-rdo-after");
+        var rdoAfter = [];
+        try { rdoAfter = JSON.parse(rdoAfterRaw); } catch (err) {}
+        moves.push({
+          lineId: tr.getAttribute("data-line-id"),
+          targetShiftId: tr.getAttribute("data-to-shift-id"),
+          rdoAfter: rdoAfter
+        });
+      }
+    });
+    if (!moves.length) {
+      if (S.updateStatus) S.updateStatus("No moves checked to approve.");
+      return;
+    }
+    if (S.approveDfoRebalance) {
+      var ok = S.approveDfoRebalance(moves);
+      if (ok) {
+        S._dfoRebalanceDeltas = {};
+        S._dfoRebalanceProposal = null;
+        S.renderDfoRebalanceModal();
       }
     }
   });

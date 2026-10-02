@@ -14,6 +14,7 @@ import { attachExportBoard } from "./exportBoard.js";
 import { attachCertPools } from "../utils/certs.js";
 import { attachRebalancePt } from "../utils/rebalancePt.js";
 import { attachRebalanceFt } from "../utils/rebalanceFt.js";
+import { attachRebalanceDfo } from "../utils/rebalanceDfo.js";
 
 function safeAttach(name, fn) {
   try {
@@ -38,6 +39,7 @@ export function bridgeScheduler(S) {
   safeAttach("attachExportBoard", function () { attachExportBoard(S); });
   safeAttach("attachRebalancePt", function () { attachRebalancePt(S); });
   safeAttach("attachRebalanceFt", function () { attachRebalanceFt(S); });
+  safeAttach("attachRebalanceDfo", function () { attachRebalanceDfo(S); });
 
   safeAttach("rebuildSetupTab", function () {
     S.rebuildSetupTab = function () {
