@@ -107,7 +107,7 @@
 </div>
 <div id="crew-groups-list" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem"></div>
 </details>
-<div class="card"><div class="section-title">Shifts</div><div class="toolbar"><button type="button" class="btn" id="btn-add-shift">+ Add shift</button> <button type="button" class="btn btn-amber" id="btn-rdo-matrix">RDO by sex</button> <button type="button" class="btn btn-amber" id="btn-rebalance-pt">Rebalance PT TSO shifts</button> <button type="button" class="btn btn-amber" id="btn-rebalance-ft">Rebalance shifts…</button> <button type="button" class="btn btn-amber" id="btn-rebalance-dfo">Rebalance DFO…</button> <button type="button" class="btn btn-amber" id="btn-swap-sex">Swap M/F between shifts…</button></div><div class="lines-scroll" style="max-height:none"><table class="data-table"><thead><tr><th>Name</th><th>Start 1</th><th>End 1</th><th>Start 2</th><th>End 2</th><th>Phase</th><th>Paid h</th><th>TSO force</th><th>LTSO force</th><th>STSO force</th><th>Hard RDOs (Sun–Sat)</th><th>Day times</th><th>Crew group</th></tr></thead><tbody id="shifts-tbody"></tbody></table></div></div>
+<div class="card"><div class="section-title">Shifts</div><div class="toolbar"><button type="button" class="btn" id="btn-add-shift">+ Add shift</button> <button type="button" class="btn btn-amber" id="btn-rdo-matrix">RDO by sex</button> <button type="button" class="btn btn-amber" id="btn-lock-schedules">Lock Schedules…</button> <button type="button" class="btn btn-amber" id="btn-rebalance-pt">Rebalance PT TSO shifts</button> <button type="button" class="btn btn-amber" id="btn-rebalance-ft">Rebalance shifts…</button> <button type="button" class="btn btn-amber" id="btn-rebalance-dfo">Rebalance DFO…</button> <button type="button" class="btn btn-amber" id="btn-swap-sex">Swap M/F between shifts…</button></div><div class="lines-scroll" style="max-height:none"><table class="data-table"><thead><tr><th>Name</th><th>Start 1</th><th>End 1</th><th>Start 2</th><th>End 2</th><th>Phase</th><th>Paid h</th><th>TSO force</th><th>LTSO force</th><th>STSO force</th><th>Hard RDOs (Sun–Sat)</th><th>Day times</th><th>Crew group</th></tr></thead><tbody id="shifts-tbody"></tbody></table></div></div>
 <div id="issues"></div>
 
 <div id="rdo-matrix-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center">
@@ -131,6 +131,47 @@
     </div>
     <div id="rdo-matrix-table-wrap" class="lines-scroll" style="max-height:60vh">
       <p class="muted">No generated schedule available. Click GENERATE first.</p>
+    </div>
+  </div>
+</div>
+
+<div id="lock-schedules-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100000;align-items:center;justify-content:center">
+  <div class="card" style="max-width:80vw;max-height:85vh;overflow:auto;margin:7vh auto;background:var(--bg-card,#fff);padding:1.25rem;border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;border-bottom:1px solid #ddd;padding-bottom:0.5rem">
+      <h3 style="margin:0;font-size:1.1rem">Lock Schedules</h3>
+      <button type="button" class="btn btn-red" id="lock-schedules-close">✕</button>
+    </div>
+    <p class="muted" style="margin:0 0 0.75rem">Stacked rules protect matching lines' shift assignments across GENERATE, rebalance, and sex swap.</p>
+
+    <div class="card" style="background:var(--bg-subtle,#f8f9fa);padding:0.75rem;margin-bottom:1rem">
+      <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+        <label style="font-weight:600">Class:
+          <select id="lock-rule-class" style="padding:0.25rem 0.5rem;font-size:0.9rem"></select>
+        </label>
+        <label style="font-weight:600">Gender:
+          <select id="lock-rule-sex" style="padding:0.25rem 0.5rem;font-size:0.9rem">
+            <option value="ALL">All</option>
+            <option value="M">Male (M)</option>
+            <option value="F">Female (F)</option>
+          </select>
+        </label>
+        <label style="font-weight:600">Shift:
+          <select id="lock-rule-shift" style="padding:0.25rem 0.5rem;font-size:0.9rem"></select>
+        </label>
+        <button type="button" class="btn btn-amber" id="btn-add-lock-rule">+ Add Rule</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center">
+      <h4 style="margin:0;font-size:0.95rem">Active Lock Rules</h4>
+      <button type="button" class="btn btn-sm btn-red" id="btn-clear-lock-rules">Clear All Rules</button>
+    </div>
+
+    <div id="lock-rules-list" style="display:flex;flex-direction:column;gap:0.5rem;max-height:40vh;overflow-y:auto;border:1px solid #ddd;padding:0.75rem;border-radius:4px">
+    </div>
+
+    <div style="margin-top:1rem;display:flex;justify-content:flex-end">
+      <button type="button" class="btn" id="btn-lock-schedules-done">Done</button>
     </div>
   </div>
 </div>

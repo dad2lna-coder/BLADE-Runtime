@@ -591,16 +591,27 @@ export function attachShiftsTable(S) {
         var rdoSeed = (seedPool[idx] + offset) % 7;
         var workDays = S.targetWorkDays ? S.targetWorkDays(l.shiftId, l.empClass) : ((+l.paid || 8) >= 10 ? 4 : 5);
         var rdoCount = Math.max(1, 7 - workDays);
-        var hard = Array.isArray(l.rdoHard) && l.rdoHard
-          ? (Array.isArray(l.rdoHard) ? l.rdoHard : [])
-          : [];
+        var sh = S.getShift ? S.getShift(l.shiftId) : null;
+        var hard = (sh && Array.isArray(sh.rdoHard) && sh.rdoHard.length > 0)
+          ? sh.rdoHard.map(Number).filter(function (x) { return x >= 0 && x <= 6; })
+          : (l.rdoHard && Array.isArray(l.rdoDays) ? l.rdoDays : []);
 
-        if (l.rdoHard && Array.isArray(l.rdoDays) && l.rdoDays.length > 0) {
-          // Hard RDOs set, preserve
+        if (hard.length > 0) {
+          var rDays = hard.slice();
+          if (rDays.length < rdoCount) {
+            for (var d = 0; d < 7 && rDays.length < rdoCount; d++) {
+              var cand = (rdoSeed + d) % 7;
+              if (rDays.indexOf(cand) < 0) rDays.push(cand);
+            }
+          }
+          l.rdoDays = rDays;
+          l.rdoHard = true;
         } else if (S.consecutiveRdos) {
           l.rdoDays = S.consecutiveRdos(rdoCount, rdoSeed);
+          l.rdoHard = false;
         } else {
           l.rdoDays = [(rdoSeed) % 7, (rdoSeed + 1) % 7];
+          l.rdoHard = false;
         }
 
         // Update schedule array for this line

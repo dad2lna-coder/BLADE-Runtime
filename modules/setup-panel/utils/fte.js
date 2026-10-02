@@ -103,7 +103,8 @@ export function collectSetupInputs(S) {
     functionCoverage: setupStore.functionCoverage,
     certPool: setupStore.certPool,
     shifts: (S.state && S.state.shifts) || [],
-    shiftCrewGroups: (S.state && S.state.shiftCrewGroups) || []
+    shiftCrewGroups: (S.state && S.state.shiftCrewGroups) || [],
+    scheduleLocks: (S.state && S.state.scheduleLocks) || []
   };
 }
 
@@ -117,7 +118,8 @@ export function exportStaffingConfig(S) {
     functionCoverage: snap.functionCoverage,
     extraPositions: snap.extraPositions || [],
     certPool: snap.certPool || (S.state && S.state.certPool) || null,
-    shiftCrewGroups: snap.shiftCrewGroups || []
+    shiftCrewGroups: snap.shiftCrewGroups || [],
+    scheduleLocks: snap.scheduleLocks || []
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const filename = (S.exportFileName && S.exportFileName("Staffing", ".json")) || "staffing.json";

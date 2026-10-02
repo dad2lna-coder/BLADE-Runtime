@@ -54,7 +54,11 @@ export function generate(S) {
     if (!s.rdoHard || !s.rdoHard.length) return;
     var need = S.rdoCountForShift(s, "FT");
     if (s.rdoHard.length !== need) {
-      S.state.issues.push(s.name + ": hard RDOs checked " + s.rdoHard.length + " day(s); pattern expects " + need + " (paid " + s.paid + "h). Days kept; work-day count may adjust.");
+      if (s.rdoHard.length > need) {
+        S.state.issues.push(s.name + ": hard RDOs checked " + s.rdoHard.length + " day(s) exceeds pattern target " + need + " (paid " + s.paid + "h). Extra hard days kept; work-day count drops.");
+      } else {
+        S.state.issues.push(s.name + ": hard RDOs checked " + s.rdoHard.length + " day(s); padded to pattern target " + need + " (paid " + s.paid + "h).");
+      }
     }
   });
 
@@ -81,23 +85,66 @@ export function generate(S) {
     return;
   }
 
+  var existingLockedLines = [];
+  if (S.state.lines && Array.isArray(S.state.lines) && S.isLineScheduleLocked) {
+    existingLockedLines = S.state.lines.filter(function (l) { return S.isLineScheduleLocked(l); });
+  }
+
+  function adjustCountsForLocked(counts, lockedLines, filterFn) {
+    var adj = Object.assign({}, counts || {});
+    lockedLines.forEach(function (l) {
+      if (filterFn(l) && l.shiftId && adj[l.shiftId] > 0) {
+        adj[l.shiftId]--;
+      }
+    });
+    return adj;
+  }
+
+  var isTsoLine = function (l) {
+    if (l.isLtso || l.isStso || l.empClass === "LTSO" || l.empClass === "STSO") return false;
+    if (l.isExtra || l.extraPositionId || l.isTraining || l.trainingClass) return false;
+    return true;
+  };
+  var isLtsoLine = function (l) { return l.isLtso || l.empClass === "LTSO"; };
+  var isStsoLine = function (l) { return l.isStso || l.empClass === "STSO"; };
+
+  var lockedTso = existingLockedLines.filter(isTsoLine);
+  var lockedLtso = existingLockedLines.filter(isLtsoLine);
+  var lockedStso = existingLockedLines.filter(isStsoLine);
+  var lockedOther = existingLockedLines.filter(function (l) {
+    return !isTsoLine(l) && !isLtsoLine(l) && !isStsoLine(l);
+  });
+
+  // Ensure locked lines refresh shift metadata
+  existingLockedLines.forEach(function (l) {
+    var sh = S.getShift ? S.getShift(l.shiftId) : null;
+    if (sh) {
+      l.shiftName = sh.name;
+      l.shiftLabel = S.shiftLabel ? S.shiftLabel(sh) : ((sh.start || "") + "–" + (sh.end || ""));
+      if (l.startTime !== undefined) l.startTime = sh.start;
+      if (l.endTime !== undefined) l.endTime = sh.end;
+      if (l.start !== undefined) l.start = sh.start;
+      if (l.end !== undefined) l.end = sh.end;
+    }
+  });
+
   var tsoLines = [];
   var mode = "extras";
   if (total > 0) {
     var allocation = S.allocateShiftHeadcounts(total, openMin, closeMin);
-    var counts = allocation.counts;
+    var counts = adjustCountsForLocked(allocation.counts, lockedTso, isTsoLine);
     mode = allocation.mode;
     tsoLines = S.buildLines(counts);
   }
   S.state.mode = mode;
 
-  var ltsoTotal = S.state.ltsoM + S.state.ltsoF;
+  var ltsoTotal = Math.max(0, (S.state.ltsoM + S.state.ltsoF) - lockedLtso.length);
   var ltsoLines = [];
   if (ltsoTotal > 0) {
     var ltsoAlloc = S.allocateSupervisoryHeadcounts(ltsoTotal, openMin, closeMin, "ltsoForce", tsoLines);
     ltsoLines = S.buildSupervisoryLines(ltsoAlloc.counts || {}, "LTSO");
   }
-  var stsoTotal = S.state.stsoM + S.state.stsoF;
+  var stsoTotal = Math.max(0, (S.state.stsoM + S.state.stsoF) - lockedStso.length);
   var stsoLines = [];
   if (stsoTotal > 0) {
     var stsoAlloc = S.allocateSupervisoryHeadcounts(stsoTotal, openMin, closeMin, "stsoForce", tsoLines);
@@ -105,7 +152,13 @@ export function generate(S) {
   }
   var extraLines = S.buildExtraPositionLines ? S.buildExtraPositionLines() : [];
   var trainingLines = S.buildTrainingClassLines ? S.buildTrainingClassLines() : [];
-  S.state.lines = [].concat(tsoLines, ltsoLines, stsoLines, extraLines, trainingLines);
+
+  S.state.lines = [].concat(
+    lockedTso, tsoLines,
+    lockedLtso, ltsoLines,
+    lockedStso, stsoLines,
+    lockedOther, extraLines, trainingLines
+  );
 
   var days = S.state.weekCount * 7;
   S.state.schedule = {};

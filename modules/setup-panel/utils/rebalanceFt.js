@@ -156,7 +156,9 @@ export function proposeClassMoves(S, classKey, deltas) {
   // Build pairs of donor and receiver
   donorShifts.forEach(function (dShift) {
     var dNeed = donorNeeds[dShift.id];
-    var dLines = classLines.filter(function (l) { return l.shiftId === dShift.id; });
+    var dLines = classLines.filter(function (l) {
+      return l.shiftId === dShift.id && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
+    });
 
     while (dNeed > 0 && dLines.length > 0) {
       // Pick best receiver shift

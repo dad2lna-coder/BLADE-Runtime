@@ -2,10 +2,11 @@
  * Post-generate rebalance for PT TSO lines across non-long shifts.
  */
 
-export function selectPtTsoLines(lines) {
+export function selectPtTsoLines(lines, S) {
   if (!Array.isArray(lines)) return [];
   return lines.filter(function (l) {
     if (!l) return false;
+    if (S && S.isLineScheduleLocked && S.isLineScheduleLocked(l)) return false;
     var isPt = l.empClass === "PT" || l.isPt === true;
     if (!isPt) return false;
     if (l.isStso || l.isLtso || l.empClass === "STSO" || l.empClass === "LTSO") return false;
@@ -29,7 +30,7 @@ export function rebalancePtTsoShifts(S) {
   S.state.issues = S.state.issues || [];
 
   var lines = S.state.lines || [];
-  var ptLines = selectPtTsoLines(lines);
+  var ptLines = selectPtTsoLines(lines, S);
   var eligibleShifts = getEligiblePtShifts(S.state.shifts || []);
 
   if (ptLines.length === 0) {
