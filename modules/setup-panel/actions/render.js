@@ -78,45 +78,141 @@ export function bindSetupActions(S) {
   S.addFcBand = S.addFcShiftRequirement || S.addFcBand || function () { addFcBandClassic(S); };
   patchImportCoverage(S);
 
+  S._rebalanceDeltas = {};
+  S._rebalanceCurrentClass = "TSO_FT";
+  S._rebalanceProposal = null;
+
   S.openFtRebalanceModal = function () {
     var modal = typeof document !== "undefined" ? document.getElementById("ft-rebalance-modal") : null;
     if (modal) { modal.style.display = "flex"; modal.setAttribute("aria-hidden", "false"); }
+    S._rebalanceDeltas = {};
+    S._rebalanceProposal = null;
+    S.renderFtRebalanceClassSelect();
     S.renderFtRebalanceModal();
   };
 
   S.closeFtRebalanceModal = function () {
     var modal = typeof document !== "undefined" ? document.getElementById("ft-rebalance-modal") : null;
     if (modal) { modal.style.display = "none"; modal.setAttribute("aria-hidden", "true"); }
+    S._rebalanceDeltas = {};
+    S._rebalanceProposal = null;
+  };
+
+  S.renderFtRebalanceClassSelect = function () {
+    var selectEl = typeof document !== "undefined" ? document.getElementById("rebalance-class-select") : null;
+    if (!selectEl) return;
+    var options = S.getAvailableClasses ? S.getAvailableClasses() : [];
+    if (!S._rebalanceCurrentClass) S._rebalanceCurrentClass = "TSO_FT";
+    selectEl.innerHTML = options.map(function (opt) {
+      var sel = opt.key === S._rebalanceCurrentClass ? " selected" : "";
+      return '<option value="' + opt.key + '"' + sel + '>' + opt.label + '</option>';
+    }).join("");
   };
 
   S.renderFtRebalanceModal = function () {
-    var tbody = typeof document !== "undefined" ? document.getElementById("ft-rebalance-tbody") : null;
+    var tbody = typeof document !== "undefined" ? document.getElementById("rebalance-bands-tbody") : null;
     if (!tbody) return;
 
-    var info = S.getFtRebalanceCandidates ? S.getFtRebalanceCandidates() : { candidates: [], shifts: [], isEven: true };
+    var classKey = S._rebalanceCurrentClass || "TSO_FT";
+    var lines = (S.state && S.state.lines) || [];
+    var classLines = S.getLinesForClass ? S.getLinesForClass(lines, classKey) : [];
+    var shifts = (S.state && S.state.shifts) || [];
 
-    if (info.isEven || !info.candidates.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;padding:1rem">FT TSO already even across shifts by sex.</td></tr>';
+    var countsM = {};
+    var countsF = {};
+    shifts.forEach(function (s) { countsM[s.id] = 0; countsF[s.id] = 0; });
+    classLines.forEach(function (l) {
+      if (l.sex === "F") countsF[l.shiftId] = (countsF[l.shiftId] || 0) + 1;
+      else countsM[l.shiftId] = (countsM[l.shiftId] || 0) + 1;
+    });
+
+    var deltas = S._rebalanceDeltas || {};
+    var netDelta = 0;
+
+    tbody.innerHTML = shifts.map(function (s) {
+      var cM = countsM[s.id] || 0;
+      var cF = countsF[s.id] || 0;
+      var total = cM + cF;
+      var fPct = total > 0 ? Math.round((cF / total) * 100) + "%" : "—";
+      var minVal = S.getClassBandMin ? S.getClassBandMin(s, classKey) : "—";
+      var dVal = deltas[s.id] || 0;
+      netDelta += dVal;
+
+      var labelTime = (s.start || "") + (s.end ? "–" + s.end : "");
+      var shiftDisp = "<strong>" + (s.name || s.id) + "</strong>" + (labelTime ? ' <span class="muted">(' + labelTime + ")</span>" : "");
+
+      return '<tr data-shift-id="' + s.id + '">' +
+        '<td>' + shiftDisp + '</td>' +
+        '<td style="text-align:center">' + minVal + '</td>' +
+        '<td style="text-align:center">' + cM + '</td>' +
+        '<td style="text-align:center">' + cF + '</td>' +
+        '<td style="text-align:center"><strong>' + total + '</strong></td>' +
+        '<td style="text-align:center">' + fPct + '</td>' +
+        '<td style="text-align:center;white-space:nowrap">' +
+          '<button type="button" class="btn btn-sm btn-delta-down" data-shift-id="' + s.id + '" style="padding:0.1rem 0.4rem;margin-right:0.25rem">▼</button>' +
+          '<span class="delta-val" style="display:inline-block;width:2rem;font-weight:bold">' + (dVal > 0 ? "+" + dVal : dVal) + '</span>' +
+          '<button type="button" class="btn btn-sm btn-delta-up" data-shift-id="' + s.id + '" style="padding:0.1rem 0.4rem;margin-left:0.25rem">▲</button>' +
+        '</td>' +
+        '</tr>';
+    }).join("");
+
+    var netEl = document.getElementById("rebalance-delta-net");
+    if (netEl) {
+      netEl.textContent = "Net delta: " + (netDelta > 0 ? "+" + netDelta : netDelta);
+      netEl.style.color = netDelta === 0 ? "var(--green, #28a745)" : "var(--red, #dc3545)";
+    }
+
+    tbody.querySelectorAll(".btn-delta-up").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var sId = btn.getAttribute("data-shift-id");
+        S._rebalanceDeltas[sId] = (S._rebalanceDeltas[sId] || 0) + 1;
+        S._rebalanceProposal = null;
+        S.renderFtRebalanceModal();
+      });
+    });
+
+    tbody.querySelectorAll(".btn-delta-down").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var sId = btn.getAttribute("data-shift-id");
+        S._rebalanceDeltas[sId] = (S._rebalanceDeltas[sId] || 0) - 1;
+        S._rebalanceProposal = null;
+        S.renderFtRebalanceModal();
+      });
+    });
+
+    S.renderFtProposalTable();
+  };
+
+  S.renderFtProposalTable = function () {
+    var wrap = typeof document !== "undefined" ? document.getElementById("rebalance-proposal-wrap") : null;
+    var tbody = typeof document !== "undefined" ? document.getElementById("rebalance-proposal-tbody") : null;
+    if (!wrap || !tbody) return;
+
+    var propInfo = S._rebalanceProposal;
+    if (!propInfo || !propInfo.proposals || !propInfo.proposals.length) {
+      wrap.style.display = "none";
+      tbody.innerHTML = "";
       return;
     }
 
-    var shifts = info.shifts || [];
+    wrap.style.display = "block";
+    tbody.innerHTML = propInfo.proposals.map(function (p, idx) {
+      var l = p.line;
+      var fromName = p.fromShift ? (p.fromShift.name || p.fromShift.id) : "";
+      var toName = p.toShift ? (p.toShift.name || p.toShift.id) : "";
+      var rBefore = S.formatRdos ? S.formatRdos(p.rdoBefore) : (p.rdoBefore || []).join("-");
+      var rAfter = S.formatRdos ? S.formatRdos(p.rdoAfter) : (p.rdoAfter || []).join("-");
+      var rAfterJson = JSON.stringify(p.rdoAfter);
 
-    tbody.innerHTML = info.candidates.map(function (item) {
-      var l = item.line;
-      var currShiftName = item.currentShift ? (item.currentShift.name || item.currentShift.id) : (l.shiftName || l.shiftId);
-      var optionsHtml = shifts.map(function (s) {
-        var sel = s.id === item.recommendedShiftId ? " selected" : "";
-        return '<option value="' + s.id + '"' + sel + '>' + (s.name || s.id) + '</option>';
-      }).join("");
-
-      return '<tr data-line-id="' + l.id + '">' +
-        '<td style="text-align:center"><input type="checkbox" class="ft-candidate-cb" data-line-id="' + l.id + '" checked /></td>' +
+      return '<tr data-proposal-idx="' + idx + '" data-line-id="' + l.id + '" data-to-shift-id="' + p.toShift.id + '" data-rdo-after=\'' + rAfterJson + '\'>' +
+        '<td style="text-align:center"><input type="checkbox" class="proposal-move-cb" checked /></td>' +
         '<td><strong>' + (l.lineCode || l.id) + '</strong></td>' +
-        '<td>' + currShiftName + '</td>' +
         '<td><span class="badge" style="background:' + (l.sex === "M" ? "#007bff" : "#e83e8c") + ';color:#fff;padding:0.15rem 0.4rem;border-radius:3px">' + (l.sex || "—") + '</span></td>' +
-        '<td>' + (l.paid || 8) + 'h</td>' +
-        '<td><select class="ft-target-select" data-line-id="' + l.id + '" style="padding:0.2rem 0.4rem;font-size:0.85rem">' + optionsHtml + '</select></td>' +
+        '<td>' + fromName + '</td>' +
+        '<td><strong>' + toName + '</strong></td>' +
+        '<td>' + rBefore + '</td>' +
+        '<td><strong style="color:var(--amber, #d97706)">' + rAfter + '</strong></td>' +
+        '<td><span class="muted">' + (p.note || "") + '</span></td>' +
         '</tr>';
     }).join("");
   };
@@ -199,17 +295,10 @@ export function bindSetupActions(S) {
 
   function handleFtRebalanceClick(e) {
     if (e) e.preventDefault();
-    if (typeof S.getFtRebalanceCandidates !== "function" || typeof S.openFtRebalanceModal !== "function") {
-      var err = "Setup rebalance FT failed to attach — check console.";
+    if (typeof S.openFtRebalanceModal !== "function") {
+      var err = "Setup rebalance shifts failed to attach — check console.";
       if (S.updateStatus) S.updateStatus(err);
       if (typeof window !== "undefined" && window.alert) window.alert(err);
-      return;
-    }
-    var info = S.getFtRebalanceCandidates();
-    if (info.isEven || !info.candidates.length) {
-      var msg = "FT TSO already even across shifts.";
-      if (S.updateStatus) S.updateStatus(msg);
-      if (typeof window !== "undefined" && window.alert) window.alert(msg);
       return;
     }
     S.openFtRebalanceModal();
@@ -225,33 +314,67 @@ export function bindSetupActions(S) {
     e.preventDefault();
     if (S.closeFtRebalanceModal) S.closeFtRebalanceModal();
   });
+
+  bindOnce(document.getElementById("rebalance-class-select"), "change", function (e) {
+    S._rebalanceCurrentClass = e.target.value;
+    S._rebalanceDeltas = {};
+    S._rebalanceProposal = null;
+    S.renderFtRebalanceModal();
+  });
+
+  bindOnce(document.getElementById("btn-rebalance-propose"), "click", function (e) {
+    e.preventDefault();
+    var classKey = S._rebalanceCurrentClass || "TSO_FT";
+    var deltas = S._rebalanceDeltas || {};
+    if (S.proposeClassMoves) {
+      var res = S.proposeClassMoves(classKey, deltas);
+      if (res.error) {
+        if (S.updateStatus) S.updateStatus(res.error);
+        if (typeof window !== "undefined" && window.alert) window.alert(res.error);
+        return;
+      }
+      S._rebalanceProposal = res;
+      S.renderFtProposalTable();
+    }
+  });
+
   bindOnce(document.getElementById("btn-ft-select-all"), "click", function (e) {
     e.preventDefault();
-    document.querySelectorAll(".ft-candidate-cb").forEach(function (cb) { cb.checked = true; });
+    document.querySelectorAll(".proposal-move-cb").forEach(function (cb) { cb.checked = true; });
   });
   bindOnce(document.getElementById("btn-ft-clear-all"), "click", function (e) {
     e.preventDefault();
-    document.querySelectorAll(".ft-candidate-cb").forEach(function (cb) { cb.checked = false; });
+    document.querySelectorAll(".proposal-move-cb").forEach(function (cb) { cb.checked = false; });
   });
+
   bindOnce(document.getElementById("btn-do-ft-rebalance"), "click", function (e) {
     e.preventDefault();
     var moves = [];
-    document.querySelectorAll("#ft-rebalance-tbody tr[data-line-id]").forEach(function (tr) {
-      var cb = tr.querySelector(".ft-candidate-cb");
-      var sel = tr.querySelector(".ft-target-select");
-      if (cb && cb.checked && sel) {
+    document.querySelectorAll("#rebalance-proposal-tbody tr[data-line-id]").forEach(function (tr) {
+      var cb = tr.querySelector(".proposal-move-cb");
+      if (cb && cb.checked) {
+        var rdoAfterRaw = tr.getAttribute("data-rdo-after");
+        var rdoAfter = [];
+        try { rdoAfter = JSON.parse(rdoAfterRaw); } catch (err) {}
         moves.push({
           lineId: tr.getAttribute("data-line-id"),
-          targetShiftId: sel.value
+          targetShiftId: tr.getAttribute("data-to-shift-id"),
+          rdoAfter: rdoAfter
         });
       }
     });
     if (!moves.length) {
-      if (S.updateStatus) S.updateStatus("No FT TSO lines checked for move.");
+      if (S.updateStatus) S.updateStatus("No moves checked to approve.");
       return;
     }
-    if (S.approveFtRebalance) S.approveFtRebalance(moves);
-    if (S.closeFtRebalanceModal) S.closeFtRebalanceModal();
+    if (S.approveClassRebalance) {
+      var ok = S.approveClassRebalance(moves);
+      if (ok) {
+        S._rebalanceDeltas = {};
+        S._rebalanceProposal = null;
+        S.renderFtRebalanceModal();
+      }
+    }
   });
 
   bindOnce(document.getElementById("btn-rdo-respin-open"), "click", function (e) {
