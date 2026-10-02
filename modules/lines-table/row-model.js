@@ -47,7 +47,10 @@ export function initRowModel(S) {
     var shiftName = line.shiftName || (shift && shift.name) || "";
     var start = line.startTime || (shift && shift.start ? shift.start : "");
     var end = line.endTime || (shift && shift.end ? shift.end : "");
-    var workLabel = line.shiftLabel || (start && end ? start + "\u2013" + end : start || "WORK");
+    var defaultWorkLabel = (shift && shift.segments && shift.segments.length === 2)
+      ? (shift.segments[0].start + "\u2013" + shift.segments[0].end + " / " + shift.segments[1].start + "\u2013" + shift.segments[1].end)
+      : (start && end ? start + "\u2013" + end : start || "WORK");
+    var workLabel = line.shiftLabel || defaultWorkLabel;
     var extra = !!(line.isExtra || line.extraPositionId);
     var position = extra
       ? (line.position || line.extraName || "TSO")

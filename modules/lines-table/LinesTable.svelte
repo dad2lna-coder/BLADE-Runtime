@@ -42,6 +42,10 @@
   function shiftLabel(opt) {
     if (!opt) return '';
     const name = opt.name || opt.id || '';
+    if (opt.segments && Array.isArray(opt.segments) && opt.segments.length === 2) {
+      const segStr = opt.segments[0].start + '–' + opt.segments[0].end + ' / ' + opt.segments[1].start + '–' + opt.segments[1].end;
+      return (name ? name + ' ' : '') + '(' + segStr + ')';
+    }
     if (opt.start && opt.end) return (name ? name + ' ' : '') + '(' + opt.start + '–' + opt.end + ')';
     if (opt.start) return name ? name + ' ' + opt.start : opt.start;
     return name;

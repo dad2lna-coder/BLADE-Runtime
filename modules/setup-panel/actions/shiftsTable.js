@@ -23,10 +23,33 @@ export function attachShiftsTable(S) {
       var name = (tr.querySelector("[data-f=name]") && tr.querySelector("[data-f=name]").value.trim()) || id;
       var start = (tr.querySelector("[data-f=start]") && tr.querySelector("[data-f=start]").value) || "05:00";
       var end = (tr.querySelector("[data-f=end]") && tr.querySelector("[data-f=end]").value) || "13:30";
+      var start2El = tr.querySelector("[data-f=start2]");
+      var end2El = tr.querySelector("[data-f=end2]");
+      var start2 = start2El ? start2El.value : "";
+      var end2 = end2El ? end2El.value : "";
+
+      var segments = null;
+      if (start2 && end2 && S.isValidTimeText(start) && S.isValidTimeText(end) && S.isValidTimeText(start2) && S.isValidTimeText(end2)) {
+        var m0s = S.timeToMin(start), m0e = S.timeToMin(end);
+        var m1s = S.timeToMin(start2), m1e = S.timeToMin(end2);
+        if (m0e > m0s && m1e > m1s && m1s > m0e) {
+          segments = [
+            { start: start, end: end },
+            { start: start2, end: end2 }
+          ];
+        }
+      }
+
       var paid = +(tr.querySelector("[data-f=paid]") && tr.querySelector("[data-f=paid]").value);
       if (!paid || paid <= 0) {
-        var mins = S.timeToMin(end) - S.timeToMin(start);
-        paid = Math.max(1, Math.round((mins / 60) * 2) / 2);
+        if (segments) {
+          var m1 = S.timeToMin(segments[0].end) - S.timeToMin(segments[0].start);
+          var m2 = S.timeToMin(segments[1].end) - S.timeToMin(segments[1].start);
+          paid = Math.max(1, Math.round(((m1 + m2) / 60) * 2) / 2);
+        } else {
+          var mins = S.timeToMin(end) - S.timeToMin(start);
+          paid = Math.max(1, Math.round((mins / 60) * 2) / 2);
+        }
       }
       var force = Math.max(0, Math.floor(+(tr.querySelector("[data-f=force]") && tr.querySelector("[data-f=force]").value) || 0));
       var ltsoForce = Math.max(0, Math.floor(+(tr.querySelector("[data-f=ltsoForce]") && tr.querySelector("[data-f=ltsoForce]").value) || 0));
@@ -41,11 +64,14 @@ export function attachShiftsTable(S) {
       var phase = (phaseEl && phaseEl.value) || (existing && existing.phase) || "auto";
       var cgEl = tr.querySelector("[data-f=crewGroupId]");
       var crewGroupId = (cgEl && cgEl.value) || (existing && existing.crewGroupId) || "";
-      next.push({
-        id: id, name: name, start: start, end: end, paid: paid,
+
+      var sObj = {
+        id: id, name: name, start: segments ? segments[0].start : start, end: segments ? segments[1].end : end, paid: paid,
         force: force, ltsoForce: ltsoForce, stsoForce: stsoForce, rdoHard: rdoHard,
         dayTimes: dayTimes, phase: phase, crewGroupId: crewGroupId
-      });
+      };
+      if (segments) sObj.segments = segments;
+      next.push(sObj);
     });
     S.state.shifts = next;
     return next;
@@ -126,11 +152,19 @@ export function attachShiftsTable(S) {
         return '<option value="' + g.id + '"' + sel + '>' + (g.name || g.id) + '</option>';
       }).join('');
 
+      var isSplit = !!(s.segments && s.segments.length === 2);
+      var start1 = isSplit ? s.segments[0].start : s.start;
+      var end1 = isSplit ? s.segments[0].end : s.end;
+      var start2 = isSplit ? s.segments[1].start : "";
+      var end2 = isSplit ? s.segments[1].end : "";
+
       return (
         '<tr data-shift-id="' + s.id + '">' +
         '<td><input type="text" data-f="name" value="' + String(s.name).replace(/"/g, "&quot;") + '" style="width:5.5rem" /></td>' +
-        '<td><input type="time" data-f="start" value="' + s.start + '" /></td>' +
-        '<td><input type="time" data-f="end" value="' + s.end + '" /></td>' +
+        '<td><input type="time" data-f="start" value="' + start1 + '" /></td>' +
+        '<td><input type="time" data-f="end" value="' + end1 + '" /></td>' +
+        '<td><input type="time" data-f="start2" value="' + start2 + '" placeholder="Seg 2 start" /></td>' +
+        '<td><input type="time" data-f="end2" value="' + end2 + '" placeholder="Seg 2 end" /></td>' +
         '<td><select data-f="phase">' +
           '<option value="auto"' + ((s.phase || "auto") === "auto" ? " selected" : "") + '>Auto</option>' +
           '<option value="opening"' + (s.phase === "opening" ? " selected" : "") + '>Opening</option>' +
@@ -196,22 +230,32 @@ export function attachShiftsTable(S) {
     S._editingDayTimesShiftId = shiftId;
     var modal = document.getElementById("shift-day-times-modal");
     var title = document.getElementById("shift-day-times-title");
-    if (title) title.textContent = "Day times for " + (s.name || s.id) + " (base " + s.start + "\u2013" + s.end + ")";
+    var isSplit = !!(s.segments && s.segments.length === 2);
+    var baseLabel = isSplit
+      ? (s.segments[0].start + "\u2013" + s.segments[0].end + " / " + s.segments[1].start + "\u2013" + s.segments[1].end)
+      : (s.start + "\u2013" + s.end);
+    if (title) title.textContent = "Day times for " + (s.name || s.id) + " (base " + baseLabel + ")";
     var tbody = document.getElementById("shift-day-times-tbody");
     if (!tbody) return;
     var days = S.DAYS || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     var dt = s.dayTimes || {};
     tbody.innerHTML = days.map(function (name, i) {
       var ov = dt[String(i)];
-      var useOverride = !!(ov && ov.start && ov.end);
-      var startVal = useOverride ? ov.start : s.start;
-      var endVal = useOverride ? ov.end : s.end;
+      var useOverride = !!(ov && (ov.start || ov.segments));
+      var ovSplit = !!(ov && ov.segments && ov.segments.length === 2);
+      var startVal = ovSplit ? ov.segments[0].start : (ov ? ov.start : (isSplit ? s.segments[0].start : s.start));
+      var endVal = ovSplit ? ov.segments[0].end : (ov ? ov.end : (isSplit ? s.segments[0].end : s.end));
+      var start2Val = ovSplit ? ov.segments[1].start : (isSplit ? s.segments[1].start : "");
+      var end2Val = ovSplit ? ov.segments[1].end : (isSplit ? s.segments[1].end : "");
+
       return "<tr data-dow=\"" + i + "\">" +
         "<td><strong>" + name + "</strong></td>" +
         "<td><label class=\"rdo-chk\" style=\"flex-direction:row;gap:0.35rem\">" +
         "<input type=\"checkbox\" data-sdt=\"use\" " + (useOverride ? "checked" : "") + "> Override</label></td>" +
         "<td><input type=\"time\" data-sdt=\"start\" value=\"" + startVal + "\" step=\"900\" " + (useOverride ? "" : "disabled") + "></td>" +
         "<td><input type=\"time\" data-sdt=\"end\" value=\"" + endVal + "\" step=\"900\" " + (useOverride ? "" : "disabled") + "></td>" +
+        "<td><input type=\"time\" data-sdt=\"start2\" value=\"" + start2Val + "\" step=\"900\" placeholder=\"Seg 2 start\" " + (useOverride ? "" : "disabled") + "></td>" +
+        "<td><input type=\"time\" data-sdt=\"end2\" value=\"" + end2Val + "\" step=\"900\" placeholder=\"Seg 2 end\" " + (useOverride ? "" : "disabled") + "></td>" +
         "<td class=\"muted\" data-sdt=\"dur\"></td></tr>";
     }).join("");
     S.updateShiftDayTimesDurations();
@@ -229,20 +273,42 @@ export function attachShiftsTable(S) {
       var use = tr.querySelector("[data-sdt=use]");
       var startEl = tr.querySelector("[data-sdt=start]");
       var endEl = tr.querySelector("[data-sdt=end]");
+      var start2El = tr.querySelector("[data-sdt=start2]");
+      var end2El = tr.querySelector("[data-sdt=end2]");
       var durEl = tr.querySelector("[data-sdt=dur]");
       if (!use || !startEl || !endEl || !durEl) return;
-      startEl.disabled = !use.checked;
-      endEl.disabled = !use.checked;
+      var disabled = !use.checked;
+      startEl.disabled = disabled;
+      endEl.disabled = disabled;
+      if (start2El) start2El.disabled = disabled;
+      if (end2El) end2El.disabled = disabled;
       if (!use.checked) { durEl.textContent = "base"; durEl.style.color = "var(--muted)"; return; }
-      var o = S.timeToMin(startEl.value);
-      var c = S.timeToMin(endEl.value);
-      if (c <= o) { durEl.textContent = "Invalid"; durEl.style.color = "var(--red)"; }
-      else {
-        var mins = c - o;
+
+      var s1 = S.timeToMin(startEl.value);
+      var e1 = S.timeToMin(endEl.value);
+      var hasSeg2 = start2El && end2El && start2El.value && end2El.value;
+      if (hasSeg2) {
+        var s2 = S.timeToMin(start2El.value);
+        var e2 = S.timeToMin(end2El.value);
+        if (e1 <= s1 || e2 <= s2 || s2 <= e1) {
+          durEl.textContent = "Invalid";
+          durEl.style.color = "var(--red)";
+          return;
+        }
+        var mins = (e1 - s1) + (e2 - s2);
         var h = Math.floor(mins / 60);
         var m = mins % 60;
         durEl.textContent = h + "h" + (m ? " " + m + "m" : "");
         durEl.style.color = "";
+      } else {
+        if (e1 <= s1) { durEl.textContent = "Invalid"; durEl.style.color = "var(--red)"; }
+        else {
+          var mins1 = e1 - s1;
+          var h1 = Math.floor(mins1 / 60);
+          var m1 = mins1 % 60;
+          durEl.textContent = h1 + "h" + (m1 ? " " + m1 + "m" : "");
+          durEl.style.color = "";
+        }
       }
     });
   };
@@ -361,11 +427,31 @@ export function attachShiftsTable(S) {
       var use = tr.querySelector("[data-sdt=use]");
       var startEl = tr.querySelector("[data-sdt=start]");
       var endEl = tr.querySelector("[data-sdt=end]");
+      var start2El = tr.querySelector("[data-sdt=start2]");
+      var end2El = tr.querySelector("[data-sdt=end2]");
       if (!use || !use.checked || !startEl || !endEl) return;
       if (!S.isValidTimeText(startEl.value) || !S.isValidTimeText(endEl.value)) return;
-      if (S.timeToMin(endEl.value) <= S.timeToMin(startEl.value)) return;
-      if (startEl.value === s.start && endEl.value === s.end) return;
-      dayTimes[String(i)] = { start: startEl.value, end: endEl.value };
+      var s1Val = startEl.value, e1Val = endEl.value;
+      var s2Val = start2El ? start2El.value : "";
+      var e2Val = end2El ? end2El.value : "";
+
+      if (s2Val && e2Val && S.isValidTimeText(s2Val) && S.isValidTimeText(e2Val)) {
+        var m1s = S.timeToMin(s1Val), m1e = S.timeToMin(e1Val);
+        var m2s = S.timeToMin(s2Val), m2e = S.timeToMin(e2Val);
+        if (m1e > m1s && m2e > m2s && m2s > m1e) {
+          dayTimes[String(i)] = {
+            start: s1Val, end: e2Val,
+            segments: [
+              { start: s1Val, end: e1Val },
+              { start: s2Val, end: e2Val }
+            ]
+          };
+          return;
+        }
+      }
+      if (S.timeToMin(e1Val) <= S.timeToMin(s1Val)) return;
+      if (!s.segments && s1Val === s.start && e1Val === s.end) return;
+      dayTimes[String(i)] = { start: s1Val, end: e1Val };
     });
     s.dayTimes = Object.keys(dayTimes).length ? dayTimes : null;
     S.closeShiftDayTimesModal();

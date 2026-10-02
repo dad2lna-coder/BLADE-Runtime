@@ -65,15 +65,29 @@ export function lineCoversSlot(line, dayIndex, slotMin) {
       ? api.weekdaySun0(api.addDays(base, dayIndex))
       : (api.dj ? api.dj(base).add(dayIndex).day() : dayIndex % 7);
   }
-  var times = api.getEffectiveShiftTimes ? api.getEffectiveShiftTimes(line.shiftId, dow) : null;
-  if (!times) {
-    var sh = api.getShift(line.shiftId);
-    if (!sh) return false;
-    times = { start: sh.start, end: sh.end };
+  if (api.shiftCoversSlot) return api.shiftCoversSlot(line.shiftId, slotMin, dow);
+
+  var segs = api.getEffectiveShiftSegments ? api.getEffectiveShiftSegments(line.shiftId, dow) : null;
+  if (!segs) {
+    var times = api.getEffectiveShiftTimes ? api.getEffectiveShiftTimes(line.shiftId, dow) : null;
+    if (!times) {
+      var sh = api.getShift(line.shiftId);
+      if (!sh) return false;
+      segs = sh.segments && sh.segments.length === 2 ? sh.segments : [{ start: sh.start, end: sh.end }];
+    } else {
+      segs = [{ start: times.start, end: times.end }];
+    }
   }
-  var a = api.timeToMin(times.start), c = api.timeToMin(times.end);
-  if (c <= a) return slotMin >= a || slotMin < c;
-  return slotMin >= a && slotMin < c;
+  for (var i = 0; i < segs.length; i++) {
+    var a = api.timeToMin(segs[i].start);
+    var c = api.timeToMin(segs[i].end);
+    if (c <= a) {
+      if (slotMin >= a || slotMin < c) return true;
+    } else {
+      if (slotMin >= a && slotMin < c) return true;
+    }
+  }
+  return false;
 }
 // Legacy: extra-position coverage windows and unmapped fc.bands only.
 // Function Coverage assignment no longer uses bands.
