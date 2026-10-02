@@ -1,5 +1,5 @@
 /**
- * Selective FT TSO shift rebalancing via candidate modal.
+ * Selective FT TSO shift rebalancing via surplus-by-sex candidate modal.
  */
 
 export function selectFtTsoLines(lines) {
@@ -15,76 +15,132 @@ export function selectFtTsoLines(lines) {
   });
 }
 
+function shiftStartMins(S, s) {
+  if (!s || !s.start) return 0;
+  if (S && typeof S.timeToMin === "function") return S.timeToMin(s.start);
+  var p = String(s.start).split(":");
+  return (+p[0] || 0) * 60 + (+p[1] || 0);
+}
+
 export function getFtRebalanceCandidates(S) {
-  if (!S || !S.state) return { candidates: [], shifts: [], overfullShifts: [], underfullShifts: [], isEven: true };
+  if (!S || !S.state) return { candidates: [], shifts: [], isEven: true };
 
   var lines = S.state.lines || [];
   var ftLines = selectFtTsoLines(lines);
   var shifts = S.state.shifts || [];
 
   if (ftLines.length === 0 || shifts.length < 2) {
-    return { candidates: [], shifts: shifts, overfullShifts: [], underfullShifts: [], isEven: true };
+    return { candidates: [], shifts: shifts, isEven: true };
   }
 
-  // Count FT TSO per shiftId
-  var ftCounts = {};
-  shifts.forEach(function (s) { ftCounts[s.id] = 0; });
+  var shiftCount = shifts.length;
+
+  // Counts per shift & sex
+  var countsM = {};
+  var countsF = {};
+  shifts.forEach(function (s) { countsM[s.id] = 0; countsF[s.id] = 0; });
+
+  var totalM = 0;
+  var totalF = 0;
   ftLines.forEach(function (l) {
-    if (ftCounts[l.shiftId] !== undefined) {
-      ftCounts[l.shiftId]++;
+    var sx = (l.sex === "F") ? "F" : "M";
+    if (sx === "F") {
+      countsF[l.shiftId] = (countsF[l.shiftId] || 0) + 1;
+      totalF++;
     } else {
-      ftCounts[l.shiftId] = 1;
+      countsM[l.shiftId] = (countsM[l.shiftId] || 0) + 1;
+      totalM++;
     }
   });
 
-  var totalFt = ftLines.length;
-  var shiftCount = shifts.length;
-  var avg = totalFt / shiftCount;
+  var floorM = Math.floor(totalM / shiftCount);
+  var ceilM = Math.ceil(totalM / shiftCount);
+  var floorF = Math.floor(totalF / shiftCount);
+  var ceilF = Math.ceil(totalF / shiftCount);
 
-  var overfullShifts = shifts.filter(function (s) { return (ftCounts[s.id] || 0) > avg; });
-  var underfullShifts = shifts.filter(function (s) { return (ftCounts[s.id] || 0) < avg; });
+  var underfullM = shifts.filter(function (s) { return (countsM[s.id] || 0) < floorM; });
+  var underfullF = shifts.filter(function (s) { return (countsF[s.id] || 0) < floorF; });
 
-  var overfullSet = new Set(overfullShifts.map(function (s) { return s.id; }));
+  var candidates = [];
 
-  if (!overfullShifts.length || !underfullShifts.length) {
-    return { candidates: [], shifts: shifts, overfullShifts: overfullShifts, underfullShifts: underfullShifts, isEven: true };
-  }
+  shifts.forEach(function (s) {
+    var cM = countsM[s.id] || 0;
+    if (cM > ceilM) {
+      var surplusM = cM - floorM;
+      var linesM = ftLines.filter(function (l) {
+        return l.shiftId === s.id && l.sex !== "F";
+      }).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
 
-  // Determine default recommended target shift: underfull shift with lowest FT count
-  function shiftStartMins(s) {
-    if (!s || !s.start) return 0;
-    if (S && typeof S.timeToMin === "function") return S.timeToMin(s.start);
-    var p = String(s.start).split(":");
-    return (+p[0] || 0) * 60 + (+p[1] || 0);
-  }
+      var selectedM = linesM.slice(0, surplusM);
 
-  var sortedUnderfull = underfullShifts.slice().sort(function (a, b) {
-    var countA = ftCounts[a.id] || 0;
-    var countB = ftCounts[b.id] || 0;
-    if (countA !== countB) return countA - countB;
-    var startA = shiftStartMins(a);
-    var startB = shiftStartMins(b);
-    if (startA !== startB) return startA - startB;
-    return String(a.id).localeCompare(String(b.id));
-  });
+      // Best target underfull shift for M
+      var targetShiftsM = underfullM.slice().sort(function (a, b) {
+        var cA = countsM[a.id] || 0;
+        var cB = countsM[b.id] || 0;
+        if (cA !== cB) return cA - cB;
+        var stA = shiftStartMins(S, a);
+        var stB = shiftStartMins(S, b);
+        if (stA !== stB) return stA - stB;
+        return String(a.id).localeCompare(String(b.id));
+      });
+      if (!targetShiftsM.length) {
+        targetShiftsM = shifts.filter(function (sh) { return sh.id !== s.id; }).sort(function (a, b) {
+          return (countsM[a.id] || 0) - (countsM[b.id] || 0);
+        });
+      }
+      var recommendedM = targetShiftsM[0] ? targetShiftsM[0].id : s.id;
 
-  var recommendedShift = sortedUnderfull[0];
+      selectedM.forEach(function (l) {
+        candidates.push({
+          line: l,
+          currentShift: s,
+          recommendedShiftId: recommendedM,
+          sex: "M"
+        });
+      });
+    }
 
-  var candidates = ftLines.filter(function (l) { return overfullSet.has(l.shiftId); }).map(function (l) {
-    var currShift = shifts.find(function (s) { return s.id === l.shiftId; });
-    return {
-      line: l,
-      currentShift: currShift,
-      recommendedShiftId: recommendedShift ? recommendedShift.id : l.shiftId
-    };
+    var cF = countsF[s.id] || 0;
+    if (cF > ceilF) {
+      var surplusF = cF - floorF;
+      var linesF = ftLines.filter(function (l) {
+        return l.shiftId === s.id && l.sex === "F";
+      }).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
+
+      var selectedF = linesF.slice(0, surplusF);
+
+      // Best target underfull shift for F
+      var targetShiftsF = underfullF.slice().sort(function (a, b) {
+        var cA = countsF[a.id] || 0;
+        var cB = countsF[b.id] || 0;
+        if (cA !== cB) return cA - cB;
+        var stA = shiftStartMins(S, a);
+        var stB = shiftStartMins(S, b);
+        if (stA !== stB) return stA - stB;
+        return String(a.id).localeCompare(String(b.id));
+      });
+      if (!targetShiftsF.length) {
+        targetShiftsF = shifts.filter(function (sh) { return sh.id !== s.id; }).sort(function (a, b) {
+          return (countsF[a.id] || 0) - (countsF[b.id] || 0);
+        });
+      }
+      var recommendedF = targetShiftsF[0] ? targetShiftsF[0].id : s.id;
+
+      selectedF.forEach(function (l) {
+        candidates.push({
+          line: l,
+          currentShift: s,
+          recommendedShiftId: recommendedF,
+          sex: "F"
+        });
+      });
+    }
   });
 
   return {
     candidates: candidates,
     shifts: shifts,
-    overfullShifts: overfullShifts,
-    underfullShifts: underfullShifts,
-    isEven: false
+    isEven: candidates.length === 0
   };
 }
 
@@ -93,7 +149,7 @@ export function approveFtRebalance(S, moves) {
   S.state.issues = S.state.issues || [];
 
   if (!Array.isArray(moves) || moves.length === 0) {
-    var msg0 = "No FT TSO lines selected to rebalance.";
+    var msg0 = "No FT TSO lines checked to rebalance.";
     if (S.updateStatus) S.updateStatus(msg0);
     return false;
   }
@@ -102,13 +158,19 @@ export function approveFtRebalance(S, moves) {
   var lines = S.state.lines || [];
   var ftLines = selectFtTsoLines(lines);
 
-  // Before counts
-  var beforeCounts = {};
-  shifts.forEach(function (s) { beforeCounts[s.name || s.id] = 0; });
+  // Before M and F counts
+  var beforeM = {};
+  var beforeF = {};
+  shifts.forEach(function (s) {
+    var name = s.name || s.id;
+    beforeM[name] = 0;
+    beforeF[name] = 0;
+  });
   ftLines.forEach(function (l) {
     var s = shifts.find(function (sh) { return sh.id === l.shiftId; });
     var name = s ? (s.name || s.id) : (l.shiftName || l.shiftId);
-    beforeCounts[name] = (beforeCounts[name] || 0) + 1;
+    if (l.sex === "F") beforeF[name] = (beforeF[name] || 0) + 1;
+    else beforeM[name] = (beforeM[name] || 0) + 1;
   });
 
   var movedCount = 0;
@@ -136,27 +198,35 @@ export function approveFtRebalance(S, moves) {
     return false;
   }
 
-  // After counts
+  // After M and F counts
   var updatedFtLines = selectFtTsoLines(lines);
-  var afterCounts = {};
-  shifts.forEach(function (s) { afterCounts[s.name || s.id] = 0; });
+  var afterM = {};
+  var afterF = {};
+  shifts.forEach(function (s) {
+    var name = s.name || s.id;
+    afterM[name] = 0;
+    afterF[name] = 0;
+  });
   updatedFtLines.forEach(function (l) {
     var s = shifts.find(function (sh) { return sh.id === l.shiftId; });
     var name = s ? (s.name || s.id) : (l.shiftName || l.shiftId);
-    afterCounts[name] = (afterCounts[name] || 0) + 1;
+    if (l.sex === "F") afterF[name] = (afterF[name] || 0) + 1;
+    else afterM[name] = (afterM[name] || 0) + 1;
   });
 
   var shiftSummaries = [];
   shifts.forEach(function (s) {
     var name = s.name || s.id;
-    var b = beforeCounts[name] || 0;
-    var a = afterCounts[name] || 0;
-    if (b !== 0 || a !== 0) {
-      shiftSummaries.push(name + ": " + b + "→" + a);
+    var bM = beforeM[name] || 0;
+    var aM = afterM[name] || 0;
+    var bF = beforeF[name] || 0;
+    var aF = afterF[name] || 0;
+    if (bM !== 0 || aM !== 0 || bF !== 0 || aF !== 0) {
+      shiftSummaries.push(name + ": M " + bM + "→" + aM + ", F " + bF + "→" + aF);
     }
   });
 
-  var countsStr = shiftSummaries.join(", ");
+  var countsStr = shiftSummaries.join(" · ");
   var statusMsg = "Rebalanced " + movedCount + " FT TSO line(s) · " + countsStr;
   if (S.updateStatus) S.updateStatus(statusMsg);
   if (typeof window !== "undefined" && window.alert) {

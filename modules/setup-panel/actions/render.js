@@ -96,7 +96,7 @@ export function bindSetupActions(S) {
     var info = S.getFtRebalanceCandidates ? S.getFtRebalanceCandidates() : { candidates: [], shifts: [], isEven: true };
 
     if (info.isEven || !info.candidates.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;padding:1rem">FT TSO already even across shifts (no candidates on overfull shifts).</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;padding:1rem">FT TSO already even across shifts by sex.</td></tr>';
       return;
     }
 
