@@ -15,6 +15,7 @@ import { attachCertPools } from "../utils/certs.js";
 import { attachRebalancePt } from "../utils/rebalancePt.js";
 import { attachRebalanceFt } from "../utils/rebalanceFt.js";
 import { attachRebalanceDfo } from "../utils/rebalanceDfo.js";
+import { attachSwapSex } from "../utils/swapSex.js";
 
 function safeAttach(name, fn) {
   try {
@@ -40,6 +41,7 @@ export function bridgeScheduler(S) {
   safeAttach("attachRebalancePt", function () { attachRebalancePt(S); });
   safeAttach("attachRebalanceFt", function () { attachRebalanceFt(S); });
   safeAttach("attachRebalanceDfo", function () { attachRebalanceDfo(S); });
+  safeAttach("attachSwapSex", function () { attachSwapSex(S); });
 
   safeAttach("rebuildSetupTab", function () {
     S.rebuildSetupTab = function () {

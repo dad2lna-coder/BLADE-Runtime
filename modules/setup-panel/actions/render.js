@@ -217,6 +217,107 @@ export function bindSetupActions(S) {
     }).join("");
   };
 
+  S._swapSexCurrentClass = "TSO_ALL";
+  S._swapSexSelectedShifts = {};
+  S._swapSexProposal = null;
+
+  S.openSwapSexModal = function () {
+    var modal = typeof document !== "undefined" ? document.getElementById("swap-sex-modal") : null;
+    if (modal) { modal.style.display = "flex"; modal.setAttribute("aria-hidden", "false"); }
+    S._swapSexProposal = null;
+    S.renderSwapSexClassSelect();
+    S.renderSwapSexShiftsList();
+    S.renderSwapSexProposalTable();
+  };
+
+  S.closeSwapSexModal = function () {
+    var modal = typeof document !== "undefined" ? document.getElementById("swap-sex-modal") : null;
+    if (modal) { modal.style.display = "none"; modal.setAttribute("aria-hidden", "true"); }
+    S._swapSexProposal = null;
+  };
+
+  S.renderSwapSexClassSelect = function () {
+    var selectEl = typeof document !== "undefined" ? document.getElementById("swap-sex-class-select") : null;
+    if (!selectEl) return;
+    var options = S.getSwapAvailableClasses ? S.getSwapAvailableClasses() : [];
+    if (!S._swapSexCurrentClass) S._swapSexCurrentClass = "TSO_ALL";
+    selectEl.innerHTML = options.map(function (opt) {
+      var sel = opt.key === S._swapSexCurrentClass ? " selected" : "";
+      return '<option value="' + opt.key + '"' + sel + '>' + opt.label + '</option>';
+    }).join("");
+  };
+
+  S.renderSwapSexShiftsList = function () {
+    var listEl = typeof document !== "undefined" ? document.getElementById("swap-sex-shifts-list") : null;
+    if (!listEl) return;
+
+    var classKey = S._swapSexCurrentClass || "TSO_ALL";
+    var lines = (S.state && S.state.lines) || [];
+    var classLines = S.getLinesForSwapClass ? S.getLinesForSwapClass(classKey) : [];
+    var shifts = (S.state && S.state.shifts) || [];
+
+    var countsM = {};
+    var countsF = {};
+    shifts.forEach(function (s) { countsM[s.id] = 0; countsF[s.id] = 0; });
+    classLines.forEach(function (l) {
+      if (l.sex === "F") countsF[l.shiftId] = (countsF[l.shiftId] || 0) + 1;
+      else countsM[l.shiftId] = (countsM[l.shiftId] || 0) + 1;
+    });
+
+    listEl.innerHTML = shifts.map(function (s) {
+      var cM = countsM[s.id] || 0;
+      var cF = countsF[s.id] || 0;
+      var total = cM + cF;
+      var isChecked = S._swapSexSelectedShifts[s.id] !== false;
+      S._swapSexSelectedShifts[s.id] = isChecked;
+
+      return '<label style="display:inline-flex;align-items:center;gap:0.35rem;white-space:nowrap;font-size:0.9rem">' +
+        '<input type="checkbox" class="swap-sex-shift-cb" data-shift-id="' + s.id + '"' + (isChecked ? ' checked' : '') + ' /> ' +
+        '<strong>' + (s.name || s.id) + '</strong> (' + cM + 'M / ' + cF + 'F = ' + total + ')' +
+        '</label>';
+    }).join("");
+
+    listEl.querySelectorAll(".swap-sex-shift-cb").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var sId = cb.getAttribute("data-shift-id");
+        S._swapSexSelectedShifts[sId] = cb.checked;
+        S._swapSexProposal = null;
+        S.renderSwapSexProposalTable();
+      });
+    });
+  };
+
+  S.renderSwapSexProposalTable = function () {
+    var wrap = typeof document !== "undefined" ? document.getElementById("swap-sex-proposal-wrap") : null;
+    var tbody = typeof document !== "undefined" ? document.getElementById("swap-sex-proposal-tbody") : null;
+    if (!wrap || !tbody) return;
+
+    var propInfo = S._swapSexProposal;
+    if (!propInfo || !propInfo.proposals || !propInfo.proposals.length) {
+      wrap.style.display = "none";
+      tbody.innerHTML = "";
+      return;
+    }
+
+    wrap.style.display = "block";
+    tbody.innerHTML = propInfo.proposals.map(function (p, idx) {
+      var lM = p.lineM;
+      var lF = p.lineF;
+      var shiftAName = p.shiftA ? (p.shiftA.name || p.shiftA.id) : "";
+      var shiftBName = p.shiftB ? (p.shiftB.name || p.shiftB.id) : "";
+
+      var rMAfterJson = JSON.stringify(p.rdoMAfter);
+      var rFAfterJson = JSON.stringify(p.rdoFAfter);
+
+      return '<tr data-proposal-idx="' + idx + '" data-line-m-id="' + lM.id + '" data-line-f-id="' + lF.id + '" data-shift-a-id="' + p.shiftA.id + '" data-shift-b-id="' + p.shiftB.id + '" data-rdo-m-after=\'' + rMAfterJson + '\' data-rdo-f-after=\'' + rFAfterJson + '\'>' +
+        '<td style="text-align:center"><input type="checkbox" class="swap-sex-proposal-cb" checked /></td>' +
+        '<td><span class="badge" style="background:#007bff;color:#fff;padding:0.15rem 0.4rem;border-radius:3px">M</span> <strong>' + (lM.lineCode || lM.id) + '</strong> (' + shiftAName + ' → ' + shiftBName + ')</td>' +
+        '<td><span class="badge" style="background:#e83e8c;color:#fff;padding:0.15rem 0.4rem;border-radius:3px">F</span> <strong>' + (lF.lineCode || lF.id) + '</strong> (' + shiftBName + ' → ' + shiftAName + ')</td>' +
+        '<td><span class="muted">' + (p.notes || "") + '</span></td>' +
+        '</tr>';
+    }).join("");
+  };
+
   S._dfoRebalanceDeltas = {};
   S._dfoRebalanceCurrentClass = "TSO_ALL";
   S._dfoRebalanceProposal = null;
@@ -584,6 +685,118 @@ export function bindSetupActions(S) {
   bindOnce(document.getElementById("btn-dfo-clear-all"), "click", function (e) {
     e.preventDefault();
     document.querySelectorAll(".dfo-proposal-move-cb").forEach(function (cb) { cb.checked = false; });
+  });
+
+  function handleSwapSexClick(e) {
+    if (e) e.preventDefault();
+    if (typeof S.openSwapSexModal !== "function") {
+      var err = "Setup swap M/F failed to attach — check console.";
+      if (S.updateStatus) S.updateStatus(err);
+      if (typeof window !== "undefined" && window.alert) window.alert(err);
+      return;
+    }
+    S.openSwapSexModal();
+  }
+
+  bindOnce(document.getElementById("btn-swap-sex"), "click", handleSwapSexClick);
+  bindOnce(document.getElementById("btn-swap-sex-modal"), "click", handleSwapSexClick);
+  bindOnce(document.getElementById("swap-sex-close"), "click", function (e) {
+    e.preventDefault();
+    if (S.closeSwapSexModal) S.closeSwapSexModal();
+  });
+  bindOnce(document.getElementById("btn-swap-sex-cancel"), "click", function (e) {
+    e.preventDefault();
+    if (S.closeSwapSexModal) S.closeSwapSexModal();
+  });
+
+  bindOnce(document.getElementById("swap-sex-class-select"), "change", function (e) {
+    S._swapSexCurrentClass = e.target.value;
+    S._swapSexProposal = null;
+    S.renderSwapSexShiftsList();
+    S.renderSwapSexProposalTable();
+  });
+
+  bindOnce(document.getElementById("btn-swap-sex-select-all-shifts"), "click", function (e) {
+    e.preventDefault();
+    (S.state ? S.state.shifts : []).forEach(function (s) { S._swapSexSelectedShifts[s.id] = true; });
+    S._swapSexProposal = null;
+    S.renderSwapSexShiftsList();
+  });
+
+  bindOnce(document.getElementById("btn-swap-sex-clear-all-shifts"), "click", function (e) {
+    e.preventDefault();
+    (S.state ? S.state.shifts : []).forEach(function (s) { S._swapSexSelectedShifts[s.id] = false; });
+    S._swapSexProposal = null;
+    S.renderSwapSexShiftsList();
+  });
+
+  bindOnce(document.getElementById("btn-swap-sex-propose"), "click", function (e) {
+    e.preventDefault();
+    var classKey = S._swapSexCurrentClass || "TSO_ALL";
+    var selShiftIds = [];
+    Object.keys(S._swapSexSelectedShifts || {}).forEach(function (sId) {
+      if (S._swapSexSelectedShifts[sId]) selShiftIds.push(sId);
+    });
+
+    if (S.proposeSexSwaps) {
+      var res = S.proposeSexSwaps(classKey, selShiftIds);
+      if (res.error) {
+        if (S.updateStatus) S.updateStatus(res.error);
+        if (typeof window !== "undefined" && window.alert) window.alert(res.error);
+        return;
+      }
+      S._swapSexProposal = res;
+      S.renderSwapSexProposalTable();
+    }
+  });
+
+  bindOnce(document.getElementById("btn-swap-sex-select-all"), "click", function (e) {
+    e.preventDefault();
+    document.querySelectorAll(".swap-sex-proposal-cb").forEach(function (cb) { cb.checked = true; });
+  });
+
+  bindOnce(document.getElementById("btn-swap-sex-clear-all"), "click", function (e) {
+    e.preventDefault();
+    document.querySelectorAll(".swap-sex-proposal-cb").forEach(function (cb) { cb.checked = false; });
+  });
+
+  bindOnce(document.getElementById("btn-do-swap-sex"), "click", function (e) {
+    e.preventDefault();
+    var swapPairs = [];
+    document.querySelectorAll("#swap-sex-proposal-tbody tr[data-line-m-id]").forEach(function (tr) {
+      var cb = tr.querySelector(".swap-sex-proposal-cb");
+      if (cb && cb.checked) {
+        var rdoMAfterRaw = tr.getAttribute("data-rdo-m-after");
+        var rdoFAfterRaw = tr.getAttribute("data-rdo-f-after");
+        var rdoMAfter = [];
+        var rdoFAfter = [];
+        try { rdoMAfter = JSON.parse(rdoMAfterRaw); } catch (err) {}
+        try { rdoFAfter = JSON.parse(rdoFAfterRaw); } catch (err) {}
+
+        swapPairs.push({
+          lineMId: tr.getAttribute("data-line-m-id"),
+          lineFId: tr.getAttribute("data-line-f-id"),
+          shiftAId: tr.getAttribute("data-shift-a-id"),
+          shiftBId: tr.getAttribute("data-shift-b-id"),
+          rdoMAfter: rdoMAfter,
+          rdoFAfter: rdoFAfter
+        });
+      }
+    });
+
+    if (!swapPairs.length) {
+      if (S.updateStatus) S.updateStatus("No swap pairs checked to approve.");
+      return;
+    }
+
+    if (S.approveSexSwaps) {
+      var ok = S.approveSexSwaps(swapPairs);
+      if (ok) {
+        S._swapSexProposal = null;
+        S.renderSwapSexShiftsList();
+        S.renderSwapSexProposalTable();
+      }
+    }
   });
 
   bindOnce(document.getElementById("btn-do-dfo-rebalance"), "click", function (e) {
