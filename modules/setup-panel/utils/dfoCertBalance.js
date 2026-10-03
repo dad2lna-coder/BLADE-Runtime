@@ -87,47 +87,43 @@ export function proposeDfoCertBalance(S, classKey) {
       return l.shiftId === dShift.id && hasDfoCert(l) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
     });
 
-    while (surplus > 0 && donorCertLines.length > 0) {
-      var rShift = receiverShifts.find(function (rs) { return workingCertCounts[rs.id] < avgCerts; });
-      if (!rShift) break;
+    for (var dIdx = 0; dIdx < donorCertLines.length && surplus > 0; dIdx++) {
+      var candDonor = donorCertLines[dIdx];
+      var candSex = candDonor.sex || "M";
 
-      var donorLine = null;
-      var recvLine = null;
+      var matchedRecv = null;
+      var matchedRShift = null;
 
-      // Try finding a donor line that has a same-sex receiver line on rShift
-      for (var dIdx = 0; dIdx < donorCertLines.length; dIdx++) {
-        var candDonor = donorCertLines[dIdx];
-        var candSex = candDonor.sex || "M";
+      var availRecvShifts = receiverShifts.filter(function (rs) { return workingCertCounts[rs.id] < avgCerts; });
+
+      // Check all available receiver shifts for a same-sex receiver line
+      for (var rIdx = 0; rIdx < availRecvShifts.length; rIdx++) {
+        var candRShift = availRecvShifts[rIdx];
         var candRecv = lines.find(function (l) {
-          return l.shiftId === rShift.id && (l.sex || "M") === candSex && !hasDfoCert(l) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
+          return l.shiftId === candRShift.id && (l.sex || "M") === candSex && !hasDfoCert(l) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
         });
         if (candRecv) {
-          donorLine = candDonor;
-          recvLine = candRecv;
+          matchedRecv = candRecv;
+          matchedRShift = candRShift;
           break;
         }
       }
 
-      // Strict same-sex requirement: if no same-sex receiver exists, skip this move!
-      if (!donorLine || !recvLine) {
-        donorCertLines.shift();
+      if (!matchedRecv || !matchedRShift) {
         continue;
       }
 
-      var matchedSex = donorLine.sex || "M";
-
       proposals.push({
-        donorLine: donorLine,
-        receiverLine: recvLine,
-        sex: matchedSex,
+        donorLine: candDonor,
+        receiverLine: matchedRecv,
+        sex: candSex,
         donorShift: dShift,
-        receiverShift: rShift,
-        note: "Move DFO cert from " + (donorLine.lineCode || donorLine.id) + " (" + dShift.name + ") to " + (recvLine.lineCode || recvLine.id) + " (" + rShift.name + "). Lines do not move."
+        receiverShift: matchedRShift,
+        note: "Move DFO cert from " + (candDonor.lineCode || candDonor.id) + " (" + dShift.name + ") to " + (matchedRecv.lineCode || matchedRecv.id) + " (" + matchedRShift.name + "). Lines do not move."
       });
 
-      donorCertLines = donorCertLines.filter(function (l) { return l.id !== donorLine.id; });
       workingCertCounts[dShift.id]--;
-      workingCertCounts[rShift.id]++;
+      workingCertCounts[matchedRShift.id]++;
       surplus--;
     }
   });

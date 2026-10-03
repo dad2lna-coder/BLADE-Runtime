@@ -189,6 +189,32 @@ test('DFO cert balance proposes same-sex cert move when cert counts differ witho
   }
 });
 
+test('DFO cert balance tries all receiver shifts for same-sex match in 3-shift setup', () => {
+  const S = createMockScheduler();
+  S.state.shifts.push({ id: 'S3', name: '1500', start: '15:00', end: '23:30', paid: 8, stsoForce: 1, ltsoForce: 0, force: 2 });
+  S.generate();
+
+  const stsoLines = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
+  if (stsoLines.length >= 4) {
+    // S1 has 2 certs (1 Female, 1 Male) -> donor shift
+    stsoLines[0].shiftId = 'S1'; stsoLines[0].sex = 'F'; stsoLines[0].certPool = 'B'; stsoLines[0].function = 'DFO';
+    stsoLines[3].shiftId = 'S1'; stsoLines[3].sex = 'M'; stsoLines[3].certPool = 'B'; stsoLines[3].function = 'DFO';
+    // S2: 1 Male line without DFO cert (first short shift - only Male)
+    stsoLines[1].shiftId = 'S2'; stsoLines[1].sex = 'M'; stsoLines[1].certPool = 'A'; stsoLines[1].function = 'PAX';
+    // S3: 1 Female line without DFO cert (second short shift)
+    stsoLines[2].shiftId = 'S3'; stsoLines[2].sex = 'F'; stsoLines[2].certPool = 'A'; stsoLines[2].function = 'PAX';
+
+    const res = S.proposeDfoCertBalance('STSO');
+    assert.equal(res.mode, 'cert_move', 'Mode is cert_move');
+    const femaleProps = res.proposals.filter(p => p.donorLine.id === stsoLines[0].id);
+    assert.ok(femaleProps.length > 0, 'Found proposal for female donor');
+    const prop = femaleProps[0];
+    assert.equal(prop.receiverLine.id, stsoLines[2].id, 'Female donor on S1 paired with female receiver on S3');
+    assert.equal(prop.receiverShift.id, 'S3', 'Receiver shift is S3');
+    assert.equal(prop.donorLine.sex, prop.receiverLine.sex, 'Same sex pair F <-> F');
+  }
+});
+
 test('DFO cert balance refuses cross-sex proposal and skips move if no same-sex receiver exists', () => {
   const S = createMockScheduler();
   S.generate();
