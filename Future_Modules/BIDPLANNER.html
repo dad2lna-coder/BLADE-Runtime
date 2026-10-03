@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHAOS Master Bid Planner & Portfolio Dashboard</title>
+    <!-- SheetJS CDN for native Excel (.xlsx) exports -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #003366;
+            --primary-light: #e6f0fa;
+            --secondary: #008080;
+            --dark: #333333;
+            --light: #f8f9fa;
+            --border: #cccccc;
+            --success: #006644;
+            --danger: #de350b;
+            --warning: #ffab00;
+            --highlight-purple: #6f42c1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h1, h2, h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        h1 {
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 10px;
+        }
+
+        .top-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .top-grid { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            background: #ffffff;
+        }
+        
+        .full-width-panel {
+            margin-top: 20px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        input, select {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: #002244; }
+        button.export { background-color: var(--secondary); }
+        button.export:hover { background-color: #005a5a; }
+        button.danger { background-color: var(--danger); }
+        button.danger:hover { background-color: #b31d00; }
+
+        /* Calendar Styles */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            background: var(--border);
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .calendar-day-label {
+            background: var(--primary-light);
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            padding: 5px 0;
+            color: var(--primary);
+        }
+
+        .calendar-cell {
+            background: white;
+            min-height: 100px;
+            padding: 5px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .calendar-cell .day-num {
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: #777;
+        }
+
+        .calendar-event {
+            font-size: 0.7rem;
+            padding: 2px 4px;
+            margin-top: 2px;
+            border-radius: 3px;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .badge-compliant { background-color: #e3fcef; color: var(--success); }
+        .badge-failed { background-color: #ffebe6; color: var(--danger); }
+
+        .portfolio-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary-light);
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* Print Optimization */
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; }
+            .panel:not(.printable), button, .config-grid { display: none !important; }
+            .calendar-grid { gap: 1px; background: black; }
+            .calendar-cell { min-height: 120px; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>✈️ CHAOS Portfolio Scheduler & Master Calendar</h1>
+    
+    <div class="top-grid">
+        <!-- Left Column: Settings -->
+        <div class="panel">
+            <h3>🛠️ Add Bid Event to Master Shell</h3>
+            <div class="config-grid">
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" value="DAL" placeholder="e.g., DAL, SPS">
+                </div>
+                <div class="form-group">
+                    <label for="bidType">Bid Type</label>
+                    <select id="bidType" onchange="toggleDynamicFields()">
+                        <option value="Leave Bid">Annual Leave Bid</option>
+                        <option value="Shift Bid">Shift Bid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="airportCat">Airport Category</label>
+                    <select id="airportCat">
+                        <option value="X_I">CAT X & I</option>
+                        <option value="III_IV">CAT III & IV</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="bidDuration">Duration (Days)</label>
+                    <input type="number" id="bidDuration" value="1" min="1">
+                </div>
+            </div>
+
+            <div class="config-grid">
+                <div class="form-group">
+                    <label for="anchorDay0">Live Bid Start</label>
+                    <input type="date" id="anchorDay0" value="2026-10-14">
+                </div>
+                 <div class="form-group">
+                    <label for="planningStart">Planning Start</label>
+                    <input type="date" id="planningStart">
+                </div>
+                <!-- Dynamic fields will be injected here by JS -->
+                <div id="dynamic-fields-container" class="form-group"></div>
+            </div>
+
+            <button onclick="addBidToShell()">➕ Add to Portfolio</button>
+        </div>
+
+        <!-- Right Column: Active Portfolio -->
+        <div class="panel">
+            <h3>📂 Active Portfolio Shell</h3>
+            <div id="portfolioList"></div>
+            <div class="btn-group" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
+                <input type="file" id="json-importer" accept=".json" style="display:none;" onchange="importPortfolioJSON(event)">
+                <button class="export" style="background:#333;" onclick="document.getElementById('json-importer').click()">📥 Import JSON</button>
+                <button class="export" onclick="exportPortfolioJSON()">📤 Export JSON</button>
+                <input type="file" id="excel-importer" accept=".xlsx" style="display:none;" onchange="importPortfolioExcel(event)">
+                <button class="export" style="background:#28a745;" onclick="document.getElementById('excel-importer').click()">📥 Import Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="panel full-width-panel printable">
+        <div class="calendar-header">
+            <h3>📅 Portfolio Master Calendar</h3>
+            <div style="display: flex; gap: 8px;">
+                <button class="secondary" onclick="window.print()">🖨️ Print Dashboard</button>
+                <button onclick="exportCalendarICS()">📅 Export ICS</button>
+            </div>
+        </div>
+        
+        <div class="calendar-header" style="justify-content: center; gap: 15px;">
+            <button onclick="changeMonth(-1)">&lt;</button>
+            <span id="calendarMonthLabel" style="font-weight: bold; font-size: 1.1rem; min-width: 120px; text-align: center;"></span>
+            <button onclick="changeMonth(1)">&gt;</button>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+    
+    <!-- Excel Export Buttons (moved for context) -->
+     <div class="panel">
+        <h3>📋 SharePoint & Excel Exports</h3>
+         <div class="btn-group" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
+            <button class="export" onclick="copyPortfolioToClipboard('features')">📋 Copy Features</button>
+            <button class="export" onclick="copyPortfolioToClipboard('workitems')">📋 Copy Work Items</button>
+            <button class="export" style="background:#4b0082;" onclick="exportToExcelWorkbook()">📊 Download Excel (.xlsx)</button>
+        </div>
+    </div>
+
+
+    <!-- Active Worksheet Inspection -->
+    <div class="panel full-width-panel printable" id="inspectionPanel" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 id="inspectTitle">📋 Inspecting Milestones</h3>
+            <button class="secondary" onclick="window.print()">🖨️ Print Current List</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table id="inspectionTable">
+                <thead>
+                    <tr>
+                        <th>Work Item Name</th>
+                        <th>Type</th>
+                        <th>Target Date (Adjustable)</th>
+                        <th>Current Day Count Offset</th>
+                        <th>Compliance Check</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inspectionBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const federalHolidays = [
+        "2026-01-01", "2026-01-19", "2026-02-16", "2026-05-25", "2026-06-19", 
+        "2026-07-03", "2026-07-04", "2026-09-07", "2026-10-12", "2026-11-11", 
+        "2026-11-26", "2026-12-25"
+    ];
+
+    let portfolio = [];
+    let calendarDate = new Date(2026, 9, 1);
+    
+    const locationColors = ["#007bff", "#28a745", "#fd7e14", "#6f42c1", "#17a2b8", "#d63384"];
+
+    function getColorForLocation(location) {
+        let hash = 0;
+        for (let i = 0; i < location.length; i++) {
+            hash = location.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash % locationColors.length);
+        return locationColors[index];
+    }
+
+    function parseLocalDate(dateStr) {
+        const parts = dateStr.split('-');
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+
+    function isWeekend(date) {
+        return date.getDay() === 0 || date.getDay() === 6;
+    }
+
+    function isHoliday(dateStr) {
+        return federalHolidays.includes(dateStr);
+    }
+
+    function adjustToWorkday(date, offsetDirection) {
+        const temp = new Date(date);
+        let attempts = 0;
+        while ((isWeekend(temp) || isHoliday(temp.toISOString().split('T')[0])) && attempts < 15) {
+            temp.setDate(temp.getDate() + (offsetDirection <= 0 ? -1 : 1));
+            attempts++;
+        }
+        return temp;
+    }
+
+    function addBidToShell() {
+        const loc = document.getElementById("location").value.toUpperCase().trim() || "DAL";
+        const type = document.getElementById("bidType").value;
+        const cat = document.getElementById("airportCat").value;
+        const duration = parseInt(document.getElementById("bidDuration").value) || 1;
+        const d0Val = document.getElementById("anchorDay0").value;
+        const planningStartVal = document.getElementById("planningStart").value;
+
+        let fcfOpenVal = null, cyStartVal = null, scheduleStartVal = null;
+        if (type === 'Leave Bid') {
+            fcfOpenVal = document.getElementById('fcfOpen').value;
+            cyStartVal = document.getElementById('cyStartDate').value;
+        } else {
+            scheduleStartVal = document.getElementById('scheduleStartDate').value;
+        }
+
+        if (!d0Val || !planningStartVal) {
+            alert("Please supply both Live Bid Start and Planning Start dates.");
+            return;
+        }
+        
+        const bid = {
+            id: Date.now(),
+            featureName: `${loc} CY27 ${type === 'Leave Bid' ? 'Annual Leave' : 'Operational'} Bid`,
+            location: loc,
+            type,
+            category: cat,
+            duration,
+            anchorD0: d0Val,
+            planningStart: planningStartVal,
+            fcfOpen: fcfOpenVal,
+            cyStart: cyStartVal,
+            scheduleStart: scheduleStartVal,
+            milestones: []
+        };
+        
+        recalculateBidMilestones(bid);
+        portfolio.push(bid);
+
+        calendarDate = parseLocalDate(d0Val);
+        updatePortfolioUI();
+        renderCalendar();
+    }
+    
+    function recalculateBidMilestones(bid) {
+        const anchorD0 = parseLocalDate(bid.anchorD0);
+        const anchorPlanning = parseLocalDate(bid.planningStart);
+        
+        let items = [];
+        
+        if (bid.type === "Leave Bid") {
+            items = [
+                { name: "Seniority Validated", anchor: 'planning', offset: 0, type: "Task" },
+                { name: "Initial Meeting", anchor: 'planning', offset: 1, type: "Meeting" },
+                { name: "Draft Bidlines", anchor: 'planning', offset: 1, type: "Task" },
+                { name: "Meet with Leadership Team", anchor: 'planning', offset: 1, type: "Meeting" },
+                { name: "Bid Announcement Letter", anchor: 'live', offset: -33, type: "Task" },
+                { name: "Seniority Posted", anchor: 'live', offset: -32, type: "Task" },
+                { name: "Scheduling Committee Meeting", anchor: 'live', offset: -32, type: "Meeting" },
+                { name: "CBA/TSA validation", anchor: 'live', offset: -32, type: "Task" },
+                { name: "Review DAT/Bid Line limits", anchor: 'live', offset: -32, type: "Task" },
+                { name: "AFSD-S Approval", anchor: 'live', offset: -32, type: "Task" },
+                { name: "AFGE & Live bid Attendee ID'd", anchor: 'live', offset: -32, type: "Task" },
+                { name: "Phone Line Verified", anchor: 'live', offset: -32, type: "Task" },
+                { name: "FSD Approval", anchor: 'live', offset: -27, type: "Task" },
+                { name: "Bid Lines Posted", anchor: 'live', offset: -22, type: "Task" },
+                { name: "AFGE Rep Notified", anchor: 'live', offset: -31, type: "Task" },
+                { name: "Proxy Forms Returned to SOO", anchor: 'live', offset: -6, type: "Task" },
+                { name: "Live Bid Start", anchor: 'live', offset: 0, type: "Task" }
+            ];
+
+            if (bid.duration > 1) {
+                for (let i = 2; i <= bid.duration; i++) {
+                    items.push({ name: `Live Bid Day ${i}`, anchor: 'live', offset: i - 1, type: "Task" });
+                }
+            }
+             if (bid.category === "III_IV") {
+                items.push({ name: "Spoke Phone Bid (Stage 1)", anchor: 'live', offset: 7, type: "Task" });
+                items.push({ name: "Spoke Phone Bid (Stage 2)", anchor: 'live', offset: 8, type: "Task" });
+            }
+             items.push({ name: "First Come First Serve Open", anchor: 'fcf', offset: 0, type: "Task" });
+
+        } else { // Shift Bid
+             items = [
+                { name: "Review gender balance", anchor: 'planning', offset: 0, type: "Task" },
+                { name: "Review AM/PM balance", anchor: 'planning', offset: 0, type: "Task" },
+                { name: "Draft Bid lines", anchor: 'planning', offset: 0, type: "Task" },
+                { name: "TSO/LTSO/STSO Seniority Validated", anchor: 'planning', offset: 3, type: "Task" },
+                { name: "TSO/LTSO/STSO Seniority Posted (Initial)", anchor: 'planning', offset: 4, type: "Task" },
+                { name: "AM Scheduling Committee Meeting", anchor: 'planning', offset: 5, type: "Meeting" },
+                { name: "Meet with Managers", anchor: 'planning', offset: 6, type: "Meeting" },
+                { name: "PM Scheduling Committee Meeting", anchor: 'live', offset: -29, type: "Meeting" },
+                { name: "Leadership Strategy & Guidance Meeting", anchor: 'live', offset: -27, type: "Meeting" },
+                { name: "AFSD-S/DAFSD-S Approval", anchor: 'live', offset: -14, type: "Task" },
+                { name: "FSD Approval", anchor: 'live', offset: -14, type: "Task" },
+                { name: "Conduct Bid Briefings", anchor: 'live', offset: -18, type: "Meeting" },
+                { name: "Bid Announcement Letter Posted", anchor: 'live', offset: -14, type: "Task" },
+                { name: "TSO/LTSO/STSO Seniority posted (Final)", anchor: 'live', offset: -14, type: "Task" },
+                { name: "Bid Lines Posted", anchor: 'live', offset: -14, type: "Task" },
+                { name: "Bid Letters Sent", anchor: 'live', offset: -14, type: "Task" },
+                { name: "Live bid Attendee ID'd", anchor: 'live', offset: -11, type: "Task" },
+                { name: "Proxy Forms Returned to SOO", anchor: 'live', offset: -5, type: "Task" },
+                { name: "Phone Line Verified", anchor: 'live', offset: -1, type: "Task" },
+                { name: "Room Setup complete", anchor: 'live', offset: -1, type: "Task" },
+                { name: "Live Bid Start", anchor: 'live', offset: 0, type: "Task" }
+            ];
+
+            if (bid.duration > 1) {
+                for (let i = 2; i <= bid.duration; i++) {
+                   items.push({ name: `Live Bid Day ${i} /Results Posted`, anchor: 'live', offset: i - 1, type: "Task" });
+                }
+            }
+            
+            const implementationOffset = (bid.category === "III_IV") ? 21 : 28;
+            items.push({ name: "Implement Bid", anchor: 'implementation', offset: implementationOffset, type: "Task" });
+        }
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        bid.milestones = items.map(item => {
+            let targetDate;
+            if (item.anchor === 'planning') {
+                targetDate = new Date(anchorPlanning);
+                targetDate.setDate(targetDate.getDate() + item.offset);
+            } else if (item.anchor === 'fcf') {
+                targetDate = parseLocalDate(bid.fcfOpen);
+            } else if (item.anchor === 'implementation') {
+                 targetDate = parseLocalDate(bid.scheduleStart);
+            } else { // Default to 'live' anchor
+                targetDate = new Date(anchorD0);
+                targetDate.setDate(targetDate.getDate() + item.offset);
+            }
+            
+            if (targetDate < today) {
+                targetDate = new Date(today);
+            }
+
+            if (item.name !== "Implement Bid") {
+                targetDate = adjustToWorkday(targetDate, item.offset || -1);
+            }
+
+            return {
+                id: Date.now() + Math.random(),
+                name: item.name,
+                type: item.type,
+                offset: item.offset || 0,
+                currentDate: targetDate.toISOString().split('T')[0]
+            };
+        });
+    }
+
+
+    function updatePortfolioUI() {
+        const list = document.getElementById("portfolioList");
+        list.innerHTML = "";
+        portfolio.forEach(bid => {
+            const div = document.createElement("div");
+            div.className = "portfolio-item";
+            div.innerHTML = `
+                <div>
+                    <strong>📍 ${bid.featureName}</strong> <br>
+                    <span style="font-size:0.75rem; color:#666;">Cat: ${bid.category} | Live Bid Start: ${bid.anchorD0}</span>
+                </div>
+                <div>
+                    <button class="secondary" onclick="inspectBid(${bid.id})">🔍 Inspect</button>
+                    <button class="danger" onclick="removeBid(${bid.id})">❌</button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function removeBid(id) {
+        portfolio = portfolio.filter(b => b.id !== id);
+        updatePortfolioUI();
+        renderCalendar();
+        document.getElementById("inspectionPanel").style.display = "none";
+    }
+
+    let activeInspectBidId = null;
+    function inspectBid(id) {
+        activeInspectBidId = id;
+        const bid = portfolio.find(b => b.id === id);
+        if (!bid) return;
+
+        document.getElementById("inspectTitle").textContent = `📋 Inspecting Milestones for ${bid.featureName}`;
+        document.getElementById("inspectionPanel").style.display = "block";
+        renderInspectionRows(bid);
+    }
+    
+    function renderInspectionRows(bid) {
+        const tbody = document.getElementById("inspectionBody");
+        tbody.innerHTML = "";
+        
+        bid.milestones.sort((a, b) => new Date(a.currentDate) - new Date(b.currentDate));
+
+        bid.milestones.forEach((item, mIdx) => {
+            const tr = document.createElement("tr");
+            
+            const diff = Math.ceil((parseLocalDate(item.currentDate) - parseLocalDate(bid.anchorD0)) / (1000*60*60*24));
+            const displayOffset = `Live Bid Start ${diff >= 0 ? '+' : ''}${diff} Days`;
+            
+            tr.innerHTML = `
+                <td><input type="text" value="${item.name}" onchange="updateMilestoneName(${mIdx}, this.value)" style="border:0; background:transparent; font-weight:600; width:100%;"></td>
+                <td><span class="badge" style="background:#eae6ff; color:#403294">${item.type}</span></td>
+                <td>
+                    <input type="date" value="${item.currentDate}" onchange="updateMilestoneDate(${mIdx}, this.value)">
+                </td>
+                <td style="font-weight:bold; color:#003366;">${displayOffset}</td>
+                <td id="inspect-status-${mIdx}"><span class="badge badge-compliant">🟢 Compliant</span></td>
+                <td><button class="danger" onclick="deleteMilestone(${mIdx})">Delete</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+        validateInspectionCompliance();
+    }
+
+    function updateMilestoneName(mIdx, newName) {
+        const bid = portfolio.find(b => b.id === activeInspectBidId);
+        if (!bid) return;
+        bid.milestones[mIdx].name = newName;
+        renderCalendar();
+    }
+
+    function deleteMilestone(mIdx) {
+        const bid = portfolio.find(b => b.id === activeInspectBidId);
+        if (!bid) return;
+        bid.milestones.splice(mIdx, 1);
+        renderInspectionRows(bid);
+        renderCalendar();
+    }
+
+    function updateMilestoneDate(mIdx, dateVal) {
+        const bid = portfolio.find(b => b.id === activeInspectBidId);
+        if (!bid) return;
+        
+        const milestone = bid.milestones[mIdx];
+        milestone.currentDate = dateVal;
+
+        if (milestone.name === 'Live Bid Start') {
+            bid.anchorD0 = dateVal;
+            recalculateBidMilestones(bid);
+        } else if (milestone.name === 'Review gender balance' || milestone.name === 'Seniority Validated') {
+             bid.planningStart = dateVal;
+             recalculateBidMilestones(bid);
+        }
+
+        renderInspectionRows(bid);
+        renderCalendar();
+    }
+
+    function validateInspectionCompliance() {
+        const bid = portfolio.find(b => b.id === activeInspectBidId);
+        if (!bid) return;
+
+        bid.milestones.forEach((item, idx) => {
+            const statusCell = document.getElementById(`inspect-status-${idx}`);
+            if (!statusCell) return;
+
+            let result = { compliant: true, msg: "🟢 Compliant" };
+
+            if (item.name === "Bid Lines Posted") {
+                const targetD0 = bid.milestones.find(m => m.name.includes("Live Bid Start"));
+                if (targetD0) {
+                    const diff = Math.ceil((parseLocalDate(targetD0.currentDate) - parseLocalDate(item.currentDate)) / (1000*60*60*24));
+                    const requiredNotice = bid.type === 'Leave Bid' ? 10 : 14;
+                    if (diff < requiredNotice) {
+                        result = { compliant: false, msg: `🔴 CBA Violation (Requires ${requiredNotice} days notice, got ${diff})` };
+                    }
+                }
+            }
+
+            if (item.name === "Implement Bid") {
+                const targetD0 = bid.milestones.find(m => m.name.includes("Live Bid Start"));
+                if (targetD0) {
+                    const diff = Math.ceil((parseLocalDate(item.currentDate) - parseLocalDate(targetD0.currentDate)) / (1000*60*60*24));
+                    const requiredNotice = bid.category === 'III_IV' ? 21 : 28;
+                    if (diff < requiredNotice) {
+                        result = { compliant: false, msg: `🔴 Buffer Deficit (Requires ${requiredNotice} days, got ${diff})` };
+                    }
+                }
+            }
+             if (item.name === "First Come First Serve Open" && bid.cyStart) {
+                const fcfDate = parseLocalDate(item.currentDate);
+                const cyStartDate = parseLocalDate(bid.cyStart);
+                if (fcfDate >= cyStartDate) {
+                     result = { compliant: false, msg: `🔴 FCFS must be before CY Start` };
+                }
+            }
+
+            statusCell.innerHTML = `<span class="badge ${result.compliant ? 'badge-compliant' : 'badge-failed'}">${result.msg}</span>`;
+        });
+    }
+
+    function changeMonth(dir) {
+        calendarDate.setMonth(calendarDate.getMonth() + dir);
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById("calendarGrid");
+        const monthLabel = document.getElementById("calendarMonthLabel");
+
+        grid.innerHTML = "";
+        
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+        monthLabel.textContent = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(day => {
+            const div = document.createElement("div");
+            div.className = "calendar-day-label";
+            div.textContent = day;
+            grid.appendChild(div);
+        });
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) {
+            const div = document.createElement("div");
+            div.className = "calendar-cell";
+            div.style.background = "#f4f6f8";
+            grid.appendChild(div);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const cell = document.createElement("div");
+            cell.className = "calendar-cell";
+            cell.innerHTML = `<div class="day-num">${day}</div>`;
+
+            portfolio.forEach(bid => {
+                bid.milestones.forEach(m => {
+                    if (m.currentDate === dateStr) {
+                        const evtDiv = document.createElement("div");
+                        evtDiv.className = "calendar-event";
+                        
+                        let eventName = m.name;
+                        let color = getColorForLocation(bid.location);
+
+                        if (m.name.includes("Live Bid")) {
+                            color = "var(--danger)";
+                            eventName = bid.type;
+                        } else if (m.name.includes("Lines Posted")) {
+                            color = "var(--highlight-purple)";
+                        }
+
+                        evtDiv.style.backgroundColor = color;
+                        evtDiv.title = `${bid.featureName}: ${m.name}`;
+                        evtDiv.textContent = `${bid.location}: ${eventName}`;
+                        evtDiv.onclick = () => inspectBid(bid.id);
+                        cell.appendChild(evtDiv);
+                    }
+                });
+            });
+            grid.appendChild(cell);
+        }
+    }
+
+    function exportToExcelWorkbook() {
+        if (portfolio.length === 0) {
+            alert("No schedules added to compile yet.");
+            return;
+        }
+
+        const featureHeaders = ["Feature Name", "Color Tag", "Compliance", "Asset Id", "Feature ID", "Initiative", "Description"];
+        const featureRows = [featureHeaders];
+        portfolio.forEach(bid => {
+            featureRows.push([
+                bid.featureName, "", "", "", "", bid.type, `${bid.type} planning event for Station Category ${bid.category}`
+            ]);
+        });
+
+        const wiHeaders = ["Work Item Name", "Due Date", "Work Item ID", "Feature", "Work Item Type"];
+        const wiRows = [wiHeaders];
+        portfolio.forEach(bid => {
+            bid.milestones.forEach(m => {
+                const dateParts = m.currentDate.split('-');
+                const formattedDate = `${dateParts[1]}/${dateParts[2]}/${dateParts[0]}`;
+                wiRows.push([ m.name, formattedDate, "", bid.featureName, m.type ]);
+            });
+        });
+
+        const wb = XLSX.utils.book_new();
+        const wsFeatures = XLSX.utils.aoa_to_sheet(featureRows);
+        const wsWorkItems = XLSX.utils.aoa_to_sheet(wiRows);
+
+        XLSX.utils.book_append_sheet(wb, wsFeatures, "CHAOS-Features");
+        XLSX.utils.book_append_sheet(wb, wsWorkItems, "CHAOS-WorkItems");
+
+        XLSX.writeFile(wb, "CHAOS_Master_Bid_Portfolio.xlsx");
+    }
+
+    function generateMasterTSV(type) {
+        let tsvContent = "";
+
+        if (type === 'features') {
+            tsvContent += "Feature Name\tColor Tag\tCompliance\tAsset Id\tFeature ID\tInitiative\tDescription\n";
+            portfolio.forEach(bid => {
+                tsvContent += `${bid.featureName}\t\t\t\t\t${bid.type}\t${bid.type} planning event\n`;
+            });
+        } else if (type === 'workitems') {
+            tsvContent += "Work Item Name\tDue Date\tWork Item ID\tFeature\tWork Item Type\n";
+            portfolio.forEach(bid => {
+                bid.milestones.forEach(m => {
+                    const dateParts = m.currentDate.split('-');
+                    tsvContent += `${m.name}\t${dateParts[1]}/${dateParts[2]}/${dateParts[0]}\t\t${bid.featureName}\t${m.type}\n`;
+                });
+            });
+        }
+        return tsvContent;
+    }
+
+    function copyPortfolioToClipboard(type) {
+        const tsv = generateMasterTSV(type);
+        navigator.clipboard.writeText(tsv).then(() => {
+            alert(`✅ ${type === 'features' ? 'CHAOS-Features' : 'CHAOS-WorkItems'} copied to clipboard!`);
+        });
+    }
+
+    function exportCalendarICS() {
+        let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CHAOS//Bid Portfolio Engine//EN\n";
+        
+        portfolio.forEach(bid => {
+            bid.milestones.forEach(m => {
+                ics += `BEGIN:VEVENT\nSUMMARY:${bid.location} - ${m.name}\nDTSTART;VALUE=DATE:${m.currentDate.replace(/-/g, "")}\nDTEND;VALUE=DATE:${m.currentDate.replace(/-/g, "")}\nEND:VEVENT\n`;
+            });
+        });
+        ics += "END:VCALENDAR";
+        const blob = new Blob([ics], { type: 'text/calendar' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `chaos_master_schedule.ics`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    function toggleDynamicFields() {
+        const bidType = document.getElementById('bidType').value;
+        const container = document.getElementById('dynamic-fields-container');
+        container.innerHTML = ''; 
+
+        if (bidType === 'Leave Bid') {
+            container.innerHTML = `
+                <div class="form-group">
+                    <label for="fcfOpen">FCFS Open</label>
+                    <input type="date" id="fcfOpen" value="2026-12-20">
+                </div>
+                <div class="form-group">
+                    <label for="cyStartDate">CY Start Date</label>
+                    <input type="date" id="cyStartDate" value="2027-01-01">
+                </div>
+            `;
+        } else { // Shift Bid
+             container.innerHTML = `
+                <div class="form-group">
+                    <label for="scheduleStartDate">Schedule Start Date</label>
+                    <input type="date" id="scheduleStartDate" value="2026-11-15" onchange="enforceSunday(this)">
+                </div>
+            `;
+        }
+    }
+    
+    function enforceSunday(dateInput) {
+        const date = parseLocalDate(dateInput.value);
+        if (date.getDay() !== 0) {
+            alert("Schedule Start Date must be a Sunday.");
+            const sunday = new Date(date);
+            sunday.setDate(date.getDate() - date.getDay());
+            dateInput.value = sunday.toISOString().split('T')[0];
+        }
+    }
+    
+    function exportPortfolioJSON() {
+        if (portfolio.length === 0) {
+            alert("Portfolio is empty. Nothing to export.");
+            return;
+        }
+        const jsonString = JSON.stringify(portfolio, null, 2);
+        const blob = new Blob([jsonString], {type: "application/json"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "chaos_portfolio.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function importPortfolioJSON(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedPortfolio = JSON.parse(e.target.result);
+                if (Array.isArray(importedPortfolio)) {
+                    portfolio = importedPortfolio;
+                    updatePortfolioUI();
+                    renderCalendar();
+                    alert("Portfolio successfully imported!");
+                } else {
+                    alert("Invalid JSON format. Please import a valid portfolio file.");
+                }
+            } catch (error) {
+                alert("Error parsing JSON file: " + error.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    function importPortfolioExcel(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array', cellDates:true});
+                
+                const featuresSheet = workbook.Sheets['CHAOS-Features'];
+                const workItemsSheet = workbook.Sheets['CHAOS-WorkItems'];
+
+                if (!featuresSheet || !workItemsSheet) {
+                    alert("Invalid Excel file. Make sure it contains 'CHAOS-Features' and 'CHAOS-WorkItems' sheets.");
+                    return;
+                }
+
+                const features = XLSX.utils.sheet_to_json(featuresSheet);
+                const workItems = XLSX.utils.sheet_to_json(workItemsSheet);
+
+                const newPortfolio = features.map(feature => {
+                    const bidMilestones = workItems
+                        .filter(wi => wi.Feature === feature['Feature Name'])
+                        .map(wi => {
+                             const date = new Date(wi['Due Date']);
+                             const offset = date.getTimezoneOffset();
+                             const localDate = new Date(date.getTime() + (offset*60*1000));
+                             return {
+                                id: Date.now() + Math.random(),
+                                name: wi['Work Item Name'],
+                                type: wi['Work Item Type'],
+                                currentDate: localDate.toISOString().split('T')[0],
+                                offset: 0 // Offset is lost in translation, but can be recalculated if needed
+                            };
+                        });
+                    
+                    const liveBidStartMilestone = bidMilestones.find(m => m.name === "Live Bid Start");
+                    const planningStartMilestone = bidMilestones.find(m => m.name === "Review gender balance" || m.name === "Seniority Validated");
+                    
+                    return {
+                        id: Date.now() + Math.random(),
+                        featureName: feature['Feature Name'],
+                        location: feature['Feature Name'].split(' ')[0], // Infer from name
+                        type: feature['Initiative'],
+                        category: 'X_I', // Default, cannot be perfectly inferred from excel
+                        duration: 1, // Default
+                        anchorD0: liveBidStartMilestone ? liveBidStartMilestone.currentDate : new Date().toISOString().split('T')[0],
+                        planningStart: planningStartMilestone ? planningStartMilestone.currentDate : new Date().toISOString().split('T')[0],
+                        milestones: bidMilestones
+                    };
+                });
+                
+                portfolio = newPortfolio;
+                updatePortfolioUI();
+                renderCalendar();
+                alert("Portfolio successfully imported from Excel!");
+
+            } catch (error) {
+                alert("Error processing Excel file: " + error.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    window.onload = function() {
+        const today = new Date();
+        const offset = today.getTimezoneOffset();
+        const todayLocal = new Date(today.getTime() - (offset*60*1000));
+        document.getElementById('planningStart').value = todayLocal.toISOString().split('T')[0];
+
+        toggleDynamicFields();
+        updatePortfolioUI();
+        renderCalendar();
+    };
+</script>
+
+</body>
+</html>

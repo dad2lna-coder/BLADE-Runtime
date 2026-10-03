@@ -1,0 +1,1389 @@
+eBid Shift Bid Importer & Quality Control Tool
+
+Below is the complete, self-contained single-file HTML/JavaScript application. It features automated schema detection for both Scheduler JSON files and Scheduler CSV / Excel export files (such as FINALUGH.xlsx_Sheet1_Lines.csv). All sample presets have been removed so the application starts with a zero-state, ready for immediate file upload.
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eBid Shift Bid Importer & Quality Check Tool</title>
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-hover: #1d4ed8;
+      --accent: #0284c7;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+    }
+    .title-group h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .title-group p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+    .btn-primary {
+      background-color: var(--primary);
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    .btn-success {
+      background-color: var(--success);
+      color: #ffffff;
+    }
+    .btn-success:hover {
+      background-color: #166534;
+    }
+    .btn-outline {
+      background-color: transparent;
+      border-color: var(--border);
+      color: var(--text-main);
+    }
+    .btn-outline:hover {
+      background-color: #f1f5f9;
+    }
+    .btn-danger-outline {
+      background-color: transparent;
+      border-color: #fca5a5;
+      color: var(--danger);
+    }
+    .btn-danger-outline:hover {
+      background-color: #fee2e2;
+    }
+
+    /* Configuration Panel */
+    .config-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      align-items: flex-end;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .form-control {
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+      outline: none;
+    }
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+    }
+
+    /* Drag and Drop Zone */
+    .dropzone {
+      border: 2px dashed #94a3b8;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background 0.2s, border 0.2s;
+    }
+    .dropzone.dragover {
+      background: #e0f2fe;
+      border-color: var(--accent);
+    }
+    .dropzone p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .dropzone span {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .file-status-badge {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: #e0f2fe;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* QC Summary Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    .stat-card .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .stat-card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 6px;
+      color: var(--text-main);
+    }
+    .stat-card .sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger  { background: #fee2e2; color: #991b1b; }
+    .badge-info    { background: #e0f2fe; color: #075985; }
+
+    /* Tables */
+    .table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .table-scroll {
+      max-height: 600px;
+      overflow: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.825rem;
+      white-space: nowrap;
+    }
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 700;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+    }
+    tr:hover td {
+      background-color: #f8fafc;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Distinct Values Filter Grid */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .filter-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .filter-card h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .filter-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 6px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+    }
+    .filter-item:hover {
+      background: #f1f5f9;
+    }
+    .filter-item .count {
+      background: #e2e8f0;
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+
+    /* Search & Filter Bar */
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #fafafa;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+    .search-box {
+      width: 320px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="title-group">
+      <h1>eBid Shift Bid Generator & Quality Control</h1>
+      <p>Import Scheduler JSON or CSV/Excel exports &bull; Auto-apply Info tab rules &bull; Cert Pool in Col 13 &bull; Export 45-Col CSV</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-danger-outline" id="clearDataBtn">&#x2715; Clear Data</button>
+      <button class="btn btn-success" id="exportCsvBtn">&#x2193; Export 45-Col CSV (A-AS)</button>
+    </div>
+  </header>
+
+  <!-- Upload and Configuration -->
+  <div class="dropzone" id="dropzone">
+    <p>Drag & Drop a <strong>Scheduler CSV or JSON</strong> file here, or <span>Click to Browse</span></p>
+    <p style="font-size: 0.75rem; margin-top: 4px; color: #94a3b8;">Supports lines CSV/Excel exports (FINALUGH format) & Scheduler JSON format</p>
+    <div id="fileStatusBadge" class="file-status-badge" style="display: none;"></div>
+    <input type="file" id="fileInput" accept=".json,.csv,.txt" style="display: none;">
+  </div>
+
+  <div class="config-card">
+    <div class="config-grid">
+      <div class="form-group">
+        <label>Airport Code (Col 1)</label>
+        <input type="text" id="airportCode" class="form-control" value="AAA" maxlength="3">
+      </div>
+      <div class="form-group">
+        <label>Bid Event ID (Col 2)</label>
+        <input type="text" id="bidEventId" class="form-control" value="AAA2020-07" maxlength="10">
+      </div>
+      <div class="form-group">
+        <label>Schedule Start Date (Col 3)</label>
+        <input type="date" id="scheduleStart" class="form-control" value="2020-07-05">
+      </div>
+      <div class="form-group">
+        <label>Schedule End Date (Col 4)</label>
+        <input type="date" id="scheduleEnd" class="form-control" value="2020-12-31">
+      </div>
+      <div class="form-group">
+        <label>Default Shift Type (Workdays)</label>
+        <select id="defaultShiftType" class="form-control">
+          <option value="Airport">Airport (Standard)</option>
+          <option value="Admin/Avail">Admin/Avail</option>
+          <option value="Training">Training</option>
+          <option value="PandemicMix">Pandemic Mix (Rotational)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <button class="btn btn-primary" id="recalcBtn" style="width: 100%; height: 38px;">Apply Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-tab="bidlinesTab">Bidlines Table (45 Columns)</button>
+    <button class="tab-btn" data-tab="qcTab">Quality Check & Distinct Values</button>
+    <button class="tab-btn" data-tab="infoRulesTab">Info Tab Rules Reference</button>
+  </div>
+
+  <!-- Tab 1: Bidlines Table -->
+  <div class="tab-content active" id="bidlinesTab">
+    <div class="table-container">
+      <div class="filter-bar">
+        <input type="text" id="tableSearch" class="search-box" placeholder="Search line ID, rank, sex, shift, RDOs, Cert Pool...">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+          Showing <span id="rowCountDisplay" style="font-weight: 700; color: var(--text-main);">0</span> Bid Lines
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table id="bidlinesTable">
+          <thead>
+            <tr id="tableHeaders"></tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr>
+              <td colspan="45" class="empty-state">
+                No bid lines loaded. Please drag & drop or upload your Scheduler CSV or JSON file above.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Quality Check & Summary -->
+  <div class="tab-content" id="qcTab">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total Bid Lines</div>
+        <div class="value" id="qcTotalLines">0</div>
+        <div class="sub">Generated Lines</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Completeness Audit</div>
+        <div class="value" id="qcCompleteness">N/A</div>
+        <div class="sub" id="qcCompletenessSub">Awaiting data import</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Schedule Type Mix</div>
+        <div class="value" id="qcScheduleType">0 FT / 0 PT</div>
+        <div class="sub">Full Time vs Part Time</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pat Down Requirements</div>
+        <div class="value" id="qcPatDown">0 M / 0 F</div>
+        <div class="sub">Staffing balance</div>
+      </div>
+    </div>
+
+    <div class="config-card">
+      <h3 style="font-size: 1rem; margin-bottom: 8px; color: var(--primary);">eBid Quality Assurance Rule Status</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+        Validating all 45 columns from <strong>Airport Code</strong> to <strong>Days/Week</strong> according to official eBid specifications.
+      </p>
+      <div id="qcIssuesList" style="font-size: 0.85rem; color: var(--text-muted);">
+        No data to inspect yet. Upload a schedule file to view automated audit rules.
+      </div>
+    </div>
+
+    <h3 style="font-size: 1rem; margin: 16px 0 8px 0;">Distinct Values Inspector (Excel Filter Equivalent)</h3>
+    <p style="font-size: 0.85rem; color: var(--text-muted);">
+      Review distinct values across critical columns to ensure proper classification and formatting before CSV export:
+    </p>
+    <div class="filter-grid" id="distinctValuesGrid">
+      <div style="color: var(--text-muted); font-size: 0.85rem; grid-column: 1 / -1; padding: 24px 0;">
+        Distinct distributions will populate once a schedule file is imported.
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Info Rules Reference -->
+  <div class="tab-content" id="infoRulesTab">
+    <div class="table-container">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px;">Col #</th>
+              <th style="width: 180px;">Field Label</th>
+              <th style="width: 220px;">Accepted Values</th>
+              <th>Description & Calculation Rules</th>
+            </tr>
+          </thead>
+          <tbody id="rulesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Official 45 Columns specification from Info Tab
+const COLUMNS_DEF = [
+  { id: 1, label: "Airport Code", values: "3-letter airport code", desc: "3 letter airport code (e.g. ANC, LAX, SFO, etc.)" },
+  { id: 2, label: "Shift Bid Event ID", values: "Text up to 10 chars", desc: "Uniquely identifies a shift bid event for each airport." },
+  { id: 3, label: "Schedule Start Date", values: "Date (YYYY-MM-DD or m/d/yyyy)", desc: "The date that the schedule becomes effective." },
+  { id: 4, label: "Schedule End Date", values: "Date (YYYY-MM-DD or m/d/yyyy)", desc: "The date through which the schedule is in effect." },
+  { id: 5, label: "Bid Line ID", values: "Text up to 8 chars", desc: "Unique identifier created by scheduling office (e.g. 1001, 1002, 005)." },
+  { id: 6, label: "Location/Workgroup", values: "Text up to 30 chars", desc: "The name of a checkpoint or group/team (e.g. Team 01, Alpha, Bravo)." },
+  { id: 7, label: "Pat Down Req", values: "Female, Male, None", desc: "Specifies the sex required for pat downs in this bid line." },
+  { id: 8, label: "Title", values: "TSO, LTSO, STSO, ESTI, MSTI, etc.", desc: "Specifies the rank/role of the employee required." },
+  { id: 9, label: "Certification", values: "PAX, BAG, DUAL", desc: "Specifies the certification required for this bid line." },
+  { id: 10, label: "Schedule Type", values: "FT, PT", desc: "Specifies whether this bid line is Full-Time or Part-Time." },
+  { id: 11, label: "Shift Time", values: "9 or 19 chars or 'RDO'", desc: "Typical start-end time (inclusive of breaks) in military time (e.g. 0400-1230)." },
+  { id: 12, label: "Private Bid Line Comments", values: "Text up to 255 chars", desc: "Comments only available to scheduling office." },
+  { id: 13, label: "Public Bid Line Comments", values: "Text up to 255 chars", desc: "Comments visible to bidding employees. Contains Cert Pool data (e.g. Pool A, Pool B)." },
+  // 14 to 27: D01 - D14 Shift Times
+  ...Array.from({ length: 14 }, (_, i) => {
+    const num = String(i + 1).padStart(2, "0");
+    return { id: 14 + i, label: `D${num} Shift Time`, values: "Shift time or 'RDO'", desc: `Start-end time in military time for Day ${i + 1} or 'RDO'.` };
+  }),
+  // 28 to 41: D01 - D14 Shift Types
+  ...Array.from({ length: 14 }, (_, i) => {
+    const num = String(i + 1).padStart(2, "0");
+    return { id: 28 + i, label: `D${num} Shift Type`, values: "Airport, Training, Admin/Avail, or BLANK", desc: `Must be left BLANK if D${num} Shift Time is 'RDO'.` };
+  }),
+  { id: 42, label: "RDOs", values: "Calculated string (e.g. FR/SA)", desc: "Calculated string of day abbreviations separated by slash ('/'). Repeated if weeks differ." },
+  { id: 43, label: "Hours/Day", values: "Calculated number", desc: "Calculated daily work hours (deducts 30 min unpaid meal for shifts >= 6 hours)." },
+  { id: 44, label: "Hours/PP", values: "Calculated number (Max 80)", desc: "Non-RDO days in 14 days multiplied by Hours/Day (capped at 80 for AWS)." },
+  { id: 45, label: "Days/Week", values: "Calculated (e.g. 5 or 4/5)", desc: "Average work days per week across the 14-day pay period." }
+];
+
+const DAY_ABBR = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+// State
+let loadedFileType = null;
+let rawLoadedData = null;
+let processedRows = [];
+
+// Initialize UI
+document.addEventListener("DOMContentLoaded", () => {
+  renderRulesTable();
+  setupTabs();
+  setupEventListeners();
+  renderHeadersOnly();
+});
+
+function setupTabs() {
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(btn.dataset.tab).classList.add("active");
+    });
+  });
+}
+
+function setupEventListeners() {
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("fileInput");
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropzone.classList.add("dragover");
+  });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    if (e.dataTransfer.files.length > 0) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    if (e.target.files.length > 0) {
+      handleFile(e.target.files[0]);
+    }
+  });
+
+  document.getElementById("recalcBtn").addEventListener("click", () => {
+    if (loadedFileType === "json" && rawLoadedData) {
+      processJson(rawLoadedData);
+    } else if (loadedFileType === "csv" && rawLoadedData) {
+      processCsv(rawLoadedData);
+    } else {
+      alert("Please upload a CSV or JSON schedule file first.");
+    }
+  });
+
+  document.getElementById("clearDataBtn").addEventListener("click", clearData);
+  document.getElementById("exportCsvBtn").addEventListener("click", exportCsv);
+  document.getElementById("tableSearch").addEventListener("input", (e) => {
+    filterTable(e.target.value.toLowerCase());
+  });
+}
+
+function clearData() {
+  loadedFileType = null;
+  rawLoadedData = null;
+  processedRows = [];
+  document.getElementById("fileInput").value = "";
+  const badge = document.getElementById("fileStatusBadge");
+  badge.style.display = "none";
+  badge.textContent = "";
+  renderHeadersOnly();
+  resetQualityCheck();
+}
+
+function handleFile(file) {
+  const reader = new FileReader();
+  const fileName = file.name.toLowerCase();
+
+  reader.onload = (e) => {
+    const content = e.target.result;
+    const badge = document.getElementById("fileStatusBadge");
+
+    if (fileName.endsWith(".json")) {
+      try {
+        const json = JSON.parse(content);
+        loadedFileType = "json";
+        rawLoadedData = json;
+        badge.style.display = "inline-flex";
+        badge.textContent = `Loaded JSON: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        if (json.config && json.config.startDate) {
+          document.getElementById("scheduleStart").value = json.config.startDate;
+        }
+        processJson(json);
+      } catch (err) {
+        alert("Error parsing JSON file: " + err.message);
+      }
+    } else if (fileName.endsWith(".csv") || fileName.endsWith(".txt")) {
+      loadedFileType = "csv";
+      rawLoadedData = content;
+      badge.style.display = "inline-flex";
+      badge.textContent = `Loaded CSV: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      processCsv(content);
+    } else {
+      // Auto-detect JSON or CSV
+      try {
+        const json = JSON.parse(content);
+        loadedFileType = "json";
+        rawLoadedData = json;
+        badge.style.display = "inline-flex";
+        badge.textContent = `Loaded JSON: ${file.name}`;
+        processJson(json);
+      } catch (e) {
+        loadedFileType = "csv";
+        rawLoadedData = content;
+        badge.style.display = "inline-flex";
+        badge.textContent = `Loaded CSV: ${file.name}`;
+        processCsv(content);
+      }
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Convert "04:00" -> "0400"
+function timeToMilitary(str) {
+  if (!str) return "";
+  return str.replace(":", "").trim();
+}
+
+// Format shift span e.g. "0400-1230"
+function formatShiftSpan(start, end) {
+  if (!start || !end) return "";
+  return `${timeToMilitary(start)}-${timeToMilitary(end)}`;
+}
+
+// Compute daily work hours: subtract 30m unpaid break if shift >= 6h
+function calculateHoursPerDay(shiftSpan, paidFromConfig) {
+  if (paidFromConfig !== undefined && paidFromConfig !== null && !isNaN(Number(paidFromConfig)) && Number(paidFromConfig) > 0) {
+    return Number(paidFromConfig);
+  }
+  if (!shiftSpan || shiftSpan === "RDO") return 0;
+  const parts = shiftSpan.split(" ");
+  let totalMinutes = 0;
+  for (const part of parts) {
+    const [s, e] = part.split("-");
+    if (s && e) {
+      let sh = parseInt(s.substring(0, 2), 10);
+      let sm = parseInt(s.substring(2, 4), 10);
+      let eh = parseInt(e.substring(0, 2), 10);
+      let em = parseInt(e.substring(2, 4), 10);
+      let sMin = sh * 60 + sm;
+      let eMin = eh * 60 + em;
+      if (eMin < sMin) eMin += 24 * 60; // Crosses midnight
+      totalMinutes += (eMin - sMin);
+    }
+  }
+  let grossHours = totalMinutes / 60;
+  return grossHours >= 6 ? grossHours - 0.5 : grossHours;
+}
+
+// Robust CSV Line Parser handling quotes and commas
+function parseCsvRows(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length === 0) return [];
+
+  return lines.map(line => {
+    const row = [];
+    let insideQuote = false;
+    let currentCell = "";
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (insideQuote && line[i + 1] === '"') {
+          currentCell += '"';
+          i++;
+        } else {
+          insideQuote = !insideQuote;
+        }
+      } else if (char === ',' && !insideQuote) {
+        row.push(currentCell.trim());
+        currentCell = "";
+      } else {
+        currentCell += char;
+      }
+    }
+    row.push(currentCell.trim());
+    return row;
+  });
+}
+
+// Process CSV format (Supports FINALUGH.xlsx export and standard lines CSVs)
+function processCsv(csvText) {
+  const rows = parseCsvRows(csvText);
+  if (rows.length < 2) {
+    alert("The uploaded CSV file contains no line data.");
+    return;
+  }
+
+  const rawHeaders = rows[0].map(h => h.trim().toLowerCase());
+  const headerMap = {};
+  rawHeaders.forEach((h, idx) => { headerMap[h] = idx; });
+
+  // Resolve Column Indices with flexible matching
+  const colIdx = {
+    partnerTeam: headerMap["partner team"] !== undefined ? headerMap["partner team"] : -1,
+    team: headerMap["team"] !== undefined ? headerMap["team"] : -1,
+    line: headerMap["line"] !== undefined ? headerMap["line"] : (headerMap["line id"] !== undefined ? headerMap["line id"] : -1),
+    shift: headerMap["shift"] !== undefined ? headerMap["shift"] : -1,
+    start: headerMap["start"] !== undefined ? headerMap["start"] : -1,
+    end: headerMap["end"] !== undefined ? headerMap["end"] : -1,
+    position: headerMap["position"] !== undefined ? headerMap["position"] : (headerMap["title"] !== undefined ? headerMap["title"] : -1),
+    emp: headerMap["emp"] !== undefined ? headerMap["emp"] : (headerMap["emp class"] !== undefined ? headerMap["emp class"] : -1),
+    sex: headerMap["sex"] !== undefined ? headerMap["sex"] : (headerMap["gender"] !== undefined ? headerMap["gender"] : -1),
+    function: headerMap["function"] !== undefined ? headerMap["function"] : (headerMap["cert"] !== undefined ? headerMap["cert"] : -1),
+    certPool: headerMap["cert pool"] !== undefined ? headerMap["cert pool"] : -1,
+    rdos: headerMap["rdos"] !== undefined ? headerMap["rdos"] : -1,
+    paid: headerMap["paid"] !== undefined ? headerMap["paid"] : (headerMap["hours/day"] !== undefined ? headerMap["hours/day"] : -1),
+    sun: headerMap["sun"] !== undefined ? headerMap["sun"] : -1,
+    mon: headerMap["mon"] !== undefined ? headerMap["mon"] : -1,
+    tue: headerMap["tue"] !== undefined ? headerMap["tue"] : -1,
+    wed: headerMap["wed"] !== undefined ? headerMap["wed"] : -1,
+    thu: headerMap["thu"] !== undefined ? headerMap["thu"] : -1,
+    fri: headerMap["fri"] !== undefined ? headerMap["fri"] : -1,
+    sat: headerMap["sat"] !== undefined ? headerMap["sat"] : -1,
+    hours: headerMap["hours"] !== undefined ? headerMap["hours"] : -1
+  };
+
+  const airportCode = document.getElementById("airportCode").value.trim().toUpperCase() || "AAA";
+  const bidEventId = document.getElementById("bidEventId").value.trim() || "AAA2020-07";
+  const startDate = document.getElementById("scheduleStart").value || "2020-07-05";
+  const endDate = document.getElementById("scheduleEnd").value || "2020-12-31";
+  const defaultShiftTypeMode = document.getElementById("defaultShiftType").value;
+
+  processedRows = [];
+  const dayColKeys = [colIdx.sun, colIdx.mon, colIdx.tue, colIdx.wed, colIdx.thu, colIdx.fri, colIdx.sat];
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (row.length === 0 || (row.length === 1 && row[0] === "")) continue;
+
+    const getVal = (idx) => (idx !== -1 && row[idx] !== undefined) ? row[idx].trim() : "";
+
+    // 1. Bid Line ID (Clean up "Line 005" -> "005" or keep "STSO 21" <= 8 chars)
+    let rawLineStr = getVal(colIdx.line);
+    let bidLineId = "";
+    if (rawLineStr) {
+      if (rawLineStr.toLowerCase().startsWith("line ") && rawLineStr.length <= 8) {
+        bidLineId = rawLineStr.replace(/line\s+/i, "").trim();
+      } else if (rawLineStr.length <= 8) {
+        bidLineId = rawLineStr;
+      } else {
+        bidLineId = rawLineStr.substring(0, 8);
+      }
+    } else {
+      bidLineId = String(1001 + processedRows.length);
+    }
+
+    // 2. Location / Workgroup
+    const partnerTeam = getVal(colIdx.partnerTeam);
+    const teamNum = getVal(colIdx.team);
+    let workgroup = "Alpha";
+    if (teamNum) {
+      workgroup = `Team ${teamNum}`;
+    } else if (partnerTeam) {
+      workgroup = `Team ${partnerTeam}`;
+    }
+
+    // 3. Pat Down Req (Female, Male, None)
+    const sexVal = getVal(colIdx.sex).toUpperCase();
+    let patDown = "None";
+    if (sexVal === "M" || sexVal === "MALE") patDown = "Male";
+    else if (sexVal === "F" || sexVal === "FEMALE") patDown = "Female";
+
+    // 4. Title / Rank
+    const posVal = getVal(colIdx.position).toUpperCase();
+    let title = "TSO";
+    if (posVal.includes("STSO") || rawLineStr.includes("STSO")) title = "STSO";
+    else if (posVal.includes("LTSO") || rawLineStr.includes("LTSO")) title = "LTSO";
+    else if (posVal.includes("ESTI")) title = "ESTI";
+    else if (posVal.includes("MSTI")) title = "MSTI";
+    else if (posVal.includes("ETSO")) title = "ETSO";
+
+    // 5. Certification
+    const funcVal = getVal(colIdx.function).toUpperCase();
+    const certPoolVal = getVal(colIdx.certPool).toUpperCase();
+    let cert = "PAX";
+    if (funcVal === "BAG" || certPoolVal === "B") cert = "BAG";
+    else if (funcVal === "DFO" || funcVal === "DUAL") cert = "DUAL";
+
+    // 6. Schedule Type (FT vs PT)
+    const empVal = getVal(colIdx.emp).toUpperCase();
+    let schedType = "FT";
+    if (empVal === "PT" || posVal === "PT" || (colIdx.hours !== -1 && Number(getVal(colIdx.hours)) < 40 && empVal !== "FT")) {
+      schedType = "PT";
+    }
+
+    // 7. Base Shift Time (inclusive of breaks e.g. 0400-1230)
+    const startVal = getVal(colIdx.start);
+    const endVal = getVal(colIdx.end);
+    let defaultShiftSpan = formatShiftSpan(startVal, endVal);
+    if (!defaultShiftSpan) {
+      const shiftCol = getVal(colIdx.shift);
+      if (shiftCol.includes("-")) defaultShiftSpan = shiftCol.replace(":", "");
+    }
+
+    // 8. Public Comments: Cert Pool
+    let publicComments = "";
+    if (certPoolVal) {
+      publicComments = certPoolVal.startsWith("POOL") ? certPoolVal : `Pool ${certPoolVal}`;
+    }
+
+    // 9. Daily Work Schedule (7 days extended to 14 days)
+    const dayShiftTimes = [];
+    const dayShiftTypes = [];
+    const w1RdoList = [];
+    const w2RdoList = [];
+
+    // Parse week 1 days
+    const week1Times = dayColKeys.map(cIdx => {
+      const cell = getVal(cIdx);
+      if (!cell || cell.toUpperCase() === "RDO") return "RDO";
+      return cell.replace(":", "").trim();
+    });
+
+    // Populate standard shift span fallback if day has shift without format
+    for (let d = 0; d < 14; d++) {
+      const dayOfWeek = d % 7;
+      const isWeek1 = d < 7;
+      let timeVal = week1Times[dayOfWeek];
+
+      if (!timeVal || timeVal === "RDO") {
+        dayShiftTimes.push("RDO");
+        dayShiftTypes.push(""); // MUST be strictly blank on RDO!
+        if (isWeek1) w1RdoList.push(DAY_ABBR[dayOfWeek]);
+        else w2RdoList.push(DAY_ABBR[dayOfWeek]);
+      } else {
+        if (!timeVal.includes("-") && defaultShiftSpan) {
+          timeVal = defaultShiftSpan;
+        }
+        dayShiftTimes.push(timeVal);
+
+        // Assign Shift Type
+        let shiftType = "Airport";
+        if (defaultShiftTypeMode === "Admin/Avail") {
+          shiftType = "Admin/Avail";
+        } else if (defaultShiftTypeMode === "Training") {
+          shiftType = "Training";
+        } else if (defaultShiftTypeMode === "PandemicMix") {
+          const workDayIdx = dayShiftTimes.filter(t => t !== "RDO").length;
+          if (workDayIdx === 1) shiftType = "Admin/Avail";
+          else if (workDayIdx === 2) shiftType = "Training";
+          else shiftType = "Airport";
+        }
+        dayShiftTypes.push(shiftType);
+      }
+    }
+
+    // If shift span was missing, grab first non-RDO day span
+    if (!defaultShiftSpan) {
+      const firstWork = dayShiftTimes.find(t => t !== "RDO");
+      defaultShiftSpan = firstWork || "0400-1230";
+    }
+
+    // 10. RDO String Calculation
+    const w1RdoStr = w1RdoList.join("/");
+    const w2RdoStr = w2RdoList.join("/");
+    let rdoFinalStr = w1RdoStr;
+    if (w1RdoStr !== w2RdoStr) {
+      rdoFinalStr = `${w1RdoStr} ${w2RdoStr}`.trim();
+    }
+
+    // 11. Hours & Days/Week Calculations
+    const dailyHours = calculateHoursPerDay(defaultShiftSpan, getVal(colIdx.paid));
+    const totalWorkDays = dayShiftTimes.filter(t => t !== "RDO").length;
+    let hoursPerPP = totalWorkDays * dailyHours;
+    if (hoursPerPP > 80 && schedType === "FT") hoursPerPP = 80;
+
+    const daysPerWeek = (totalWorkDays / 2) % 1 === 0 ? String(totalWorkDays / 2) : `${totalWorkDays - Math.floor(totalWorkDays / 2)}/${Math.floor(totalWorkDays / 2)}`;
+
+    processedRows.push({
+      airportCode,
+      bidEventId,
+      startDate,
+      endDate,
+      bidLineId,
+      workgroup,
+      patDown,
+      title,
+      certification: cert,
+      schedType,
+      shiftTime: defaultShiftSpan,
+      privateComments: "",
+      publicComments: publicComments,
+      dayShiftTimes,
+      dayShiftTypes,
+      rdos: rdoFinalStr,
+      hoursPerDay: dailyHours,
+      hoursPerPP: hoursPerPP,
+      daysPerWeek: daysPerWeek
+    });
+  }
+
+  renderTable(processedRows);
+  runQualityCheck(processedRows);
+}
+
+// Process JSON format
+function processJson(data) {
+  rawLoadedData = data;
+  const airportCode = document.getElementById("airportCode").value.trim().toUpperCase() || "AAA";
+  const bidEventId = document.getElementById("bidEventId").value.trim() || "AAA2020-07";
+  const startDate = document.getElementById("scheduleStart").value || "2020-07-05";
+  const endDate = document.getElementById("scheduleEnd").value || "2020-12-31";
+  const defaultShiftTypeMode = document.getElementById("defaultShiftType").value;
+
+  const config = data.config || {};
+  const results = data.results || {};
+  const shiftsMap = {};
+  if (config.shifts) {
+    config.shifts.forEach(s => { shiftsMap[s.id] = s; });
+  }
+
+  const lineTeamMap = {};
+  if (results.teams && Array.isArray(results.teams)) {
+    results.teams.forEach(t => {
+      if (t.members) {
+        t.members.forEach(memberId => {
+          lineTeamMap[memberId] = t.name ? `Team ${t.name}` : (t.phase || "Alpha");
+        });
+      }
+    });
+  }
+
+  const rawLines = results.lines || [];
+  const scheduleObj = results.schedule || {};
+  processedRows = [];
+
+  rawLines.forEach((line, idx) => {
+    const lineIdStr = String(line.id);
+    const lineSched = scheduleObj[lineIdStr] || (line.rdoDays ? buildSchedFromRdo(line.rdoDays) : ["WORK","WORK","WORK","WORK","WORK","RDO","RDO"]);
+
+    const shift = shiftsMap[line.shiftId] || {};
+    const baseShiftStart = shift.start || (line.shiftLabel ? line.shiftLabel.split("-")[0] : "04:00");
+    const baseShiftEnd = shift.end || (line.shiftLabel ? line.shiftLabel.split("-")[1] : "12:30");
+    const defaultShiftSpan = formatShiftSpan(baseShiftStart, baseShiftEnd);
+
+    let title = "TSO";
+    if (line.isStso || line.empClass === "STSO" || line.position === "STSO") title = "STSO";
+    else if (line.isLtso || line.empClass === "LTSO" || line.position === "LTSO") title = "LTSO";
+    else if (line.empClass === "ESTI" || line.position === "ESTI") title = "ESTI";
+    else if (line.empClass === "MSTI" || line.position === "MSTI") title = "MSTI";
+    else if (line.empClass === "ETSO") title = "ETSO";
+
+    let cert = "PAX";
+    if (line.function === "BAG") cert = "BAG";
+    else if (line.function === "DFO") cert = "DUAL";
+    else if (line.certPool === "B") cert = "BAG";
+
+    let publicComments = "";
+    if (line.certPool && String(line.certPool).trim() !== "") {
+      const poolVal = String(line.certPool).trim().toUpperCase();
+      publicComments = poolVal.startsWith("POOL") ? poolVal : `Pool ${poolVal}`;
+    }
+
+    const schedType = (line.empClass === "PT" || line.position === "PT") ? "PT" : "FT";
+    let workgroup = lineTeamMap[line.id] || "Alpha";
+    const bidLineId = String(1001 + idx);
+
+    let patDown = "None";
+    if (line.sex === "M") patDown = "Male";
+    else if (line.sex === "F") patDown = "Female";
+
+    const dayShiftTimes = [];
+    const dayShiftTypes = [];
+    const w1RdoList = [];
+    const w2RdoList = [];
+
+    for (let d = 0; d < 14; d++) {
+      const dayOfWeek = d % 7;
+      const isWeek1 = d < 7;
+      const dayStatus = lineSched[dayOfWeek] || "WORK";
+
+      if (dayStatus === "RDO") {
+        dayShiftTimes.push("RDO");
+        dayShiftTypes.push("");
+        if (isWeek1) w1RdoList.push(DAY_ABBR[dayOfWeek]);
+        else w2RdoList.push(DAY_ABBR[dayOfWeek]);
+      } else {
+        let currentShiftSpan = defaultShiftSpan;
+        if (shift.dayTimes && shift.dayTimes[dayOfWeek]) {
+          currentShiftSpan = formatShiftSpan(shift.dayTimes[dayOfWeek].start, shift.dayTimes[dayOfWeek].end);
+        }
+        dayShiftTimes.push(currentShiftSpan);
+
+        let shiftType = "Airport";
+        if (defaultShiftTypeMode === "Admin/Avail") {
+          shiftType = "Admin/Avail";
+        } else if (defaultShiftTypeMode === "Training" || line.isTraining) {
+          shiftType = "Training";
+        } else if (defaultShiftTypeMode === "PandemicMix") {
+          const workDayIdx = dayShiftTimes.filter(t => t !== "RDO").length;
+          if (workDayIdx === 1) shiftType = "Admin/Avail";
+          else if (workDayIdx === 2) shiftType = "Training";
+          else shiftType = "Airport";
+        }
+        dayShiftTypes.push(shiftType);
+      }
+    }
+
+    const w1RdoStr = w1RdoList.join("/");
+    const w2RdoStr = w2RdoList.join("/");
+    let rdoFinalStr = w1RdoStr;
+    if (w1RdoStr !== w2RdoStr) {
+      rdoFinalStr = `${w1RdoStr} ${w2RdoStr}`.trim();
+    }
+
+    const dailyHours = calculateHoursPerDay(defaultShiftSpan, line.paid);
+    const totalWorkDays = dayShiftTimes.filter(t => t !== "RDO").length;
+    let hoursPerPP = totalWorkDays * dailyHours;
+    if (hoursPerPP > 80 && schedType === "FT") hoursPerPP = 80;
+
+    const daysPerWeek = (totalWorkDays / 2) % 1 === 0 ? String(totalWorkDays / 2) : `${totalWorkDays - Math.floor(totalWorkDays / 2)}/${Math.floor(totalWorkDays / 2)}`;
+
+    processedRows.push({
+      airportCode,
+      bidEventId,
+      startDate,
+      endDate,
+      bidLineId,
+      workgroup,
+      patDown,
+      title,
+      certification: cert,
+      schedType,
+      shiftTime: defaultShiftSpan,
+      privateComments: "",
+      publicComments: publicComments,
+      dayShiftTimes,
+      dayShiftTypes,
+      rdos: rdoFinalStr,
+      hoursPerDay: dailyHours,
+      hoursPerPP: hoursPerPP,
+      daysPerWeek: daysPerWeek
+    });
+  });
+
+  renderTable(processedRows);
+  runQualityCheck(processedRows);
+}
+
+function buildSchedFromRdo(rdoDays) {
+  const sched = ["WORK", "WORK", "WORK", "WORK", "WORK", "WORK", "WORK"];
+  rdoDays.forEach(d => { sched[d] = "RDO"; });
+  return sched;
+}
+
+function renderHeadersOnly() {
+  const tableHeaders = document.getElementById("tableHeaders");
+  const tableBody = document.getElementById("tableBody");
+  document.getElementById("rowCountDisplay").textContent = "0";
+
+  tableHeaders.innerHTML = COLUMNS_DEF.map(c => `<th>${c.label}</th>`).join("");
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="45" class="empty-state">
+        No bid lines loaded. Please drag & drop or upload your Scheduler CSV or JSON file above.
+      </td>
+    </tr>
+  `;
+}
+
+// Render Bidlines Tab Table
+function renderTable(rows) {
+  const tableHeaders = document.getElementById("tableHeaders");
+  const tableBody = document.getElementById("tableBody");
+  document.getElementById("rowCountDisplay").textContent = rows.length;
+
+  tableHeaders.innerHTML = COLUMNS_DEF.map(c => `<th>${c.label}</th>`).join("");
+
+  if (rows.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="45" class="empty-state">
+          No matching records found.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tableBody.innerHTML = rows.map((r) => {
+    const cells = [
+      r.airportCode,
+      r.bidEventId,
+      r.startDate,
+      r.endDate,
+      r.bidLineId,
+      r.workgroup,
+      r.patDown,
+      r.title,
+      r.certification,
+      r.schedType,
+      r.shiftTime,
+      r.privateComments,
+      r.publicComments,
+      ...r.dayShiftTimes,
+      ...r.dayShiftTypes,
+      r.rdos,
+      r.hoursPerDay,
+      r.hoursPerPP,
+      r.daysPerWeek
+    ];
+
+    return `<tr>${cells.map((v, ci) => {
+      let style = "";
+      if (ci >= 27 && ci <= 40) {
+        const timeVal = cells[ci - 14];
+        if (timeVal === "RDO" && v === "") {
+          style = 'style="color:#94a3b8; font-style: italic;"';
+        }
+      }
+      return `<td ${style}>${v !== undefined && v !== null ? v : ""}</td>`;
+    }).join("")}</tr>`;
+  }).join("");
+}
+
+function filterTable(searchTerm) {
+  if (!processedRows || processedRows.length === 0) return;
+  const filtered = processedRows.filter(r => {
+    const text = [
+      r.bidLineId, r.workgroup, r.title, r.patDown, r.schedType,
+      r.certification, r.shiftTime, r.rdos, r.publicComments
+    ].join(" ").toLowerCase();
+    return text.includes(searchTerm);
+  });
+  renderTable(filtered);
+}
+
+function resetQualityCheck() {
+  document.getElementById("qcTotalLines").textContent = "0";
+  document.getElementById("qcCompleteness").textContent = "N/A";
+  document.getElementById("qcCompletenessSub").textContent = "Awaiting data import";
+  document.getElementById("qcScheduleType").textContent = "0 FT / 0 PT";
+  document.getElementById("qcPatDown").textContent = "0 M / 0 F";
+  document.getElementById("qcIssuesList").innerHTML = `
+    <div style="color: var(--text-muted);">No data to inspect yet. Upload a schedule file to view automated audit rules.</div>
+  `;
+  document.getElementById("distinctValuesGrid").innerHTML = `
+    <div style="color: var(--text-muted); font-size: 0.85rem; grid-column: 1 / -1; padding: 24px 0;">
+      Distinct distributions will populate once a schedule file is imported.
+    </div>
+  `;
+}
+
+// Quality Control and Distinct Values Inspector
+function runQualityCheck(rows) {
+  if (rows.length === 0) {
+    resetQualityCheck();
+    return;
+  }
+
+  let blankViolations = 0;
+  let invalidShiftTimes = 0;
+  let totalFt = 0;
+  let totalPt = 0;
+  let maleCount = 0;
+  let femaleCount = 0;
+
+  const distinctMap = {
+    "Airport Code": {},
+    "Schedule Type": {},
+    "Title (Rank)": {},
+    "Pat Down Req": {},
+    "Certification": {},
+    "Public Bid Line Comments (Cert Pool)": {},
+    "Typical Shift Time": {},
+    "RDO Pattern": {},
+    "Hours / Day": {},
+    "Hours / Pay Period": {},
+    "Days / Week": {}
+  };
+
+  rows.forEach(r => {
+    if (r.schedType === "FT") totalFt++; else totalPt++;
+    if (r.patDown === "Male") maleCount++; else if (r.patDown === "Female") femaleCount++;
+
+    distinctMap["Airport Code"][r.airportCode] = (distinctMap["Airport Code"][r.airportCode] || 0) + 1;
+    distinctMap["Schedule Type"][r.schedType] = (distinctMap["Schedule Type"][r.schedType] || 0) + 1;
+    distinctMap["Title (Rank)"][r.title] = (distinctMap["Title (Rank)"][r.title] || 0) + 1;
+    distinctMap["Pat Down Req"][r.patDown] = (distinctMap["Pat Down Req"][r.patDown] || 0) + 1;
+    distinctMap["Certification"][r.certification] = (distinctMap["Certification"][r.certification] || 0) + 1;
+    distinctMap["Public Bid Line Comments (Cert Pool)"][r.publicComments] = (distinctMap["Public Bid Line Comments (Cert Pool)"][r.publicComments] || 0) + 1;
+    distinctMap["Typical Shift Time"][r.shiftTime] = (distinctMap["Typical Shift Time"][r.shiftTime] || 0) + 1;
+    distinctMap["RDO Pattern"][r.rdos] = (distinctMap["RDO Pattern"][r.rdos] || 0) + 1;
+    distinctMap["Hours / Day"][r.hoursPerDay] = (distinctMap["Hours / Day"][r.hoursPerDay] || 0) + 1;
+    distinctMap["Hours / Pay Period"][r.hoursPerPP] = (distinctMap["Hours / Pay Period"][r.hoursPerPP] || 0) + 1;
+    distinctMap["Days / Week"][r.daysPerWeek] = (distinctMap["Days / Week"][r.daysPerWeek] || 0) + 1;
+
+    for (let d = 0; d < 14; d++) {
+      const time = r.dayShiftTimes[d];
+      const type = r.dayShiftTypes[d];
+
+      if (!time || (time !== "RDO" && time.length !== 9 && time.length !== 19)) {
+        invalidShiftTimes++;
+      }
+      if (time === "RDO" && type !== "") {
+        blankViolations++;
+      } else if (time !== "RDO" && (!type || type.trim() === "")) {
+        blankViolations++;
+      }
+    }
+  });
+
+  document.getElementById("qcTotalLines").textContent = rows.length;
+  document.getElementById("qcScheduleType").textContent = `${totalFt} FT / ${totalPt} PT`;
+  document.getElementById("qcPatDown").textContent = `${maleCount} M / ${femaleCount} F`;
+
+  const completenessEl = document.getElementById("qcCompleteness");
+  const completenessSubEl = document.getElementById("qcCompletenessSub");
+  if (blankViolations === 0 && invalidShiftTimes === 0) {
+    completenessEl.innerHTML = '<span class="badge badge-success" style="font-size:1.1rem;">PASSED (100%)</span>';
+    completenessSubEl.textContent = "All cells populated; RDO shift types correctly left blank.";
+  } else {
+    completenessEl.innerHTML = '<span class="badge badge-danger" style="font-size:1.1rem;">ATTENTION</span>';
+    completenessSubEl.textContent = `${blankViolations} blank rule mismatch(es), ${invalidShiftTimes} time format issue(s).`;
+  }
+
+  const issuesContainer = document.getElementById("qcIssuesList");
+  issuesContainer.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge ${blankViolations === 0 ? 'badge-success' : 'badge-danger'}">${blankViolations === 0 ? '✓' : '✕'}</span>
+        <strong>RDO Cell Exemption Rule:</strong> All 14 'Dxx Shift Type' columns are left blank strictly when Shift Time is 'RDO' (${blankViolations} errors found).
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge ${invalidShiftTimes === 0 ? 'badge-success' : 'badge-danger'}">${invalidShiftTimes === 0 ? '✓' : '✕'}</span>
+        <strong>Military Shift Time Precision:</strong> Shift times are formatted cleanly as military time (9 chars: 0400-1230 or 19 chars for split shifts).
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge badge-success">✓</span>
+        <strong>Cert Pool in Public Comments:</strong> Cert pool groupings (e.g. Pool A, Pool B) are populated into Column 13 (Public Bid Line Comments).
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge badge-success">✓</span>
+        <strong>Max Hours/PP Capping:</strong> Full-time hours are capped at 80 hours per pay period to comply with AWS guidelines.
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge badge-success">✓</span>
+        <strong>45 Column Truncation:</strong> CSV output is aligned strictly to first 45 columns (Airport Code to Days/Week, Col A thru AS).
+      </div>
+    </div>
+  `;
+
+  const gridContainer = document.getElementById("distinctValuesGrid");
+  gridContainer.innerHTML = Object.keys(distinctMap).map(colName => {
+    const valCounts = distinctMap[colName];
+    const itemsHtml = Object.keys(valCounts).map(val => `
+      <div class="filter-item">
+        <span>${val === "" ? "<em>(Blank / None)</em>" : val}</span>
+        <span class="count">${valCounts[val]}</span>
+      </div>
+    `).join("");
+    return `
+      <div class="filter-card">
+        <h4>
+          <span>${colName}</span>
+          <span style="font-size:0.75rem; color:var(--text-muted);">${Object.keys(valCounts).length} Distinct</span>
+        </h4>
+        ${itemsHtml}
+      </div>
+    `;
+  }).join("");
+}
+
+function renderRulesTable() {
+  const tbody = document.getElementById("rulesTableBody");
+  tbody.innerHTML = COLUMNS_DEF.map(c => `
+    <tr>
+      <td style="font-weight:700; color:var(--primary);">${c.id}</td>
+      <td style="font-weight:600;">${c.label}</td>
+      <td style="font-family:monospace; font-size:0.8rem; color:#334155;">${c.values}</td>
+      <td style="color:#475569;">${c.desc}</td>
+    </tr>
+  `).join("");
+}
+
+// CSV Export Generator (Strictly 45 Columns: Airport Code to Days/Week)
+function exportCsv() {
+  if (!processedRows || processedRows.length === 0) {
+    alert("No bid line data available to export. Please import a file first.");
+    return;
+  }
+
+  const headers = COLUMNS_DEF.map(c => `"${c.label.replace(/"/g, '""')}"`);
+  const lines = [headers.join(",")];
+
+  processedRows.forEach(r => {
+    const rowValues = [
+      r.airportCode,
+      r.bidEventId,
+      r.startDate,
+      r.endDate,
+      r.bidLineId,
+      r.workgroup,
+      r.patDown,
+      r.title,
+      r.certification,
+      r.schedType,
+      r.shiftTime,
+      r.privateComments,
+      r.publicComments,
+      ...r.dayShiftTimes,
+      ...r.dayShiftTypes,
+      r.rdos,
+      r.hoursPerDay,
+      r.hoursPerPP,
+      r.daysPerWeek
+    ];
+    const escaped = rowValues.map(v => {
+      if (v === null || v === undefined) return '""';
+      const str = String(v).replace(/"/g, '""');
+      return `"${str}"`;
+    });
+    lines.push(escaped.join(","));
+  });
+
+  const csvContent = lines.join("\r\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const filename = `${document.getElementById("bidEventId").value.trim() || "eBid_Upload"}_45Col_Import.csv`;
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

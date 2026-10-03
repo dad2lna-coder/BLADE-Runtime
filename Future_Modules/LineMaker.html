@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to Excel Roster Generator</title>
+    <!-- We use xlsx-js-style to allow for cell formatting and colors in the output -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        p {
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 2.5rem 1rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            background: #fcfcfc;
+        }
+        .upload-area:hover, .upload-area.drag-over {
+            background: #ecf0f1;
+            border-color: #2980b9;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-label {
+            cursor: pointer;
+            color: #3498db;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .upload-label span {
+            display: block;
+            font-size: 0.85rem;
+            color: #95a5a6;
+            margin-top: 0.5rem;
+            font-weight: normal;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 6px;
+            background: #2ecc71;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .btn:not(:disabled):hover {
+            background: #27ae60;
+        }
+        .status {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            height: 20px;
+        }
+        .success { color: #27ae60; }
+        .error { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Schedule Data Converter</h1>
+        <p>Upload your exported JSON to generate the customized Excel Lines file.</p>
+
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="jsonUpload" accept=".json">
+            <label for="jsonUpload" class="upload-label">
+                Click to Upload JSON
+                <span id="fileName">No file chosen</span>
+            </label>
+        </div>
+
+        <button id="downloadBtn" class="btn" disabled>Download Excel (.xlsx)</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        let excelData = [];
+        let processedRows = []; // Store metadata for coloring
+
+        const uploadArea = document.getElementById('uploadArea');
+        const jsonUpload = document.getElementById('jsonUpload');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusEl = document.getElementById('status');
+        const fileNameEl = document.getElementById('fileName');
+
+        jsonUpload.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileNameEl.textContent = file.name;
+            statusEl.className = 'status';
+            statusEl.innerText = 'Parsing data...';
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    processJSON(data);
+
+                    statusEl.innerText = 'File successfully processed! Ready for download.';
+                    statusEl.className = 'status success';
+                    downloadBtn.disabled = false;
+                } catch (err) {
+                    statusEl.innerText = 'Error: Invalid JSON structure.';
+                    statusEl.className = 'status error';
+                    downloadBtn.disabled = true;
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function processJSON(data) {
+            const lines = data.results.lines || [];
+            const teams = data.results.teams || [];
+            const shifts = data.config.shifts || [];
+            const schedules = data.results.schedule || {};
+            const funcRot = data.results.functionRotation || {};
+
+            // Map Shift Info
+            const shiftMap = {};
+            shifts.forEach(s => shiftMap[s.id] = s);
+
+            // Generate alphabetical pairing (A, B, C...)
+            function getAlpha(index) {
+                let letter = '';
+                let temp = index;
+                while (temp >= 0) {
+                    letter = String.fromCharCode((temp % 26) + 65) + letter;
+                    temp = Math.floor(temp / 26) - 1;
+                }
+                return letter;
+            }
+
+            const alphaPairMap = {};
+            let pairIndex = 0;
+
+            // Iterate through teams to find pairs and assign letters
+            teams.forEach(t => {
+                if (t.pairedTeamName && !alphaPairMap[t.name]) {
+                    const letter = getAlpha(pairIndex++);
+                    alphaPairMap[t.name] = letter;
+                    alphaPairMap[t.pairedTeamName] = letter;
+                }
+            });
+
+            // Map Team and Partner info
+            const teamMap = {};
+            const partnerMap = {};
+            teams.forEach(t => {
+                (t.members || []).forEach(m => {
+                    teamMap[m] = t.name;
+                    partnerMap[m] = alphaPairMap[t.name] || ""; 
+                });
+            });
+
+            const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const header = [
+                "Partner team", "Team", "Line", "Shift", "Start", "End", 
+                "Position", "Emp", "Sex", "Function", "Cert pool", "RDOs", 
+                "Paid", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Hours"
+            ];
+
+            processedRows = [];
+
+            lines.forEach(line => {
+                const partner = partnerMap[line.id] || "";
+                const team = teamMap[line.id] || "";
+
+                const shiftObj = shiftMap[line.shiftId];
+                const start = shiftObj ? shiftObj.start : "";
+                const end = shiftObj ? shiftObj.end : "";
+
+                const rdosStr = (line.rdoDays || []).map(d => dayNames[d]).join(",");
+                const certPool = line.certPool || "";
+
+                const sched = schedules[line.id] || [];
+                const getDay = (idx) => sched[idx] === "WORK" ? line.shiftLabel : (sched[idx] || "RDO");
+
+                const workDays = sched.filter(s => s === "WORK").length;
+                const hours = workDays * (line.paid || 8);
+
+                // Parse and normalize the position (FT/PT map to TSO if not explicit)
+                let position = (line.position || line.role || "").trim().toUpperCase();
+                if (line.isStso || position === "STSO") {
+                    position = "STSO";
+                } else if (line.isLtso || position === "LTSO") {
+                    position = "LTSO";
+                } else if (!line.isExtra && (position === "FT" || position === "PT" || position === "")) {
+                    position = "TSO";
+                }
+
+                // Clean up Employee Class (Emp) so it doesn't show positions like "STSO"
+                let empType = (line.empClass || "").trim().toUpperCase();
+                if (empType !== "FT" && empType !== "PT") {
+                    empType = "FT"; // Default to FT if it's missing or says "STSO"/"LTSO"
+                }
+
+                // Determine daily function for coloring
+                const fRot = funcRot[line.id] || [];
+                const getFunc = (idx) => {
+                    let f = fRot[idx];
+                    if (!f) f = line.function; // Fallback to line's default function
+                    if (f === "DFO") f = "PAX"; // Normalize DFO to Passenger
+                    return f;
+                };
+                const dailyFuncs = [getFunc(0), getFunc(1), getFunc(2), getFunc(3), getFunc(4), getFunc(5), getFunc(6)];
+
+                processedRows.push({
+                    partner: partner,
+                    team: team,
+                    position: position,
+                    dailyFuncs: dailyFuncs,
+                    data: [
+                        partner,
+                        team,
+                        line.lineCode || "",
+                        line.shiftName || "",
+                        start,
+                        end,
+                        position,
+                        empType,
+                        line.sex || "",
+                        line.function || "",
+                        certPool,
+                        rdosStr,
+                        line.paid || 8,
+                        getDay(0), getDay(1), getDay(2), getDay(3), getDay(4), getDay(5), getDay(6),
+                        hours
+                    ]
+                });
+            });
+
+            // Position Rank Map for custom sorting
+            const posRank = {
+                "STSO": 1,
+                "LTSO": 2,
+                "TSO": 3
+            };
+
+            // Apply custom sorting rules
+            processedRows.sort((a, b) => {
+                // 1. Sort by Partner Team
+                if (a.partner !== b.partner) return a.partner.localeCompare(b.partner);
+
+                // 2. Sort by Team
+                if (a.team !== b.team) return a.team.localeCompare(b.team, undefined, { numeric: true });
+
+                // 3. Sort by Position (STSO -> LTSO -> TSO)
+                const rankA = posRank[a.position] || 4; 
+                const rankB = posRank[b.position] || 4;
+                return rankA - rankB;
+            });
+
+            excelData = [header, ...processedRows.map(row => row.data)];
+        }
+
+        downloadBtn.addEventListener('click', function() {
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const thinBorder = { style: "thin", color: { rgb: "000000" } };
+
+            // Distinct color palettes for teams and partner teams
+            const partnerPal = ["FCE4D6", "E2EFDA", "D9E1F2", "E4DFEC", "F2F2F2", "F8CBAD", "B4C6E7", "C6E0B4", "FFD966", "D0CECE"];
+            const teamPal = ["E4DFEC", "F2F2F2", "F8CBAD", "B4C6E7", "C6E0B4", "FFD966", "FCE4D6", "E2EFDA", "D9E1F2", "FFF2CC", "D9D9D9", "F4B183", "9DC3E6"];
+
+            // Iterate over all cells to apply formatting
+            for(let R = range.s.r; R <= range.e.r; ++R) {
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    const address = XLSX.utils.encode_cell({r: R, c: C});
+                    if(!ws[address]) continue;
+
+                    // Header Styles
+                    if (R === 0) {
+                        ws[address].s = {
+                            font: { bold: true, color: { rgb: "FFFFFF" } },
+                            fill: { fgColor: { rgb: "4F81BD" } }, // Blue Header
+                            alignment: { horizontal: "center", vertical: "center" },
+                            border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
+                        };
+                    } else {
+                        // Data Cells Styling
+                        let cellVal = ws[address].v;
+                        let cellStyle = {
+                            alignment: { horizontal: "center", vertical: "center" },
+                            border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
+                        };
+                        const rowData = processedRows[R - 1]; // R - 1 because row 0 is header
+
+                        // Conditional Color Coding
+                        if (cellVal === "RDO") {
+                            cellStyle.fill = { fgColor: { rgb: "000000" } }; // Black for RDO
+                            cellStyle.font = { color: { rgb: "FFFFFF" } }; // White text
+                        } else if (C >= 13 && C <= 19 && cellVal !== "RDO") {
+                            // Fetch the day's function from our processed rows metadata
+                            const dayFunc = rowData ? rowData.dailyFuncs[C - 13] : "";
+
+                            if (dayFunc === "BAG" || dayFunc === "DFO") {
+                                cellStyle.fill = { fgColor: { rgb: "F4B084" } }; // More saturated Orange for Baggage
+                            } else if (dayFunc === "PAX") {
+                                cellStyle.fill = { fgColor: { rgb: "9BC2E6" } }; // More saturated Blue for PAX
+                            } else {
+                                cellStyle.fill = { fgColor: { rgb: "A9D08E" } }; // More saturated Green fallback
+                            }
+                        } else if (C === 0) {
+                            // Column A: Partner Team Colors
+                            const charCode = cellVal ? cellVal.toString().charCodeAt(0) || 65 : 65;
+                            cellStyle.fill = { fgColor: { rgb: partnerPal[(charCode - 65) % partnerPal.length] } };
+                        } else if (C === 1) {
+                            // Column B: Team Colors
+                            const tVal = parseInt(cellVal, 10) || 0;
+                            cellStyle.fill = { fgColor: { rgb: teamPal[tVal % teamPal.length] } };
+                        } else if (C >= 2 && C <= 12) {
+                            // Columns C to M (Line through Paid): Position-based colors
+                            if (rowData && rowData.position === "STSO") {
+                                cellStyle.fill = { fgColor: { rgb: "FFF2CC" } }; // Light Yellow for STSO
+                            } else if (rowData && rowData.position === "LTSO") {
+                                cellStyle.fill = { fgColor: { rgb: "D9E1F2" } }; // Light Blue for LTSO
+                            }
+                        }
+
+                        ws[address].s = cellStyle;
+                    }
+                }
+            }
+
+            // Set column widths for better readability
+            const wscols = excelData[0].map((_, i) => ({ 
+                wch: (i === 2 || i === 11) ? 15 : (i >= 13 && i <= 19 ? 12 : 10) 
+            }));
+            ws['!cols'] = wscols;
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Lines");
+
+            XLSX.writeFile(wb, "Option A Lines.xlsx");
+        });
+    </script>
+</body>
+</html>
