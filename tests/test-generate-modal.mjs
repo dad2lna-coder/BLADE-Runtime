@@ -597,6 +597,28 @@ test('Half-1 Test 2: Two morning-start male LTSOs on Fri-Sat produce proposal le
   assert.equal(fLineAfter.shiftId, 'S1', 'shiftId completely unchanged');
 });
 
+test('Half-1 Test 2b: Four morning-start LTSOs already at two and two on Fri-Sat are left at two and two with no proposals', () => {
+  const S = createMockScheduler();
+  S.state.shifts = [{ id: 'S1', name: '0330', start: '03:30', end: '12:00', paid: 8 }];
+
+  // 2 Males and 2 Females on Fri-Sat [5, 6]
+  S.state.lines = [
+    { id: 1, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [5, 6] },
+    { id: 2, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [5, 6] },
+    { id: 3, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [5, 6] },
+    { id: 4, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [5, 6] }
+  ];
+
+  const res = S.checkParity('LTSO', []);
+  assert.equal(res.proposals.length, 0, 'No proposals generated for 2M and 2F (1:1 parity holds)');
+
+  const amLines = S.state.lines.filter(l => l.shiftId === 'S1');
+  const amM = amLines.filter(l => l.sex === 'M').length;
+  const amF = amLines.filter(l => l.sex === 'F').length;
+  assert.equal(amM, 2, 'AM half male count remains 2');
+  assert.equal(amF, 2, 'AM half female count remains 2');
+});
+
 test('Half-1 Test 3: Afternoon half target proposed to 1M & 1F even when starting with 0 lines on Fri-Sat pattern', () => {
   const S = createMockScheduler();
   S.state.shifts = [

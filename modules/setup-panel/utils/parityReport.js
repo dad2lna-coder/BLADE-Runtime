@@ -114,7 +114,8 @@ export function checkParity(S, classKey, selectedBandKeys) {
       var halfLabel = half === "AM" ? "Morning half (<11:00)" : "Afternoon half (>=11:00)";
       var patLabel = formatRdos(pat.rdoDays);
 
-      if (countM >= 1 && countF >= 1) {
+      // 1:1 parity means M and F counts match (e.g. 2M & 2F is fine, 1M & 1F is fine).
+      if (countM === countF && countM > 0) {
         return;
       }
 
@@ -127,7 +128,7 @@ export function checkParity(S, classKey, selectedBandKeys) {
       });
 
       if (countM === 0 && countF === 0) {
-        // Empty half for this pattern: need both 1 Male and 1 Female assigned to pat.rdoDays
+        // Empty half for this pattern: need a 1:1 pair (1 Male and 1 Female assigned to pat.rdoDays)
         var donorF0 = halfLines.find(function (l) {
           return l.sex === "F" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
         });
@@ -152,65 +153,59 @@ export function checkParity(S, classKey, selectedBandKeys) {
           if (!donorM0) shortfalls.push(halfLabel + " short of 1 Male on pattern " + patLabel);
           if (!donorF0) shortfalls.push(halfLabel + " short of 1 Female on pattern " + patLabel);
         }
-      } else if (countM === 0) {
-        // Has female(s) on pat, missing male
-        var donorM = halfLines.find(function (l) {
-          return l.sex === "M" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
-        });
-        var donorF = fPat.length > 1 ? fPat.find(function (l) { return !pairedLineIds.has(l.id); }) : null;
-        if (!donorF) {
-          donorF = halfLines.find(function (l) {
-            return l.sex === "F" && !pairedLineIds.has(l.id);
+      } else if (countM > countF) {
+        // Surplus males on pat: swap 1 Male on pat with 1 Female on another pattern in this half
+        var diff = countM - countF;
+        for (var i = 0; i < Math.ceil(diff / 2); i++) {
+          var donorM_pat = mPat.find(function (l) { return !pairedLineIds.has(l.id); });
+          var donorF_other = halfLines.find(function (l) {
+            return l.sex === "F" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
           });
-        }
 
-        if (donorM && donorF) {
-          pairedLineIds.add(donorM.id);
-          pairedLineIds.add(donorF.id);
-          var rdoA_after = pat.rdoDays;
-          var rdoB_after = (fPat.length > 1 && rdoPatternKey(donorF.rdoDays) === pat.patternKey) ? donorM.rdoDays : pat.rdoDays;
-          proposals.push({
-            lineA: donorF,
-            lineB: donorM,
-            half: half,
-            rdoA_before: donorF.rdoDays,
-            rdoB_before: donorM.rdoDays,
-            rdoA_after: rdoA_after,
-            rdoB_after: rdoB_after,
-            note: half + " half: Assign pattern " + patLabel + " to " + (donorM.lineCode || donorM.id) + " (M) & " + (donorF.lineCode || donorF.id) + " (F)"
-          });
-        } else {
-          shortfalls.push(halfLabel + " short of 1 Male on pattern " + patLabel);
+          if (donorM_pat && donorF_other) {
+            pairedLineIds.add(donorM_pat.id);
+            pairedLineIds.add(donorF_other.id);
+            proposals.push({
+              lineA: donorF_other,
+              lineB: donorM_pat,
+              half: half,
+              rdoA_before: donorF_other.rdoDays,
+              rdoB_before: donorM_pat.rdoDays,
+              rdoA_after: pat.rdoDays,
+              rdoB_after: donorF_other.rdoDays,
+              note: half + " half: Swap RDOs so " + (donorF_other.lineCode || donorF_other.id) + " (F) gains pattern " + patLabel + " from " + (donorM_pat.lineCode || donorM_pat.id) + " (M)"
+            });
+          } else {
+            shortfalls.push(halfLabel + " short of Female line to balance Male surplus on pattern " + patLabel);
+            break;
+          }
         }
-      } else if (countF === 0) {
-        // Has male(s) on pat, missing female
-        var donorF2 = halfLines.find(function (l) {
-          return l.sex === "F" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
-        });
-        var donorM2 = mPat.length > 1 ? mPat.find(function (l) { return !pairedLineIds.has(l.id); }) : null;
-        if (!donorM2) {
-          donorM2 = halfLines.find(function (l) {
-            return l.sex === "M" && !pairedLineIds.has(l.id);
+      } else if (countF > countM) {
+        // Surplus females on pat: swap 1 Female on pat with 1 Male on another pattern in this half
+        var diffF = countF - countM;
+        for (var j = 0; j < Math.ceil(diffF / 2); j++) {
+          var donorF_pat = fPat.find(function (l) { return !pairedLineIds.has(l.id); });
+          var donorM_other = halfLines.find(function (l) {
+            return l.sex === "M" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
           });
-        }
 
-        if (donorF2 && donorM2) {
-          pairedLineIds.add(donorF2.id);
-          pairedLineIds.add(donorM2.id);
-          var rdoA_after2 = pat.rdoDays;
-          var rdoB_after2 = (mPat.length > 1 && rdoPatternKey(donorM2.rdoDays) === pat.patternKey) ? donorF2.rdoDays : pat.rdoDays;
-          proposals.push({
-            lineA: donorF2,
-            lineB: donorM2,
-            half: half,
-            rdoA_before: donorF2.rdoDays,
-            rdoB_before: donorM2.rdoDays,
-            rdoA_after: rdoA_after2,
-            rdoB_after: rdoB_after2,
-            note: half + " half: Assign pattern " + patLabel + " to " + (donorF2.lineCode || donorF2.id) + " (F) & " + (donorM2.lineCode || donorM2.id) + " (M)"
-          });
-        } else {
-          shortfalls.push(halfLabel + " short of 1 Female on pattern " + patLabel);
+          if (donorF_pat && donorM_other) {
+            pairedLineIds.add(donorF_pat.id);
+            pairedLineIds.add(donorM_other.id);
+            proposals.push({
+              lineA: donorF_pat,
+              lineB: donorM_other,
+              half: half,
+              rdoA_before: donorF_pat.rdoDays,
+              rdoB_before: donorM_other.rdoDays,
+              rdoA_after: donorM_other.rdoDays,
+              rdoB_after: pat.rdoDays,
+              note: half + " half: Swap RDOs so " + (donorM_other.lineCode || donorM_other.id) + " (M) gains pattern " + patLabel + " from " + (donorF_pat.lineCode || donorF_pat.id) + " (F)"
+            });
+          } else {
+            shortfalls.push(halfLabel + " short of Male line to balance Female surplus on pattern " + patLabel);
+            break;
+          }
         }
       }
     });
