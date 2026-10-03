@@ -14,6 +14,7 @@ export function attachShiftsTable(S) {
   };
 
   S.readShiftsFromDom = function () {
+    if (typeof document === "undefined") return S.state.shifts;
     var rows = document.querySelectorAll("#shifts-tbody tr[data-shift-id]");
     if (!rows.length) return S.state.shifts;
     var next = [];

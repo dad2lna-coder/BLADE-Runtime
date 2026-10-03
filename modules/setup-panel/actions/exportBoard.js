@@ -175,6 +175,7 @@ export function attachExportBoard(S) {
   };
 
   function hook() {
+    if (typeof document === "undefined") return;
     var btn = document.getElementById("btn-export-lines-excel");
     if (btn && !btn._boardHooked) {
       btn._boardHooked = true;
@@ -183,6 +184,8 @@ export function attachExportBoard(S) {
       });
     }
   }
-  document.addEventListener("DOMContentLoaded", hook);
-  hook();
+  if (typeof document !== "undefined") {
+    document.addEventListener("DOMContentLoaded", hook);
+    hook();
+  }
 }

@@ -18,6 +18,10 @@ import { attachRebalanceDfo } from "../utils/rebalanceDfo.js";
 import { attachSwapSex } from "../utils/swapSex.js";
 import { attachScheduleLocks } from "../utils/scheduleLocks.js";
 import { attachScheduleLocksUi } from "./scheduleLocksUi.js";
+import { attachGenerateModal } from "./generateModal.js";
+import { attachClassGenerate } from "../utils/classGenerate.js";
+import { attachParityReport } from "../utils/parityReport.js";
+import { attachDfoCertBalance } from "../utils/dfoCertBalance.js";
 
 function safeAttach(name, fn) {
   try {
@@ -46,6 +50,10 @@ export function bridgeScheduler(S) {
   safeAttach("attachSwapSex", function () { attachSwapSex(S); });
   safeAttach("attachScheduleLocks", function () { attachScheduleLocks(S); });
   safeAttach("attachScheduleLocksUi", function () { attachScheduleLocksUi(S); });
+  safeAttach("attachGenerateModal", function () { attachGenerateModal(S); });
+  safeAttach("attachClassGenerate", function () { attachClassGenerate(S); });
+  safeAttach("attachParityReport", function () { attachParityReport(S); });
+  safeAttach("attachDfoCertBalance", function () { attachDfoCertBalance(S); });
 
   safeAttach("rebuildSetupTab", function () {
     S.rebuildSetupTab = function () {
