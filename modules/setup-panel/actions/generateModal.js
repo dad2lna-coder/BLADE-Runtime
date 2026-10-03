@@ -142,8 +142,12 @@ export function renderTargetControls(S) {
     var curF = +t.F || 0;
     var curTotal = curM + curF;
 
-    var canIncM = sumM < hc.M;
-    var canIncF = sumF < hc.F;
+    var isTrain = classKey === "MSTI" || classKey === "ESTI";
+    var sumTotal = sumM + sumF;
+
+    var canIncM = !isTrain && (sumM < hc.M);
+    var canIncF = !isTrain && (sumF < hc.F);
+    var canIncTot = isTrain ? (sumTotal < hc.total) : (canIncM || canIncF);
 
     var labelTime = (s.start || "") + (s.end ? "–" + s.end : "");
     var shiftName = "<strong>" + (s.name || s.id) + "</strong>" + (labelTime ? ' <span class="muted">(' + labelTime + ")</span>" : "");
@@ -151,19 +155,19 @@ export function renderTargetControls(S) {
     return '<tr data-shift-id="' + s.id + '">' +
       '<td>' + shiftName + '</td>' +
       '<td style="text-align:center;white-space:nowrap">' +
-        '<button type="button" class="btn btn-sm btn-target-m-down" data-shift-id="' + s.id + '">-</button> ' +
+        '<button type="button" class="btn btn-sm btn-target-m-down" data-shift-id="' + s.id + '"' + (isTrain ? " disabled" : "") + '>-</button> ' +
         '<span style="display:inline-block;width:2rem;text-align:center;font-weight:600">' + curM + '</span> ' +
         '<button type="button" class="btn btn-sm btn-target-m-up" data-shift-id="' + s.id + '"' + (canIncM ? "" : " disabled") + '>+</button>' +
       '</td>' +
       '<td style="text-align:center;white-space:nowrap">' +
-        '<button type="button" class="btn btn-sm btn-target-f-down" data-shift-id="' + s.id + '">-</button> ' +
+        '<button type="button" class="btn btn-sm btn-target-f-down" data-shift-id="' + s.id + '"' + (isTrain ? " disabled" : "") + '>-</button> ' +
         '<span style="display:inline-block;width:2rem;text-align:center;font-weight:600">' + curF + '</span> ' +
         '<button type="button" class="btn btn-sm btn-target-f-up" data-shift-id="' + s.id + '"' + (canIncF ? "" : " disabled") + '>+</button>' +
       '</td>' +
       '<td style="text-align:center;white-space:nowrap">' +
         '<button type="button" class="btn btn-sm btn-target-tot-down" data-shift-id="' + s.id + '">-</button> ' +
         '<span style="display:inline-block;width:2.5rem;text-align:center;font-weight:700">' + curTotal + '</span> ' +
-        '<button type="button" class="btn btn-sm btn-target-tot-up" data-shift-id="' + s.id + '"' + ((canIncM || canIncF) ? "" : " disabled") + '>+</button>' +
+        '<button type="button" class="btn btn-sm btn-target-tot-up" data-shift-id="' + s.id + '"' + (canIncTot ? "" : " disabled") + '>+</button>' +
       '</td>' +
       '</tr>';
   }).join("");
@@ -211,7 +215,12 @@ export function renderTargetControls(S) {
   tbody.querySelectorAll(".btn-target-tot-up").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var sId = btn.getAttribute("data-shift-id");
-      if (sumM < hc.M) {
+      var isTrain = classKey === "MSTI" || classKey === "ESTI";
+      if (isTrain) {
+        if ((sumM + sumF) < hc.total) {
+          targets[sId].M++;
+        }
+      } else if (sumM < hc.M) {
         targets[sId].M++;
       } else if (sumF < hc.F) {
         targets[sId].F++;

@@ -80,6 +80,7 @@ export function proposeDfoCertBalance(S, classKey) {
 
   var workingCertCounts = Object.assign({}, shiftCertCounts);
   var proposals = [];
+  var usedReceiverIds = new Set();
 
   donorShifts.forEach(function (dShift) {
     var surplus = workingCertCounts[dShift.id] - avgCerts;
@@ -100,7 +101,7 @@ export function proposeDfoCertBalance(S, classKey) {
       for (var rIdx = 0; rIdx < availRecvShifts.length; rIdx++) {
         var candRShift = availRecvShifts[rIdx];
         var candRecv = lines.find(function (l) {
-          return l.shiftId === candRShift.id && (l.sex || "M") === candSex && !hasDfoCert(l) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
+          return l.shiftId === candRShift.id && (l.sex || "M") === candSex && !hasDfoCert(l) && !usedReceiverIds.has(l.id) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
         });
         if (candRecv) {
           matchedRecv = candRecv;
@@ -112,6 +113,8 @@ export function proposeDfoCertBalance(S, classKey) {
       if (!matchedRecv || !matchedRShift) {
         continue;
       }
+
+      usedReceiverIds.add(matchedRecv.id);
 
       proposals.push({
         donorLine: candDonor,

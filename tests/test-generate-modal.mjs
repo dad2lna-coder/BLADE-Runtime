@@ -297,3 +297,128 @@ test('TSO target generation spends PT and FT separately and creates PT lines', (
     assert.equal(l.paid, 4, 'PT line paid hours per day is 4');
   });
 });
+
+test('Fix 1: Locked STSO line counts toward class headcount and is preserved without duplication', () => {
+  const S = createMockScheduler();
+  S.state.shifts.forEach(s => { s.stsoForce = 0; });
+  S.generate();
+
+  const stsoLines = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
+  assert.equal(stsoLines.length, 4, 'Initial STSO lines = 4');
+
+  const lockedLine = stsoLines[0];
+  lockedLine.locked = true;
+  S.isLineScheduleLocked = (l) => l.id === lockedLine.id || l.locked === true;
+
+  // Re-generate STSO class
+  S.generateClass('STSO');
+
+  const stsoAfter = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
+  assert.equal(stsoAfter.length, 4, 'Total STSO lines still = 4');
+
+  const lockedAfter = stsoAfter.filter(l => l.id === lockedLine.id);
+  assert.equal(lockedAfter.length, 1, 'Locked line is present exactly once');
+  assert.equal(lockedAfter[0].shiftId, lockedLine.shiftId, 'Locked line shiftId preserved');
+});
+
+test('Fix 2: ESTI / MSTI generates exact count of training lines with function TRAINING', () => {
+  const S = createMockScheduler();
+  S.state.esti = 2;
+  S.state.msti = 1;
+
+  S.generateClass('ESTI');
+
+  const estiLines = S.state.lines.filter(l => S.belongsToClass(l, 'ESTI'));
+  assert.equal(estiLines.length, 2, 'Generated 2 ESTI training lines');
+  estiLines.forEach(l => {
+    assert.equal(l.isTraining, true, 'isTraining is true');
+    assert.equal(l.function, 'TRAINING', 'function is TRAINING');
+  });
+});
+
+test('Fix 3: EXTRA_* position line generation preserves opsFte from extraPositions', () => {
+  const S = createMockScheduler();
+  S.state.extraPositions = [
+    { id: 'extra-1', name: 'OPS_ADDON', m: 1, f: 0, opsFte: true, bands: [{ start: '04:00', end: '12:00', min: 1 }] }
+  ];
+
+  S.generateClass('EXTRA_extra-1');
+
+  const extraLines = S.state.lines.filter(l => S.belongsToClass(l, 'EXTRA_extra-1'));
+  assert.equal(extraLines.length, 1, 'Generated 1 extra line');
+  assert.equal(extraLines[0].opsFte, true, 'opsFte is preserved as true');
+});
+
+test('Fix 4: Shortfall line (duty "-") is excluded from DFO cert pool assignment', () => {
+  const S = createMockScheduler();
+  S.generate();
+
+  // Targets below headcount to create shortfall line
+  const targets = { S1: { M: 1, F: 1 }, S2: { M: 0, F: 1 } }; // 1 M shortfall
+  S.generateClass('STSO', targets);
+
+  const shortfallLines = S.state.lines.filter(l => S.belongsToClass(l, 'STSO') && (l.isShortfall || l.function === '-'));
+  assert.ok(shortfallLines.length > 0, 'Shortfall line present');
+
+  shortfallLines.forEach(l => {
+    assert.notEqual(l.certPool, 'B', 'Shortfall line never receives certPool B');
+    assert.equal(l.function, '-', 'Shortfall duty is "-"');
+  });
+});
+
+test('Fix 5: DFO cert balance proposal ensures two donor lines do not share one receiver line', () => {
+  const S = createMockScheduler();
+  S.generate();
+
+  const stsoLines = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
+  if (stsoLines.length >= 4) {
+    // S1 has 2 female lines with DFO certs (donors)
+    stsoLines[0].shiftId = 'S1'; stsoLines[0].sex = 'F'; stsoLines[0].certPool = 'B'; stsoLines[0].function = 'DFO';
+    stsoLines[1].shiftId = 'S1'; stsoLines[1].sex = 'F'; stsoLines[1].certPool = 'B'; stsoLines[1].function = 'DFO';
+
+    // S2 has 2 female lines without DFO certs (receivers)
+    stsoLines[2].shiftId = 'S2'; stsoLines[2].sex = 'F'; stsoLines[2].certPool = 'A'; stsoLines[2].function = 'PAX';
+    stsoLines[3].shiftId = 'S2'; stsoLines[3].sex = 'F'; stsoLines[3].certPool = 'A'; stsoLines[3].function = 'PAX';
+
+    const res = S.proposeDfoCertBalance('STSO');
+    assert.equal(res.mode, 'cert_move', 'Mode is cert_move');
+
+    const receiverIds = res.proposals.map(p => p.receiverLine.id);
+    const uniqueReceivers = new Set(receiverIds);
+    assert.equal(receiverIds.length, uniqueReceivers.size, 'No two donors share the same receiver line');
+  }
+});
+
+test('Fix 6: Approving RDO parity swap rebuilds functionRotation so duty days follow new RDOs', () => {
+  const S = createMockScheduler();
+  S.generate();
+
+  const stsoS1 = S.state.lines.filter(l => S.belongsToClass(l, 'STSO') && l.shiftId === 'S1');
+  if (stsoS1.length >= 2) {
+    const lA = stsoS1[0];
+    const lB = stsoS1[1];
+
+    lA.rdoDays = [0, 6]; // Sat-Sun off
+    lB.rdoDays = [1, 2]; // Mon-Tue off
+
+    S.state.schedule[lA.id] = S.buildScheduleForLine(lA, 7);
+    S.state.schedule[lB.id] = S.buildScheduleForLine(lB, 7);
+
+    // Swap RDOs
+    const newRdoA = [1, 2];
+    const newRdoB = [0, 6];
+
+    S.approveParitySwaps([{
+      lineAId: lA.id,
+      lineBId: lB.id,
+      rdoA_after: newRdoA,
+      rdoB_after: newRdoB
+    }]);
+
+    const rotA = S.state.functionRotation[lA.id];
+    assert.ok(rotA, 'Rotation A updated');
+    assert.equal(rotA[1], 'OFF', 'Day 1 is OFF after RDO swap');
+    assert.equal(rotA[2], 'OFF', 'Day 2 is OFF after RDO swap');
+    assert.notEqual(rotA[0], 'OFF', 'Day 0 is WORK duty after RDO swap');
+  }
+});

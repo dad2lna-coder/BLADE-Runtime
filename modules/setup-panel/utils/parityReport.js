@@ -167,6 +167,24 @@ export function approveParitySwaps(S, swapPairs) {
         S.state.schedule[lA.id] = S.buildScheduleForLine(lA, days);
         S.state.schedule[lB.id] = S.buildScheduleForLine(lB, days);
       }
+
+      // Rebuild functionRotation so duty days follow new work / RDO days
+      if (S.state.functionRotation) {
+        var rotA = [];
+        var rotB = [];
+        var schedA = S.state.schedule[lA.id] || [];
+        var schedB = S.state.schedule[lB.id] || [];
+        var dutyA = lA.function || "PAX";
+        var dutyB = lB.function || "PAX";
+
+        for (var d = 0; d < days; d++) {
+          rotA[d] = schedA[d] === "WORK" ? dutyA : "OFF";
+          rotB[d] = schedB[d] === "WORK" ? dutyB : "OFF";
+        }
+        S.state.functionRotation[lA.id] = rotA;
+        S.state.functionRotation[lB.id] = rotB;
+      }
+
       count++;
     }
   });
