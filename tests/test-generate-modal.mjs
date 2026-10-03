@@ -422,3 +422,83 @@ test('Fix 6: Approving RDO parity swap rebuilds functionRotation so duty days fo
     assert.notEqual(rotA[0], 'OFF', 'Day 0 is WORK duty after RDO swap');
   }
 });
+
+test('Modal-5 Test 1: Stepping locked male STSO seat onto another shift does not exceed entered male headcount', () => {
+  const S = createMockScheduler();
+  S.state.stsoM = 2; S.state.stsoF = 2;
+  S.generate();
+
+  const stsoLines = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
+  let s1Male = stsoLines.find(l => l.shiftId === 'S1' && l.sex === 'M');
+  if (!s1Male) {
+    const s1Line = stsoLines.find(l => l.shiftId === 'S1') || stsoLines[0];
+    s1Line.shiftId = 'S1';
+    s1Line.sex = 'M';
+    s1Male = s1Line;
+  }
+
+  s1Male.locked = true;
+  S.isLineScheduleLocked = (l) => l.id === s1Male.id || l.locked === true;
+
+  // Step male target onto S2: S1: { M: 0, F: 1 }, S2: { M: 2, F: 1 }
+  const targets = {
+    S1: { M: 0, F: 1 },
+    S2: { M: 2, F: 1 }
+  };
+
+  S.generateClass('STSO', targets);
+
+  const stsoAfter = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
+  const malesAfter = stsoAfter.filter(l => l.sex === 'M');
+  assert.equal(malesAfter.length, 2, 'Male STSO count strictly equals entered headcount of 2');
+
+  const lockedCopies = stsoAfter.filter(l => l.id === s1Male.id);
+  assert.equal(lockedCopies.length, 1, 'Locked line is present exactly once');
+});
+
+test('Modal-5 Test 2: ESTI total 2 from fresh grid generates 2 TRAINING lines', () => {
+  const S = createMockScheduler();
+  S.state.esti = 2;
+
+  // Fresh grid targets initialization
+  const targets = S.initPerShiftTargetsForClass ? S.initPerShiftTargetsForClass('ESTI') : { S1: { M: 1, F: 0 }, S2: { M: 1, F: 0 } };
+
+  S.generateClass('ESTI', targets);
+
+  const estiLines = S.state.lines.filter(l => S.belongsToClass(l, 'ESTI'));
+  assert.equal(estiLines.length, 2, 'Generated exactly 2 ESTI lines');
+  estiLines.forEach(l => {
+    assert.equal(l.function, 'TRAINING', 'Function is TRAINING, not shortfall "-"');
+    assert.equal(l.isTraining, true, 'isTraining is true');
+  });
+});
+
+test('Modal-5 Test 3: Locked STSO id 10001 plus new lines results in all unique IDs', () => {
+  const S = createMockScheduler();
+  S.state.stsoM = 2; S.state.stsoF = 1; // Total 3 lines
+
+  const lockedLine = {
+    id: 10001,
+    lineCode: 'STSO 002',
+    shiftId: 'S1',
+    empClass: 'STSO',
+    position: 'STSO',
+    isStso: true,
+    sex: 'M',
+    function: 'PAX',
+    rdoDays: [0, 6],
+    locked: true
+  };
+
+  S.state.lines = [lockedLine];
+  S.isLineScheduleLocked = (l) => l.id === 10001 || l.locked === true;
+
+  S.generateClass('STSO');
+
+  const stsoLines = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
+  assert.equal(stsoLines.length, 3, 'Total STSO lines = 3');
+
+  const ids = stsoLines.map(l => l.id);
+  const uniqueIds = new Set(ids);
+  assert.equal(ids.length, uniqueIds.size, 'All STSO line IDs are unique (no duplicates of 10001)');
+});

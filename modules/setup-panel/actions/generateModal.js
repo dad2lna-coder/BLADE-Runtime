@@ -70,15 +70,26 @@ export function initPerShiftTargetsForClass(S, classKey) {
   } else {
     var hc = S.getClassHeadcount ? S.getClassHeadcount(classKey) : { M: 0, F: 0, total: 0 };
     if (shifts.length > 0) {
-      var mM = hc.M, mF = hc.F;
-      for (var i = 0; i < shifts.length; i++) {
-        var sId = shifts[i].id;
-        var takeM = Math.floor(mM / (shifts.length - i));
-        var takeF = Math.floor(mF / (shifts.length - i));
-        targets[sId].M = takeM;
-        targets[sId].F = takeF;
-        mM -= takeM;
-        mF -= takeF;
+      var isTrain = classKey === "MSTI" || classKey === "ESTI";
+      if (isTrain) {
+        var remTrain = hc.total;
+        for (var k = 0; k < shifts.length; k++) {
+          var trShiftId = shifts[k].id;
+          var takeTr = Math.floor(remTrain / (shifts.length - k));
+          targets[trShiftId].M = takeTr;
+          remTrain -= takeTr;
+        }
+      } else {
+        var mM = hc.M, mF = hc.F;
+        for (var i = 0; i < shifts.length; i++) {
+          var sId = shifts[i].id;
+          var takeM = Math.floor(mM / (shifts.length - i));
+          var takeF = Math.floor(mF / (shifts.length - i));
+          targets[sId].M = takeM;
+          targets[sId].F = takeF;
+          mM -= takeM;
+          mF -= takeF;
+        }
       }
     }
   }
