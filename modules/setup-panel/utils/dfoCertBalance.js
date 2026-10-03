@@ -1,0 +1,210 @@
+/** DFO Cert Balance & Baggage Day Reshuffle Engine.
+ *  Handles same-sex DFO cert moves when shift cert counts differ (lines never move),
+ *  or baggage day reshuffles when shift cert counts match.
+ */
+
+export function getDfoCertLinesForClass(S, classKey) {
+  var lines = (S && S.state && S.state.lines) || [];
+  return lines.filter(function (l) {
+    if (!l) return false;
+    var isExtra = !!(l.isExtra || l.extraPositionId);
+    var isTraining = !!(l.isTraining || l.trainingClass || l.empClass === "ESTI" || l.empClass === "MSTI");
+    if (isExtra || isTraining) return false;
+
+    if (classKey === "STSO") return l.isStso || l.empClass === "STSO" || l.position === "STSO";
+    if (classKey === "LTSO") return l.isLtso || l.empClass === "LTSO" || l.position === "LTSO";
+    if (classKey === "TSO") return !l.isStso && !l.isLtso && l.empClass !== "STSO" && l.empClass !== "LTSO";
+    return S.belongsToClass ? S.belongsToClass(l, classKey) : true;
+  });
+}
+
+export function hasDfoCert(line) {
+  if (!line) return false;
+  if (line.certPool === "B" || line.function === "DFO") return true;
+  return false;
+}
+
+export function proposeDfoCertBalance(S, classKey) {
+  if (!S || !S.state) return { mode: "none", proposals: [], summary: "No Scheduler state" };
+
+  var lines = getDfoCertLinesForClass(S, classKey);
+  var shifts = S.state.shifts || [];
+
+  if (!lines.length || !shifts.length) {
+    return { mode: "none", proposals: [], summary: "No lines or shifts found for class " + classKey };
+  }
+
+  // Count DFO certs per shift for this class
+  var shiftCertCounts = {};
+  var shiftTotalLines = {};
+  shifts.forEach(function (s) {
+    shiftCertCounts[s.id] = 0;
+    shiftTotalLines[s.id] = 0;
+  });
+
+  lines.forEach(function (l) {
+    if (!l.shiftId || shiftCertCounts[l.shiftId] == null) return;
+    shiftTotalLines[l.shiftId]++;
+    if (hasDfoCert(l)) {
+      shiftCertCounts[l.shiftId]++;
+    }
+  });
+
+  // Check if active shifts with lines have differing DFO cert counts
+  var activeShifts = shifts.filter(function (s) { return shiftTotalLines[s.id] > 0; });
+  if (!activeShifts.length) {
+    return { mode: "none", proposals: [], summary: "No active lines on shifts for class " + classKey };
+  }
+
+  var certCountsList = activeShifts.map(function (s) { return shiftCertCounts[s.id]; });
+  var minCerts = Math.min.apply(null, certCountsList);
+  var maxCerts = Math.max.apply(null, certCountsList);
+
+  var certsMatch = minCerts === maxCerts;
+
+  if (certsMatch) {
+    // Branch B: Cert counts already match! Propose baggage day reshuffle
+    return {
+      mode: "baggage_reshuffle",
+      certsMatch: true,
+      certCountPerShift: minCerts,
+      proposals: [],
+      summary: "DFO cert counts already match across shifts (" + minCerts + " certs/shift). Proposed fix: Reshuffle baggage duty days."
+    };
+  }
+
+  // Branch A: Cert counts differ! Propose moving DFO certs between same-sex people across shifts (lines stay put)
+  var avgCerts = Math.round(certCountsList.reduce(function (a, b) { return a + b; }, 0) / certCountsList.length);
+  var donorShifts = activeShifts.filter(function (s) { return shiftCertCounts[s.id] > avgCerts; });
+  var receiverShifts = activeShifts.filter(function (s) { return shiftCertCounts[s.id] < avgCerts; });
+
+  var workingCertCounts = Object.assign({}, shiftCertCounts);
+  var proposals = [];
+
+  donorShifts.forEach(function (dShift) {
+    var surplus = workingCertCounts[dShift.id] - avgCerts;
+    var donorCertLines = lines.filter(function (l) {
+      return l.shiftId === dShift.id && hasDfoCert(l) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
+    });
+
+    while (surplus > 0 && donorCertLines.length > 0) {
+      var rShift = receiverShifts.find(function (rs) { return workingCertCounts[rs.id] < avgCerts; });
+      if (!rShift) break;
+
+      var donorLine = null;
+      var recvLine = null;
+
+      // Try finding a donor line that has a same-sex receiver line on rShift
+      for (var dIdx = 0; dIdx < donorCertLines.length; dIdx++) {
+        var candDonor = donorCertLines[dIdx];
+        var candSex = candDonor.sex || "M";
+        var candRecv = lines.find(function (l) {
+          return l.shiftId === rShift.id && (l.sex || "M") === candSex && !hasDfoCert(l) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
+        });
+        if (candRecv) {
+          donorLine = candDonor;
+          recvLine = candRecv;
+          break;
+        }
+      }
+
+      if (!donorLine || !recvLine) {
+        donorLine = donorCertLines[0];
+        recvLine = lines.find(function (l) {
+          return l.shiftId === rShift.id && !hasDfoCert(l) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
+        });
+      }
+
+      if (!donorLine || !recvLine) break;
+
+      var matchedSex = donorLine.sex || "M";
+
+      proposals.push({
+        donorLine: donorLine,
+        receiverLine: recvLine,
+        sex: matchedSex,
+        donorShift: dShift,
+        receiverShift: rShift,
+        note: "Move DFO cert from " + (donorLine.lineCode || donorLine.id) + " (" + dShift.name + ") to " + (recvLine.lineCode || recvLine.id) + " (" + rShift.name + "). Lines do not move."
+      });
+
+      donorCertLines = donorCertLines.filter(function (l) { return l.id !== donorLine.id; });
+      workingCertCounts[dShift.id]--;
+      workingCertCounts[rShift.id]++;
+      surplus--;
+    }
+  });
+
+  var summaryMsg = "DFO cert counts differ between shifts (" + minCerts + " to " + maxCerts + "). Proposed fix: Move DFO certs between same-sex lines across shifts (lines stay on original shifts).";
+
+  return {
+    mode: "cert_move",
+    certsMatch: false,
+    proposals: proposals,
+    summary: summaryMsg
+  };
+}
+
+export function approveDfoCertBalance(S, propResult, selectedProposals) {
+  if (!S || !S.state || !propResult) return false;
+
+  if (propResult.mode === "baggage_reshuffle") {
+    // Run baggage day reshuffle
+    if (S.readFunctionCoverageFromDom) S.readFunctionCoverageFromDom();
+    var fc = S.ensureFunctionCoverage ? S.ensureFunctionCoverage() : S.state.functionCoverage;
+    var days = (S.state.weekCount || 1) * 7;
+    if (S.resolveBagDuties) {
+      S.resolveBagDuties(fc, days);
+    }
+    if (S.updateStatus) S.updateStatus("Approved baggage day reshuffle.");
+    return true;
+  }
+
+  if (propResult.mode === "cert_move") {
+    var props = Array.isArray(selectedProposals) && selectedProposals.length ? selectedProposals : propResult.proposals;
+    if (!props || !props.length) return false;
+
+    var lines = S.state.lines || [];
+    var count = 0;
+
+    props.forEach(function (p) {
+      var dLine = lines.find(function (l) { return String(l.id) === String(p.donorLine.id); });
+      var rLine = lines.find(function (l) { return String(l.id) === String(p.receiverLine.id); });
+      if (!dLine || !rLine) return;
+
+      // Swap DFO cert status between dLine and rLine (SAME SEX, SHIFTS DO NOT MOVE)
+      dLine.certPool = "A";
+      dLine.function = "PAX";
+      if (dLine.functionEligible) { dLine.functionEligible.dfo = false; dLine.functionEligible.pax = true; }
+
+      rLine.certPool = "B";
+      rLine.function = "DFO";
+      if (rLine.functionEligible) { rLine.functionEligible.dfo = true; rLine.functionEligible.pax = false; }
+
+      count++;
+    });
+
+    if (count > 0) {
+      // Re-run baggage day rotation
+      if (S.resolveBagDuties) {
+        var fc2 = S.ensureFunctionCoverage ? S.ensureFunctionCoverage() : S.state.functionCoverage;
+        var days2 = (S.state.weekCount || 1) * 7;
+        S.resolveBagDuties(fc2, days2);
+      }
+      if (S.updateStatus) S.updateStatus("Approved " + count + " same-sex DFO cert move(s). Lines remained in place.");
+      if (S.renderAll) S.renderAll();
+      if (S.__USE_SVELTE_LINES && typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("lines:request-render"));
+      } else if (S.renderLines) S.renderLines();
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function attachDfoCertBalance(S) {
+  if (!S) return;
+  S.proposeDfoCertBalance = function (classKey) { return proposeDfoCertBalance(S, classKey); };
+  S.approveDfoCertBalance = function (propResult, selectedProposals) { return approveDfoCertBalance(S, propResult, selectedProposals); };
+}

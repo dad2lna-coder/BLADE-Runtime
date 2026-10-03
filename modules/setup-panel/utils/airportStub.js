@@ -21,7 +21,7 @@ export function attachAirportStub(S) {
   S.importAirfieldFile = function () {
     if (S.updateStatus) S.updateStatus("Airfield import removed — rebuild that module.");
   };
-  var btn = document.getElementById("btn-airport-config");
+  var btn = typeof document !== "undefined" ? document.getElementById("btn-airport-config") : null;
   if (btn && !btn._setupStub) {
     btn._setupStub = true;
     btn.addEventListener("click", function () {

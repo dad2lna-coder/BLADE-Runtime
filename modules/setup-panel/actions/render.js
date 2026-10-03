@@ -869,7 +869,8 @@ export function bindSetupActions(S) {
 
   bindOnce(document.getElementById("btn-generate"), "click", function (e) {
     e.preventDefault();
-    if (S.generate) S.generate();
+    if (S.openGenerateModal) S.openGenerateModal();
+    else if (S.generate) S.generate();
   });
   bindOnce(document.getElementById("btn-export"), "click", function (e) {
     e.preventDefault();

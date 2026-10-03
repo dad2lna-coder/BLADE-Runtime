@@ -199,9 +199,9 @@ export function attachLineHelpers(S) {
   };
   S.renderLines = function () {
     if (S.applyExportCssVars) S.applyExportCssVars();
-    var root = document.getElementById("lines-table-root");
+    var root = typeof document !== "undefined" ? document.getElementById("lines-table-root") : null;
     if (root && typeof root.refresh === "function") root.refresh();
-    else window.dispatchEvent(new CustomEvent("lines:request-render"));
+    else if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("lines:request-render"));
   };
   S.bindLinesUI = function () {
     if (S._linesUIBound) return;

@@ -10,14 +10,15 @@ export function syncHoursFromAirfield(S) {
   const cfg = S.getAirportConfig && S.getAirportConfig();
   const open = (cfg && cfg.startTime) || "03:30";
   const close = (cfg && cfg.endTime) || "23:00";
-  let o = document.getElementById("cfg-open");
-  let c = document.getElementById("cfg-close");
+  let o = typeof document !== "undefined" ? document.getElementById("cfg-open") : null;
+  let c = typeof document !== "undefined" ? document.getElementById("cfg-close") : null;
   if (o) o.value = open;
   if (c) c.value = close;
   if (S.state) { S.state.open = open; S.state.close = close; }
 }
 
 export function ensureStyles() {
+  if (typeof document === "undefined") return;
   if (document.getElementById("setup-panel-css")) return;
   const link = document.createElement("link");
   link.id = "setup-panel-css";
