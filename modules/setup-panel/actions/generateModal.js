@@ -681,6 +681,7 @@ export function attachGenerateModal(S) {
   S.getModalClassOptions = function () { return getModalClassOptions(S); };
   S.renderClassButtons = function () { renderClassButtons(S); };
   S.renderTargetControls = function () { renderTargetControls(S); };
+  S.initPerShiftTargetsForClass = function (classKey) { return initPerShiftTargetsForClass(S, classKey); };
   S.renderWeekdayBandsMatrix = function () { renderWeekdayBandsMatrix(S); };
   S.renderParityReportSection = function () { renderParityReportSection(S); };
   S.renderDfoSection = function () { renderDfoSection(S); };

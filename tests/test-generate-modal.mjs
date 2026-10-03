@@ -370,57 +370,89 @@ test('Fix 5: DFO cert balance proposal ensures two donor lines do not share one 
   const S = createMockScheduler();
   S.generate();
 
-  const stsoLines = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
-  if (stsoLines.length >= 4) {
-    // S1 has 2 female lines with DFO certs (donors)
-    stsoLines[0].shiftId = 'S1'; stsoLines[0].sex = 'F'; stsoLines[0].certPool = 'B'; stsoLines[0].function = 'DFO';
-    stsoLines[1].shiftId = 'S1'; stsoLines[1].sex = 'F'; stsoLines[1].certPool = 'B'; stsoLines[1].function = 'DFO';
+  S.state.lines = [];
 
-    // S2 has 2 female lines without DFO certs (receivers)
-    stsoLines[2].shiftId = 'S2'; stsoLines[2].sex = 'F'; stsoLines[2].certPool = 'A'; stsoLines[2].function = 'PAX';
-    stsoLines[3].shiftId = 'S2'; stsoLines[3].sex = 'F'; stsoLines[3].certPool = 'A'; stsoLines[3].function = 'PAX';
-
-    const res = S.proposeDfoCertBalance('STSO');
-    assert.equal(res.mode, 'cert_move', 'Mode is cert_move');
-
-    const receiverIds = res.proposals.map(p => p.receiverLine.id);
-    const uniqueReceivers = new Set(receiverIds);
-    assert.equal(receiverIds.length, uniqueReceivers.size, 'No two donors share the same receiver line');
+  // Create 4 female lines on S1 with DFO certs (donors) and 4 female lines on S2 without certs (receivers)
+  for (let i = 0; i < 4; i++) {
+    S.state.lines.push({
+      id: 10000 + i,
+      lineCode: 'STSO ' + String(10000 + i),
+      shiftId: 'S1',
+      empClass: 'STSO', position: 'STSO', isStso: true, sex: 'F',
+      certPool: 'B', function: 'DFO', rdoDays: [0, 6]
+    });
   }
+  for (let j = 0; j < 4; j++) {
+    S.state.lines.push({
+      id: 20000 + j,
+      lineCode: 'STSO ' + String(20000 + j),
+      shiftId: 'S2',
+      empClass: 'STSO', position: 'STSO', isStso: true, sex: 'F',
+      certPool: 'A', function: 'PAX', rdoDays: [0, 6]
+    });
+  }
+
+  const res = S.proposeDfoCertBalance('STSO');
+  assert.equal(res.mode, 'cert_move', 'Mode is cert_move');
+  assert.equal(res.proposals.length, 2, 'Exactly 2 proposals generated');
+
+  const receiverIds = res.proposals.map(p => p.receiverLine.id);
+  const uniqueReceivers = new Set(receiverIds);
+  assert.equal(receiverIds.length, 2, '2 receiver IDs generated');
+  assert.equal(uniqueReceivers.size, 2, 'No two donors share the same receiver line');
 });
 
 test('Fix 6: Approving RDO parity swap rebuilds functionRotation so duty days follow new RDOs', () => {
   const S = createMockScheduler();
   S.generate();
 
-  const stsoS1 = S.state.lines.filter(l => S.belongsToClass(l, 'STSO') && l.shiftId === 'S1');
-  if (stsoS1.length >= 2) {
-    const lA = stsoS1[0];
-    const lB = stsoS1[1];
-
-    lA.rdoDays = [0, 6]; // Sat-Sun off
-    lB.rdoDays = [1, 2]; // Mon-Tue off
-
-    S.state.schedule[lA.id] = S.buildScheduleForLine(lA, 7);
-    S.state.schedule[lB.id] = S.buildScheduleForLine(lB, 7);
-
-    // Swap RDOs
-    const newRdoA = [1, 2];
-    const newRdoB = [0, 6];
-
-    S.approveParitySwaps([{
-      lineAId: lA.id,
-      lineBId: lB.id,
-      rdoA_after: newRdoA,
-      rdoB_after: newRdoB
-    }]);
-
-    const rotA = S.state.functionRotation[lA.id];
-    assert.ok(rotA, 'Rotation A updated');
-    assert.equal(rotA[1], 'OFF', 'Day 1 is OFF after RDO swap');
-    assert.equal(rotA[2], 'OFF', 'Day 2 is OFF after RDO swap');
-    assert.notEqual(rotA[0], 'OFF', 'Day 0 is WORK duty after RDO swap');
+  let stsoS1 = S.state.lines.filter(l => S.belongsToClass(l, 'STSO') && l.shiftId === 'S1');
+  while (stsoS1.length < 2) {
+    const id = 10000 + S.state.lines.length;
+    const l = {
+      id: id,
+      lineCode: 'STSO ' + String(id).padStart(3, '0'),
+      shiftId: 'S1',
+      empClass: 'STSO',
+      position: 'STSO',
+      isStso: true,
+      sex: stsoS1.length === 0 ? 'F' : 'M',
+      function: 'PAX',
+      rdoDays: [0, 6]
+    };
+    S.state.lines.push(l);
+    stsoS1.push(l);
   }
+
+  const lA = stsoS1[0];
+  const lB = stsoS1[1];
+
+  lA.sex = 'F';
+  lB.sex = 'M';
+  lA.rdoDays = [0, 6]; // Sat-Sun off
+  lB.rdoDays = [1, 2]; // Mon-Tue off
+
+  S.state.schedule[lA.id] = S.buildScheduleForLine(lA, 7);
+  S.state.schedule[lB.id] = S.buildScheduleForLine(lB, 7);
+
+  // Swap RDOs
+  const newRdoA = [1, 2];
+  const newRdoB = [0, 6];
+
+  const ok = S.approveParitySwaps([{
+    lineAId: lA.id,
+    lineBId: lB.id,
+    rdoA_after: newRdoA,
+    rdoB_after: newRdoB
+  }]);
+
+  assert.equal(ok, true, 'Parity swap approved');
+
+  const rotA = S.state.functionRotation[lA.id];
+  assert.ok(rotA, 'Rotation A updated');
+  assert.equal(rotA[1], 'OFF', 'Day 1 is OFF after RDO swap');
+  assert.equal(rotA[2], 'OFF', 'Day 2 is OFF after RDO swap');
+  assert.notEqual(rotA[0], 'OFF', 'Day 0 is WORK duty after RDO swap');
 });
 
 test('Modal-5 Test 1: Stepping locked male STSO seat onto another shift does not exceed entered male headcount', () => {
@@ -460,8 +492,13 @@ test('Modal-5 Test 2: ESTI total 2 from fresh grid generates 2 TRAINING lines', 
   const S = createMockScheduler();
   S.state.esti = 2;
 
-  // Fresh grid targets initialization
-  const targets = S.initPerShiftTargetsForClass ? S.initPerShiftTargetsForClass('ESTI') : { S1: { M: 1, F: 0 }, S2: { M: 1, F: 0 } };
+  // Fresh grid targets initialization directly via initPerShiftTargetsForClass
+  const targets = S.initPerShiftTargetsForClass('ESTI');
+  assert.ok(targets, 'initPerShiftTargetsForClass returned targets');
+
+  // Verify fresh grid initialized non-zero targets for ESTI summing to 2
+  const sumTargets = Object.values(targets).reduce((acc, t) => acc + (+t.M || 0) + (+t.F || 0), 0);
+  assert.equal(sumTargets, 2, 'Fresh grid initialized targets sum to ESTI total 2');
 
   S.generateClass('ESTI', targets);
 
