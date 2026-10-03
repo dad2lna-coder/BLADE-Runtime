@@ -15,6 +15,7 @@ function createMockScheduler() {
       close: '23:00',
       ftM: 4, ftF: 4,
       ptM: 0, ptF: 0,
+      ptHoursPerDay: 4,
       stsoM: 2, stsoF: 2,
       ltsoM: 1, ltsoF: 1,
       esti: 0, msti: 0,
@@ -118,7 +119,6 @@ test('RDO Parity check detects pattern imbalance and proposes approve-first swap
   S.generate();
 
   // Create explicit imbalance on S1 for STSO:
-  // Find two STSO lines on S1 of different sexes
   const stsoS1 = S.state.lines.filter(l => S.belongsToClass(l, 'STSO') && l.shiftId === 'S1');
   if (stsoS1.length >= 2) {
     stsoS1[0].sex = 'F';
@@ -137,7 +137,6 @@ test('RDO Parity check detects pattern imbalance and proposes approve-first swap
 
     const lineAId = prop.lineA.id;
     const lineBId = prop.lineB.id;
-    const oldRdoA = [...prop.lineA.rdoDays];
 
     // Approve parity swap
     S.approveParitySwaps([{
@@ -190,6 +189,42 @@ test('DFO cert balance proposes same-sex cert move when cert counts differ witho
   }
 });
 
+test('DFO cert balance refuses cross-sex proposal and skips move if no same-sex receiver exists', () => {
+  const S = createMockScheduler();
+  S.generate();
+
+  const stsoLines = S.state.lines.filter(l => S.belongsToClass(l, 'STSO'));
+  if (stsoLines.length >= 2) {
+    // S1 has 1 Female line with DFO cert
+    stsoLines[0].shiftId = 'S1'; stsoLines[0].sex = 'F'; stsoLines[0].certPool = 'B'; stsoLines[0].function = 'DFO';
+    // S2 has ONLY Male lines without DFO cert
+    stsoLines[1].shiftId = 'S2'; stsoLines[1].sex = 'M'; stsoLines[1].certPool = 'A'; stsoLines[1].function = 'PAX';
+    for (let i = 2; i < stsoLines.length; i++) {
+      stsoLines[i].shiftId = 'S1'; stsoLines[i].sex = 'M'; stsoLines[i].certPool = 'A'; stsoLines[i].function = 'PAX';
+    }
+
+    const res = S.proposeDfoCertBalance('STSO');
+    // Since S2 has no Female line, same-sex move cannot be proposed
+    const crossSexProps = res.proposals.filter(p => p.donorLine.sex !== p.receiverLine.sex);
+    assert.equal(crossSexProps.length, 0, 'No cross-sex move proposals created');
+
+    // Test approveDfoCertBalance explicitly refusing a cross-sex proposal
+    const fakeCrossSexProp = {
+      donorLine: stsoLines[0], // Female
+      receiverLine: stsoLines[1], // Male
+      sex: 'F',
+      donorShift: S.getShift('S1'),
+      receiverShift: S.getShift('S2')
+    };
+
+    const approved = S.approveDfoCertBalance({ mode: 'cert_move', proposals: [fakeCrossSexProp] }, [fakeCrossSexProp]);
+    assert.equal(approved, false, 'approveDfoCertBalance refused cross-sex proposal');
+    assert.equal(stsoLines[0].shiftId, 'S1', 'Donor shiftId unchanged');
+    assert.equal(stsoLines[1].shiftId, 'S2', 'Receiver shiftId unchanged');
+    assert.equal(stsoLines[1].certPool, 'A', 'Receiver certPool unchanged');
+  }
+});
+
 test('DFO cert balance proposes baggage reshuffle when cert counts match', () => {
   const S = createMockScheduler();
   S.generate();
@@ -208,4 +243,31 @@ test('DFO cert balance proposes baggage reshuffle when cert counts match', () =>
 
   const ok = S.approveDfoCertBalance(res, []);
   assert.equal(ok, true, 'Baggage reshuffle approved successfully');
+});
+
+test('TSO target generation spends PT and FT separately and creates PT lines', () => {
+  const S = createMockScheduler();
+  S.state.ftM = 2; S.state.ftF = 2;
+  S.state.ptM = 2; S.state.ptF = 2;
+
+  const targets = {
+    S1: { M: 3, F: 3 },
+    S2: { M: 1, F: 1 }
+  };
+
+  S.generateClass('TSO', targets);
+
+  const tsoLines = S.state.lines.filter(l => S.belongsToClass(l, 'TSO'));
+  assert.equal(tsoLines.length, 8, 'Total TSO lines generated = 8');
+
+  const ptLines = tsoLines.filter(l => l.empClass === 'PT');
+  const ftLines = tsoLines.filter(l => l.empClass === 'FT');
+
+  assert.equal(ptLines.length, 4, 'Exactly 4 PT lines generated (2 M PT, 2 F PT)');
+  assert.equal(ftLines.length, 4, 'Exactly 4 FT lines generated (2 M FT, 2 F FT)');
+
+  ptLines.forEach(l => {
+    assert.notEqual(l.empClass, 'FT', 'PT line is never marked as FT');
+    assert.equal(l.paid, 4, 'PT line paid hours per day is 4');
+  });
 });

@@ -108,14 +108,11 @@ export function proposeDfoCertBalance(S, classKey) {
         }
       }
 
+      // Strict same-sex requirement: if no same-sex receiver exists, skip this move!
       if (!donorLine || !recvLine) {
-        donorLine = donorCertLines[0];
-        recvLine = lines.find(function (l) {
-          return l.shiftId === rShift.id && !hasDfoCert(l) && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
-        });
+        donorCertLines.shift();
+        continue;
       }
-
-      if (!donorLine || !recvLine) break;
 
       var matchedSex = donorLine.sex || "M";
 
@@ -172,6 +169,15 @@ export function approveDfoCertBalance(S, propResult, selectedProposals) {
       var rLine = lines.find(function (l) { return String(l.id) === String(p.receiverLine.id); });
       if (!dLine || !rLine) return;
 
+      // Refuse pair if sexes differ
+      if ((dLine.sex || "M") !== (rLine.sex || "M")) {
+        if (S.state && S.state.issues) S.state.issues.push("Refused DFO cert move between different sexes (" + dLine.sex + " vs " + rLine.sex + ")");
+        return;
+      }
+
+      var dShiftOriginal = dLine.shiftId;
+      var rShiftOriginal = rLine.shiftId;
+
       // Swap DFO cert status between dLine and rLine (SAME SEX, SHIFTS DO NOT MOVE)
       dLine.certPool = "A";
       dLine.function = "PAX";
@@ -180,6 +186,10 @@ export function approveDfoCertBalance(S, propResult, selectedProposals) {
       rLine.certPool = "B";
       rLine.function = "DFO";
       if (rLine.functionEligible) { rLine.functionEligible.dfo = true; rLine.functionEligible.pax = false; }
+
+      // Confirm shiftId is unchanged
+      dLine.shiftId = dShiftOriginal;
+      rLine.shiftId = rShiftOriginal;
 
       count++;
     });

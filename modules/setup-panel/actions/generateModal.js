@@ -3,6 +3,7 @@
  */
 import { getBandKey } from "../utils/buildLines.js";
 import { formatRdos } from "../utils/rebalanceDfo.js";
+import { parseStartDate, addDays, weekdaySun0 } from "../../shared/utils/dates.js";
 
 export function getModalClassOptions(S) {
   var options = [
@@ -258,6 +259,8 @@ export function renderWeekdayBandsMatrix(S) {
     return;
   }
 
+  var baseDate = parseStartDate(S.state ? S.state.startDate : null);
+
   var bandKeys = [];
   var seenBands = {};
 
@@ -279,18 +282,28 @@ export function renderWeekdayBandsMatrix(S) {
 
   lines.forEach(function (line) {
     if (!line || !line.shiftId) return;
+    if (line.isShortfall || line.function === "-") return;
+
     var bk = getBandKey(S, line.shiftId);
     if (!bandCounts[bk]) {
       bandCounts[bk] = [];
       for (var d = 0; d < 7; d++) bandCounts[bk][d] = { M: 0, F: 0, total: 0 };
       bandKeys.push(bk);
     }
+
     var lineSched = schedule[line.id] || [];
-    for (var day = 0; day < 7; day++) {
-      if (lineSched[day] === "WORK") {
-        bandCounts[bk][day].total++;
-        if (line.sex === "F") bandCounts[bk][day].F++;
-        else if (line.sex === "M") bandCounts[bk][day].M++;
+    var rotation = S.state && S.state.functionRotation ? (S.state.functionRotation[line.id] || S.state.functionRotation[String(line.id)]) : null;
+
+    for (var dayIdx = 0; dayIdx < 7; dayIdx++) {
+      if (lineSched[dayIdx] === "WORK") {
+        var dayDuty = rotation ? rotation[dayIdx] : line.function;
+        if (dayDuty === "-") continue;
+
+        var calDow = weekdaySun0(addDays(baseDate, dayIdx));
+
+        bandCounts[bk][calDow].total++;
+        if (line.sex === "F") bandCounts[bk][calDow].F++;
+        else if (line.sex === "M") bandCounts[bk][calDow].M++;
       }
     }
   });
@@ -298,8 +311,8 @@ export function renderWeekdayBandsMatrix(S) {
   tbody.innerHTML = bandKeys.map(function (bk) {
     var bLabel = getBandLabel(S, bk);
     var cells = [];
-    for (var day = 0; day < 7; day++) {
-      var c = bandCounts[bk][day];
+    for (var calDow = 0; calDow < 7; calDow++) {
+      var c = bandCounts[bk][calDow];
       var text = c.M + "M / " + c.F + "F (" + c.total + ")";
       cells.push('<td style="text-align:center;font-size:0.85rem">' + text + '</td>');
     }
