@@ -540,29 +540,48 @@ test('Modal-5 Test 3: Locked STSO id 10001 plus new lines results in all unique 
   assert.equal(ids.length, uniqueIds.size, 'All STSO line IDs are unique (no duplicates of 10001)');
 });
 
-test('Half-2 Test 1: Friday-Saturday at 2 men and 0 women on shift 1 proposes 2M & 2F, and shift 2 reaches that same pair size', () => {
+test('Half-3 Test 1: On a shift with 2 men on Friday–Saturday and 2 women on Sunday–Monday, swap one man with one woman so each pattern ends 1 and 1', () => {
   const S = createMockScheduler();
   S.state.shifts = [
     { id: 'S1', name: '0330', start: '03:30', end: '12:00', paid: 8 },
     { id: 'S2', name: '1200', start: '12:00', end: '20:30', paid: 8 }
   ];
 
-  // S1 has 2 M on Fri-Sat [5, 6] and 2 F on Mon-Tue [1, 2]
+  // S1 has 2 M on Fri-Sat [5, 6] and 2 F on Sun-Mon [0, 1]
   // S2 has 2 M on Mon-Tue [1, 2] and 2 F on Mon-Tue [1, 2]
   S.state.lines = [
-    { id: 1, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [5, 6] },
-    { id: 2, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [5, 6] },
-    { id: 3, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] },
-    { id: 4, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] },
+    { id: 101, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [5, 6] },
+    { id: 102, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [5, 6] },
+    { id: 103, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [0, 1] },
+    { id: 104, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [0, 1] },
 
-    { id: 5, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [1, 2] },
-    { id: 6, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [1, 2] },
-    { id: 7, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] },
-    { id: 8, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] }
+    { id: 201, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [1, 2] },
+    { id: 202, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [1, 2] },
+    { id: 203, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] },
+    { id: 204, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] }
   ];
 
   const res = S.checkParity('LTSO', []);
-  assert.ok(res.proposals.length > 0, 'Proposals generated to balance Fri-Sat [5, 6]');
+  assert.ok(res.proposals.length > 0, 'Proposals generated');
+
+  // Find proposal for S1
+  const propS1 = res.proposals.find(p => p.shiftId === 'S1');
+  assert.ok(propS1, 'Found proposal for S1');
+
+  // Assert line IDs and sexes from before the swap
+  const lineA_before = S.state.lines.find(l => l.id === propS1.lineA.id);
+  const lineB_before = S.state.lines.find(l => l.id === propS1.lineB.id);
+
+  assert.ok(lineA_before, 'Line A exists before swap');
+  assert.ok(lineB_before, 'Line B exists before swap');
+  assert.equal(lineA_before.sex, 'F', 'Line A is Female before swap');
+  assert.equal(lineB_before.sex, 'M', 'Line B is Male before swap');
+  assert.deepEqual(lineA_before.rdoDays, [0, 1], 'Line A is Sun-Mon before swap');
+  assert.deepEqual(lineB_before.rdoDays, [5, 6], 'Line B is Fri-Sat before swap');
+
+  // Assert that RDOs exchange patterns: Line A (Female) gets Fri-Sat [5, 6], Line B (Male) gets Sun-Mon [0, 1]
+  assert.deepEqual(propS1.rdoA_after, [5, 6], 'Female line A gains Fri-Sat [5, 6]');
+  assert.deepEqual(propS1.rdoB_after, [0, 1], 'Male line B gains Sun-Mon [0, 1] (FAILS if written onto Fri-Sat [5, 6])');
 
   // Approve all proposals
   const pairs = res.proposals.map(p => ({
@@ -573,25 +592,29 @@ test('Half-2 Test 1: Friday-Saturday at 2 men and 0 women on shift 1 proposes 2M
   }));
   S.approveParitySwaps(pairs);
 
-  // Verify S1 now has 2 M and 2 F on Fri-Sat [5, 6]
+  // Verify S1 now has 1 man and 1 woman on Friday–Saturday and 1 man and 1 woman on Sunday–Monday
   const s1Lines = S.state.lines.filter(l => l.shiftId === 'S1');
-  const s1M_friSat = s1Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
-  const s1F_friSat = s1Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
-  assert.equal(s1M_friSat, 2, 'S1 has 2 M on Fri-Sat');
-  assert.equal(s1F_friSat, 2, 'S1 has 2 F on Fri-Sat');
+  const s1_friSat_M = s1Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
+  const s1_friSat_F = s1Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
+  const s1_sunMon_M = s1Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(0) && l.rdoDays.includes(1)).length;
+  const s1_sunMon_F = s1Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(0) && l.rdoDays.includes(1)).length;
 
-  // Verify S2 now has 2 M and 2 F on Fri-Sat [5, 6]
+  assert.equal(s1_friSat_M, 1, 'S1 has 1 man on Fri-Sat');
+  assert.equal(s1_friSat_F, 1, 'S1 has 1 woman on Fri-Sat');
+  assert.equal(s1_sunMon_M, 1, 'S1 has 1 man on Sun-Mon');
+  assert.equal(s1_sunMon_F, 1, 'S1 has 1 woman on Sun-Mon');
+
+  // Verify S2 reaches that same pair size for each pattern (1 man and 1 woman on Fri-Sat, 1 man and 1 woman on Sun-Mon)
   const s2Lines = S.state.lines.filter(l => l.shiftId === 'S2');
-  const s2M_friSat = s2Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
-  const s2F_friSat = s2Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
-  assert.equal(s2M_friSat, 2, 'S2 has 2 M on Fri-Sat');
-  assert.equal(s2F_friSat, 2, 'S2 has 2 F on Fri-Sat');
+  const s2_friSat_M = s2Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
+  const s2_friSat_F = s2Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
+  const s2_sunMon_M = s2Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(0) && l.rdoDays.includes(1)).length;
+  const s2_sunMon_F = s2Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(0) && l.rdoDays.includes(1)).length;
 
-  // Verify shiftId and sex remained completely unchanged
-  S.state.lines.forEach((l, i) => {
-    assert.equal(l.shiftId, l.shiftId, 'shiftId unchanged');
-    assert.equal(l.sex, l.sex, 'sex unchanged');
-  });
+  assert.equal(s2_friSat_M, 1, 'S2 reaches 1 man on Fri-Sat');
+  assert.equal(s2_friSat_F, 1, 'S2 reaches 1 woman on Fri-Sat');
+  assert.equal(s2_sunMon_M, 1, 'S2 reaches 1 man on Sun-Mon');
+  assert.equal(s2_sunMon_F, 1, 'S2 reaches 1 woman on Sun-Mon');
 });
 
 test('Half-2 Test 2: Sunday-Monday at 1 and 1 on S1 proposes 1 and 1 on S2', () => {
