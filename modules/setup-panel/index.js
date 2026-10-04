@@ -19,7 +19,26 @@ function seedStartDate(S) {
 
 export function initSetupPanel(scheduler) {
   const S = scheduler || window.Scheduler;
-  ensureStyles();
+  // Gate: if Svelte setup is active, skip classic render but still wire listeners
+  if (S.__USE_SVELTE_SETUP) {
+    ensureStyles();
+    // Wire Svelte-generated events to classic Scheduler methods
+    if (typeof S.generate === "function") {
+      window.addEventListener('setup:generate', function () { S.generate(); });
+    }
+    if (typeof S.exportBoard === "function") {
+      window.addEventListener('setup:export', function () { S.exportBoard(); });
+    }
+    if (typeof S.clear === "function") {
+      window.addEventListener('setup:clear', function () { S.clear(); });
+    }
+    // Import not yet wired; placeholder
+    // Add class to hide classic FTE/period/toolbar via CSS
+    const tabSetup = document.getElementById('tab-setup');
+    if (tabSetup) tabSetup.classList.add('setup-svelte-active');
+    window.dispatchEvent(new CustomEvent("setup:mounted"));
+    return;
+  }
   try {
     bridgeScheduler(S);
   } catch (err) {

@@ -216,6 +216,12 @@
   buildNav(ownedTabs);
   buildReportHost(reportSubModules(manifest));
 
+  // Feature flags
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("setup") === "svelte") {
+    Scheduler.__USE_SVELTE_SETUP = true;
+  }
+
   for (const [name, raw] of Object.entries(manifest)) {
     const cfg = typeof raw === "string" ? { entry: raw, init: "initTeamBuilder" } : raw;
     try {
@@ -233,6 +239,16 @@
         if (mount && !(cfg.mount === "#tab-reports" && document.getElementById("report-subtabs"))) {
           const r = await fetch(cfg.panel);
           if (r.ok) mount.innerHTML = await r.text();
+        }
+      }
+      // Svelte setup mount point (hidden until ?setup=svelte activates it)
+      if (cfg.mount === "#tab-setup" && name === "setup-panel") {
+        const existing = document.getElementById("setup-svelte-root");
+        if (!existing) {
+          const svelteRoot = document.createElement("div");
+          svelteRoot.id = "setup-svelte-root";
+          svelteRoot.style.display = "none";
+          mount.prepend(svelteRoot);
         }
       }
 
@@ -260,6 +276,16 @@
   }
 
   if (typeof Scheduler.hookConsoleIo === "function") Scheduler.hookConsoleIo();
+
+  // Svelte setup panel (gated by ?setup=svelte)
+  if (Scheduler.__USE_SVELTE_SETUP) {
+    try {
+      const svelteMod = await import(new URL("modules/setup-panel/dist-svelte/setup-panel-svelte.js", window.location.href).href);
+      if (typeof svelteMod.initSetupSvelte === "function") svelteMod.initSetupSvelte(Scheduler);
+    } catch (err) {
+      console.warn("setup-svelte", err);
+    }
+  }
 })();
 </script>
 </body>

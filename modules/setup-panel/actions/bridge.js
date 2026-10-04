@@ -22,6 +22,7 @@ import { attachGenerateModal } from "./generateModal.js";
 import { attachClassGenerate } from "../utils/classGenerate.js";
 import { attachParityReport } from "../utils/parityReport.js";
 import { attachDfoCertBalance } from "../utils/dfoCertBalance.js";
+import { attachSwapSex } from "../utils/swapSex.js";
 
 function safeAttach(name, fn) {
   try {

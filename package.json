@@ -12,6 +12,7 @@
     "build:function-coverage": "vite build --config vite.function-coverage.config.mjs",
     "build:lines-table": "vite build --config vite.lines-table.config.mjs",
     "build:setup-panel": "vite build --config vite.setup-panel.config.mjs",
+    "build:setup-panel-svelte": "vite build --config vite.setup-panel-svelte.config.mjs",
     "build:coverage": "vite build --config vite.coverage.config.mjs",
     "build:team-builder": "vite build --config vite.team-builder.config.mjs",
     "build:reports": "vite build --config vite.reports.config.mjs",

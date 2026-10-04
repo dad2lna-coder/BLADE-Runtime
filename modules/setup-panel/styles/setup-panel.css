@@ -24,6 +24,16 @@
   transition: all 0.3s ease;
 }
 
+/* Svelte setup panel active — hide classic FTE/period/toolbar siblings */
+.setup-svelte-active > #card-period,
+.setup-svelte-active > #setup-io-toolbar,
+.setup-svelte-active > #card-fte {
+  display: none;
+}
+.setup-svelte-active > #setup-svelte-root {
+  display: block;
+}
+
 /* Function coverage pools match FTE role + Male/Female cards */
 #card-func .fte-role {
   text-align: center;
@@ -93,6 +103,31 @@
 #team-pool.team-pool-columns,
 #team-pool.team-role-list {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.55rem;
+  align-content: flex-start;
+  align-items: flex-start;
+}
+
+#team-pool .team-line {
+  flex: 0 0 auto;
+}
+
+#card-cert-pool .fte-role {
+  text-align: center;
+  font-weight: 700;
+  margin: 0.85rem 0 0.35rem;
+}
+#card-cert-pool .cert-map-row select {
+  min-width: 5rem;
+}
+
+#team-pool,
+#team-pool.team-pool-columns,
+#team-pool.team-role-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.55rem;
   flex-wrap: wrap;
   gap: 0.45rem 0.55rem;
   align-content: flex-start;
