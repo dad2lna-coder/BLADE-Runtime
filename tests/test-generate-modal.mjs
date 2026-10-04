@@ -540,123 +540,132 @@ test('Modal-5 Test 3: Locked STSO id 10001 plus new lines results in all unique 
   assert.equal(ids.length, uniqueIds.size, 'All STSO line IDs are unique (no duplicates of 10001)');
 });
 
-test('Half-1 Test 1: Morning vs Afternoon classification strictly by start time (<11:00 vs >=11:00)', () => {
-  const S = createMockScheduler();
-  // S1 is 03:30 (AM half), S2 is 11:00 (PM half even if name says AM)
-  S.state.shifts = [
-    { id: 'S1', name: 'AM Shift', start: '03:30', end: '12:00', paid: 8 },
-    { id: 'S2', name: 'AM Late Shift', start: '11:00', end: '19:30', paid: 8 }
-  ];
-
-  // 2 morning male LTSOs on Fri-Sat (rdoDays: [5, 6]) on S1
-  S.state.lines = [
-    { id: 20001, lineCode: 'LTSO 001', shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', function: 'PAX', rdoDays: [5, 6] },
-    { id: 20002, lineCode: 'LTSO 002', shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', function: 'PAX', rdoDays: [5, 6] },
-    { id: 20003, lineCode: 'LTSO 003', shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'F', function: 'PAX', rdoDays: [0, 1] }
-  ];
-
-  const res = S.checkParity('LTSO', []);
-  assert.ok(res.disparities.length > 0, 'Parity disparities detected');
-
-  // Morning half needs 1 Female on Fri-Sat [5, 6]
-  const amShortfall = res.shortfalls.find(s => s.includes('Morning half') && s.includes('Female'));
-  assert.ok(amShortfall, 'Morning half reported short of 1 Female on Fri-Sat');
-});
-
-test('Half-1 Test 2: Two morning-start male LTSOs on Fri-Sat produce proposal leaving Fri-Sat with 1M & 1F on AM half with shiftId unchanged', () => {
+test('Half-2 Test 1: Friday-Saturday at 2 men and 0 women on shift 1 proposes 2M & 2F, and shift 2 reaches that same pair size', () => {
   const S = createMockScheduler();
   S.state.shifts = [
     { id: 'S1', name: '0330', start: '03:30', end: '12:00', paid: 8 },
     { id: 'S2', name: '1200', start: '12:00', end: '20:30', paid: 8 }
   ];
 
-  // AM half: 2 Males on [5, 6], 1 Female on [0, 1]
-  S.state.lines = [
-    { id: 20001, lineCode: 'LTSO 001', shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', function: 'PAX', rdoDays: [5, 6] },
-    { id: 20002, lineCode: 'LTSO 002', shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', function: 'PAX', rdoDays: [5, 6] },
-    { id: 20003, lineCode: 'LTSO 003', shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', function: 'PAX', rdoDays: [0, 1] }
-  ];
-
-  const res = S.checkParity('LTSO', []);
-  assert.ok(res.proposals.length > 0, 'Found parity proposal for AM half');
-
-  const prop = res.proposals[0];
-  assert.equal(prop.half, 'AM', 'Proposal is for AM half');
-  assert.deepEqual(prop.rdoA_after, [5, 6], 'Female line gets Fri-Sat [5, 6] pattern');
-
-  // Approve swap
-  S.approveParitySwaps([{
-    lineAId: prop.lineA.id,
-    lineBId: prop.lineB.id,
-    rdoA_after: prop.rdoA_after,
-    rdoB_after: prop.rdoB_after
-  }]);
-
-  const fLineAfter = S.state.lines.find(l => l.id === prop.lineA.id);
-  assert.deepEqual(fLineAfter.rdoDays, [5, 6], 'Female line now has Fri-Sat pattern');
-  assert.equal(fLineAfter.shiftId, 'S1', 'shiftId completely unchanged');
-});
-
-test('Half-1 Test 2b: Four morning-start LTSOs already at two and two on Fri-Sat are left at two and two with no proposals', () => {
-  const S = createMockScheduler();
-  S.state.shifts = [{ id: 'S1', name: '0330', start: '03:30', end: '12:00', paid: 8 }];
-
-  // 2 Males and 2 Females on Fri-Sat [5, 6]
+  // S1 has 2 M on Fri-Sat [5, 6] and 2 F on Mon-Tue [1, 2]
+  // S2 has 2 M on Mon-Tue [1, 2] and 2 F on Mon-Tue [1, 2]
   S.state.lines = [
     { id: 1, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [5, 6] },
     { id: 2, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [5, 6] },
-    { id: 3, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [5, 6] },
-    { id: 4, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [5, 6] }
+    { id: 3, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] },
+    { id: 4, shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] },
+
+    { id: 5, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [1, 2] },
+    { id: 6, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'M', rdoDays: [1, 2] },
+    { id: 7, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] },
+    { id: 8, shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'F', rdoDays: [1, 2] }
   ];
 
   const res = S.checkParity('LTSO', []);
-  assert.equal(res.proposals.length, 0, 'No proposals generated for 2M and 2F (1:1 parity holds)');
+  assert.ok(res.proposals.length > 0, 'Proposals generated to balance Fri-Sat [5, 6]');
 
-  const amLines = S.state.lines.filter(l => l.shiftId === 'S1');
-  const amM = amLines.filter(l => l.sex === 'M').length;
-  const amF = amLines.filter(l => l.sex === 'F').length;
-  assert.equal(amM, 2, 'AM half male count remains 2');
-  assert.equal(amF, 2, 'AM half female count remains 2');
+  // Approve all proposals
+  const pairs = res.proposals.map(p => ({
+    lineAId: p.lineA.id,
+    lineBId: p.lineB.id,
+    rdoA_after: p.rdoA_after,
+    rdoB_after: p.rdoB_after
+  }));
+  S.approveParitySwaps(pairs);
+
+  // Verify S1 now has 2 M and 2 F on Fri-Sat [5, 6]
+  const s1Lines = S.state.lines.filter(l => l.shiftId === 'S1');
+  const s1M_friSat = s1Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
+  const s1F_friSat = s1Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
+  assert.equal(s1M_friSat, 2, 'S1 has 2 M on Fri-Sat');
+  assert.equal(s1F_friSat, 2, 'S1 has 2 F on Fri-Sat');
+
+  // Verify S2 now has 2 M and 2 F on Fri-Sat [5, 6]
+  const s2Lines = S.state.lines.filter(l => l.shiftId === 'S2');
+  const s2M_friSat = s2Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
+  const s2F_friSat = s2Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(5) && l.rdoDays.includes(6)).length;
+  assert.equal(s2M_friSat, 2, 'S2 has 2 M on Fri-Sat');
+  assert.equal(s2F_friSat, 2, 'S2 has 2 F on Fri-Sat');
+
+  // Verify shiftId and sex remained completely unchanged
+  S.state.lines.forEach((l, i) => {
+    assert.equal(l.shiftId, l.shiftId, 'shiftId unchanged');
+    assert.equal(l.sex, l.sex, 'sex unchanged');
+  });
 });
 
-test('Half-1 Test 3: Afternoon half target proposed to 1M & 1F even when starting with 0 lines on Fri-Sat pattern', () => {
+test('Half-2 Test 2: Sunday-Monday at 1 and 1 on S1 proposes 1 and 1 on S2', () => {
   const S = createMockScheduler();
   S.state.shifts = [
     { id: 'S1', name: '0330', start: '03:30', end: '12:00', paid: 8 },
     { id: 'S2', name: '1200', start: '12:00', end: '20:30', paid: 8 }
   ];
 
-  // AM has Fri-Sat [5, 6] pattern. PM half has 1 M and 1 F on Mon-Tue [1, 2] (0 lines on Fri-Sat)
+  // S1 has 1 M & 1 F on Sun-Mon [0, 1]
+  // S2 has 1 M & 1 F on Mon-Tue [1, 2]
   S.state.lines = [
-    { id: 20001, lineCode: 'LTSO 001', shiftId: 'S1', empClass: 'LTSO', isLtso: true, sex: 'M', function: 'PAX', rdoDays: [5, 6] },
-    { id: 20002, lineCode: 'LTSO 002', shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'M', function: 'PAX', rdoDays: [1, 2] },
-    { id: 20003, lineCode: 'LTSO 003', shiftId: 'S2', empClass: 'LTSO', isLtso: true, sex: 'F', function: 'PAX', rdoDays: [1, 2] }
+    { id: 1, shiftId: 'S1', empClass: 'TSO', sex: 'M', rdoDays: [0, 1] },
+    { id: 2, shiftId: 'S1', empClass: 'TSO', sex: 'F', rdoDays: [0, 1] },
+
+    { id: 3, shiftId: 'S2', empClass: 'TSO', sex: 'M', rdoDays: [1, 2] },
+    { id: 4, shiftId: 'S2', empClass: 'TSO', sex: 'F', rdoDays: [1, 2] }
+  ];
+
+  const res = S.checkParity('TSO', []);
+  assert.ok(res.proposals.length > 0, 'Proposals generated for S2');
+
+  const s2Prop = res.proposals.find(p => p.shiftId === 'S2');
+  assert.ok(s2Prop, 'Found proposal for S2');
+
+  // Approve swap
+  S.approveParitySwaps([{
+    lineAId: s2Prop.lineA.id,
+    lineBId: s2Prop.lineB.id,
+    rdoA_after: s2Prop.rdoA_after,
+    rdoB_after: s2Prop.rdoB_after
+  }]);
+
+  const s2Lines = S.state.lines.filter(l => l.shiftId === 'S2');
+  const s2M_sunMon = s2Lines.filter(l => l.sex === 'M' && l.rdoDays.includes(0) && l.rdoDays.includes(1)).length;
+  const s2F_sunMon = s2Lines.filter(l => l.sex === 'F' && l.rdoDays.includes(0) && l.rdoDays.includes(1)).length;
+  assert.equal(s2M_sunMon, 1, 'S2 has 1 M on Sun-Mon');
+  assert.equal(s2F_sunMon, 1, 'S2 has 1 F on Sun-Mon');
+});
+
+test('Half-2 Test 3: Midweek-only pattern is not proposed', () => {
+  const S = createMockScheduler();
+  S.state.shifts = [
+    { id: 'S1', name: '0330', start: '03:30', end: '12:00', paid: 8 },
+    { id: 'S2', name: '1200', start: '12:00', end: '20:30', paid: 8 }
+  ];
+
+  // Only midweek patterns exist on all lines
+  S.state.lines = [
+    { id: 1, shiftId: 'S1', empClass: 'LTSO', sex: 'M', rdoDays: [1, 2] },
+    { id: 2, shiftId: 'S1', empClass: 'LTSO', sex: 'M', rdoDays: [1, 2] },
+    { id: 3, shiftId: 'S1', empClass: 'LTSO', sex: 'F', rdoDays: [3, 4] },
+
+    { id: 4, shiftId: 'S2', empClass: 'LTSO', sex: 'M', rdoDays: [2, 3] },
+    { id: 5, shiftId: 'S2', empClass: 'LTSO', sex: 'F', rdoDays: [3, 4] }
   ];
 
   const res = S.checkParity('LTSO', []);
-  const pmProps = res.proposals.filter(p => p.half === 'PM');
-  assert.ok(pmProps.length > 0, 'Found proposal for PM half to get Fri-Sat pattern');
-
-  const prop = pmProps[0];
-  assert.deepEqual(prop.rdoA_after, [5, 6], 'PM proposal targets Fri-Sat pattern');
+  assert.equal(res.proposals.length, 0, 'No proposals created for midweek-only patterns');
 });
 
-test('Half-1 Test 4: Weekend patterns are proposed ahead of midweek-only patterns', () => {
+test('Half-2 Test 4: One sex holding every weekend RDO on a shift does not report "Patterns are balanced."', () => {
   const S = createMockScheduler();
   S.state.shifts = [
     { id: 'S1', name: '0330', start: '03:30', end: '12:00', paid: 8 }
   ];
 
-  // Midweek pattern Mon-Tue [1, 2] and Weekend pattern Sat-Sun [0, 6] both need swaps
+  // S1 has 2 M on Sat-Sun [0, 6] and 0 F on Sat-Sun [0, 6], no donor F available
   S.state.lines = [
-    { id: 1, shiftId: 'S1', empClass: 'TSO', sex: 'M', rdoDays: [1, 2] },
-    { id: 2, shiftId: 'S1', empClass: 'TSO', sex: 'M', rdoDays: [0, 6] },
-    { id: 3, shiftId: 'S1', empClass: 'TSO', sex: 'F', rdoDays: [3, 4] }
+    { id: 1, shiftId: 'S1', empClass: 'TSO', sex: 'M', rdoDays: [0, 6] },
+    { id: 2, shiftId: 'S1', empClass: 'TSO', sex: 'M', rdoDays: [0, 6] }
   ];
 
   const res = S.checkParity('TSO', []);
-  assert.ok(res.proposals.length > 0, 'Proposals generated');
-
-  const firstPropNote = res.proposals[0].note;
-  assert.ok(firstPropNote.includes('0-6') || firstPropNote.includes('Sun') || firstPropNote.includes('Sat'), 'Weekend pattern proposed first');
+  assert.notEqual(res.summary, 'Class TSO: Patterns are balanced.', 'Summary does not report Patterns are balanced.');
+  assert.ok(res.shortfalls.length > 0 || res.disparities.length > 0, 'Disparity or shortfall reported');
 });

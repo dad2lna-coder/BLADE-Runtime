@@ -482,7 +482,11 @@ function renderParityProposalsTable(S) {
 
   var proposals = res.proposals || [];
   if (!proposals.length) {
-    tbody.innerHTML = '<tr><td colspan="3" class="muted" style="text-align:center">No RDO pattern swaps needed. Patterns are balanced.</td></tr>';
+    var hasIssues = (res.shortfalls && res.shortfalls.length > 0) || (res.disparities && res.disparities.length > 0);
+    var noProposalsMsg = hasIssues
+      ? "RDO pattern parity shortfalls detected. Cannot auto-balance with available lines."
+      : "No RDO pattern swaps needed. Patterns are balanced.";
+    tbody.innerHTML = '<tr><td colspan="3" class="muted" style="text-align:center">' + noProposalsMsg + '</td></tr>';
     return;
   }
 
