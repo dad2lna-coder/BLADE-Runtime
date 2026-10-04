@@ -1,3 +1,5 @@
+import { EVENTS, emitEvent } from './lib/events.js';
+
 /** Tab switch + renderAll kick. Blade chrome. */
 export function attachChrome(S) {
   if (!S) return;
@@ -6,7 +8,7 @@ export function attachChrome(S) {
     if (!el) return;
     var issues = (S.state && S.state.issues) || [];
     if (!issues.length) {
-      el.innerHTML = "<div class=\"alert alert-ok\">Ready.<\/div>";
+      el.innerHTML = "<div class=\"alert alert-ok\">Ready.</div>";
       return;
     }
     el.innerHTML = issues.map(function (m) {
@@ -37,7 +39,7 @@ export function attachChrome(S) {
       else if (S.renderReports) S.renderReports();
     }
     if (name === "capacity" && S.renderCapacity) S.renderCapacity();
-    window.dispatchEvent(new CustomEvent("lines:request-render", { detail: { source: "tab-switch" } }));
+    emitEvent(EVENTS.LINES_REQUEST_RENDER, { source: "tab-switch" });
   };
 }
 

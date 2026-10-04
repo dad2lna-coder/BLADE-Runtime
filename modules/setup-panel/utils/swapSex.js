@@ -1,6 +1,7 @@
 /**
  * Interactive 1:1 M<->F shift seat swap planner and engine.
  */
+import { EVENTS, emitEvent } from '../../shared/lib/events.js';
 
 import { getLinesForClass, getAvailableClasses, formatRdos } from "./rebalanceFt.js";
 
@@ -230,7 +231,7 @@ export function approveSexSwaps(S, swapPairs) {
 
   // Re-assign cert pools if present
   if (S.assignCertPools) {
-    try { S.assignCertPools(); } catch (e) { console.error("swapSex assignCertPools", e); }
+    try { S.assignCertPools(); } catch (_) { console.error("swapSex assignCertPools", e); }
   }
 
   // Refresh matrix & lines views
@@ -238,7 +239,7 @@ export function approveSexSwaps(S, swapPairs) {
   if (S.renderAll) S.renderAll();
   if (S.renderLines) S.renderLines();
   if (S.__USE_SVELTE_LINES && typeof window !== "undefined") {
-    try { window.dispatchEvent(new CustomEvent("lines:request-render")); } catch (e) {}
+    try { emitEvent(EVENTS.LINES_REQUEST_RENDER, null); } catch (_) {}
   }
 
   return true;

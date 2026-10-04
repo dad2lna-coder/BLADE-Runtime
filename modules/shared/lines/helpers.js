@@ -1,3 +1,4 @@
+import { EVENTS, emitEvent } from '../lib/events.js';
 import { parseStartDate, addDays, weekdaySun0 } from "../utils/dates.js";
 import { dayLabel } from "../utils/dayLabel.js";
 import { attachExcelExport } from "./excel.js";
@@ -201,7 +202,7 @@ export function attachLineHelpers(S) {
     if (S.applyExportCssVars) S.applyExportCssVars();
     var root = typeof document !== "undefined" ? document.getElementById("lines-table-root") : null;
     if (root && typeof root.refresh === "function") root.refresh();
-    else if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("lines:request-render"));
+    else if (typeof window !== "undefined") emitEvent(EVENTS.LINES_REQUEST_RENDER, null);
   };
   S.bindLinesUI = function () {
     if (S._linesUIBound) return;

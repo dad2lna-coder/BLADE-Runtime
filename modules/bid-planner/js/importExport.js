@@ -166,7 +166,7 @@ export function importScheduleJson(jsonText) {
   try {
     const parsed = JSON.parse(jsonText);
     return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
+  } catch (_) {
     console.error("Error parsing schedule JSON:", e);
     return [];
   }
@@ -185,7 +185,7 @@ export function parseCalendarImport(text, format = "auto") {
       const parsed = JSON.parse(trimmed);
       if (Array.isArray(parsed)) return parsed;
       if (parsed && Array.isArray(parsed.events)) return parsed.events;
-    } catch (e) {
+    } catch (_) {
       console.warn("JSON parse failed for calendar import:", e);
     }
   }

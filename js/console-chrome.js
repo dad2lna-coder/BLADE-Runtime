@@ -25,7 +25,7 @@ window.Scheduler = window.Scheduler || {};
     var c = String(code || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
     if (!S.state) S.state = {};
     S.state.airportCode = c;
-    try { localStorage.setItem(LS_AIRPORT, c); } catch (e) {}
+    try { localStorage.setItem(LS_AIRPORT, c); } catch (_) {}
     var el = $("console-airport");
     if (el) el.textContent = c || "\u2014";
     if (c.length === 3) {
@@ -42,7 +42,7 @@ window.Scheduler = window.Scheduler || {};
     var n = String(name || "OPERATOR").trim() || "OPERATOR";
     if (!S.state) S.state = {};
     S.state.operator = n;
-    try { localStorage.setItem(LS_OPERATOR, n); } catch (e) {}
+    try { localStorage.setItem(LS_OPERATOR, n); } catch (_) {}
     var el = $("console-operator");
     if (el) el.textContent = n;
     return n;

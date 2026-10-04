@@ -25,8 +25,8 @@ export function calculateForwardSchedule(ruleSet, announcementDate, calendarConf
 
   for (let i = 0; i < actions.length; i++) {
     const act = actions[i];
-    let rawDate = "";
-    let calculatedFromStr = "";
+    let rawDate;
+    let calculatedFromStr;
 
     if (i === 0) {
       rawDate = announcementDate;
@@ -92,8 +92,8 @@ export function calculateBackwardSchedule(ruleSet, executionDate, calendarConfig
 
   for (let i = actions.length - 1; i >= 0; i--) {
     const act = actions[i];
-    let rawDate = "";
-    let calculatedFromStr = "";
+    let rawDate;
+    let calculatedFromStr;
 
     if (i === actions.length - 1) {
       rawDate = executionDate;

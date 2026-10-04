@@ -1,6 +1,7 @@
 /** Single-class roster generator. Rebuilds lines for one class while keeping
  *  all other classes' lines, shifts, RDOs, duties, and certs untouched.
  */
+import { EVENTS, emitEvent } from '../../shared/lib/events.js';
 import { buildScheduleForLine } from "../actions/generate.js";
 import { assignCertPoolsToLines } from "./certAssign.js";
 
@@ -374,7 +375,7 @@ export function generateClass(S, classKey, perShiftTargets) {
     if (S.renderAll) S.renderAll();
     if (S.renderCoverageBars) S.renderCoverageBars();
     if (S.__USE_SVELTE_LINES && typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("lines:request-render"));
+      emitEvent(EVENTS.LINES_REQUEST_RENDER, null);
     } else if (S.renderLines) S.renderLines();
   } catch (err) {
     console.error("generateClass UI refresh", err);

@@ -1,3 +1,4 @@
+import { EVENTS, emitEvent } from '../../shared/lib/events.js';
 /** Setup owns generate: snapshot inputs, then run allocation + line schedule. */
 import { parseStartDate, addDays, weekdaySun0 } from "../../shared/utils/dates.js";
 
@@ -234,7 +235,7 @@ export function generate(S) {
     if (S.formTrainingTeams) S.formTrainingTeams();
   })();
   if (S.renderTeams) {
-    try { S.renderTeams(); } catch (e) {}
+    try { S.renderTeams(); } catch (_) {}
   }
 
   var workingLines = S.state.lines.filter(function (l) {
@@ -256,7 +257,7 @@ export function generate(S) {
     if (S.renderAll) S.renderAll();
     if (S.renderCoverageBars) S.renderCoverageBars();
     if (S.__USE_SVELTE_LINES) {
-      window.dispatchEvent(new CustomEvent("lines:request-render"));
+      emitEvent(EVENTS.LINES_REQUEST_RENDER, null);
     } else if (S.renderLines) S.renderLines();
   } catch (err) {
     console.error("generate UI refresh", err);

@@ -3,6 +3,7 @@
  * Wires existing stores/components/actions. No new architecture.
  * Unassigned pool and team boards are collapsed-by-default; cards paint on expand.
  */
+import { EVENTS, emitEvent } from '../shared/lib/events.js';
 import * as store from "./stores/teamBuilderStore.js";
 import { teams, replaceAllTeams } from "./stores/teamBuilderStore.js";
 import { autoFormTeams as runAutoForm } from "./utils/autoForm.js";
@@ -47,7 +48,7 @@ function syncLinesOnce() {
   const S = window.Scheduler;
   if (!S) return;
   if (S.__USE_SVELTE_LINES) {
-    window.dispatchEvent(new CustomEvent("lines:request-render", { detail: { source: "team-builder" } }));
+    emitEvent(EVENTS.LINES_REQUEST_RENDER, { source: "team-builder" });
     return;
   }
   if (typeof S.renderLines === "function") S.renderLines();

@@ -70,7 +70,7 @@ export function getWorkingRules() {
         if (val.valid) return parsed;
       }
     }
-  } catch (e) {
+  } catch (_) {
     console.warn("Error loading stored bid planner rules, falling back to default:", e);
   }
   return getDefaultRules();
@@ -102,7 +102,7 @@ export function getWorkingCalendar() {
         if (val.valid) return parsed;
       }
     }
-  } catch (e) {
+  } catch (_) {
     console.warn("Error loading stored bid planner calendar, falling back to default:", e);
   }
   return getDefaultCalendar();

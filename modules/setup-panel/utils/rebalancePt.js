@@ -1,6 +1,7 @@
 /**
  * Post-generate rebalance for PT TSO lines across non-long shifts.
  */
+import { EVENTS, emitEvent } from '../../shared/lib/events.js';
 
 export function selectPtTsoLines(lines, S) {
   if (!Array.isArray(lines)) return [];
@@ -103,7 +104,7 @@ export function rebalancePtTsoShifts(S) {
 
   // Re-assign cert pools if present
   if (S.assignCertPools) {
-    try { S.assignCertPools(); } catch (e) { console.error("rebalancePt assignCertPools", e); }
+    try { S.assignCertPools(); } catch (_) { console.error("rebalancePt assignCertPools", e); }
   }
 
   // Refresh matrix & lines views
@@ -111,7 +112,7 @@ export function rebalancePtTsoShifts(S) {
   if (S.renderAll) S.renderAll();
   if (S.renderLines) S.renderLines();
   if (S.__USE_SVELTE_LINES && typeof window !== "undefined") {
-    try { window.dispatchEvent(new CustomEvent("lines:request-render")); } catch (e) {}
+    try { emitEvent(EVENTS.LINES_REQUEST_RENDER, null); } catch (_) {}
   }
 
   return true;

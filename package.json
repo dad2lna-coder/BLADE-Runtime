@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "description": "Offline staffing scheduler",
+  "type": "module",
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",
@@ -25,9 +26,12 @@
     "test:bid-planner": "node tests/test-bid-planner.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "@tanstack/svelte-virtual": "^3.13.39",
     "@tauri-apps/cli": "^2",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
     "svelte": "^4.2.19",
     "vite": "^5.4.11"
   }

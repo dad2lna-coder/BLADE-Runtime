@@ -4,6 +4,7 @@
 import LinesTable from './LinesTable.svelte';
 import { initRowModel } from './row-model.js';
 import { initLineColors } from './line-colors.js';
+import { EVENTS, emitEvent } from '../shared/lib/events.js';
 
 export function initLinesTable(scheduler) {
   const S = scheduler || window.Scheduler;
@@ -164,7 +165,7 @@ export function initLinesTable(scheduler) {
       S.renderCoverageBars();
     }
     if (field === "team" && S.renderTeams) S.renderTeams();
-    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+    if (emitEvent) emitEvent(EVENTS.LINES_COVERAGE_REFRESH);
   }
 
   function writeDayToggle(detail) {
@@ -218,7 +219,7 @@ export function initLinesTable(scheduler) {
     if (S.syncRdoDaysFromSchedule) S.syncRdoDaysFromSchedule(line);
     refresh();
     if (S.renderCoverageBars) S.renderCoverageBars();
-    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+    if (emitEvent) emitEvent(EVENTS.LINES_COVERAGE_REFRESH);
   }
 
   function writeDayDutyEdit(detail) {
@@ -248,7 +249,7 @@ export function initLinesTable(scheduler) {
     if (S.syncRdoDaysFromSchedule) S.syncRdoDaysFromSchedule(line);
     refresh();
     if (S.renderCoverageBars) S.renderCoverageBars();
-    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+    if (emitEvent) emitEvent(EVENTS.LINES_COVERAGE_REFRESH);
   }
 
   function writeDayTimeEdit(detail) {
@@ -276,7 +277,7 @@ export function initLinesTable(scheduler) {
 
     refresh();
     if (S.renderCoverageBars) S.renderCoverageBars();
-    window.dispatchEvent(new CustomEvent("lines:coverage-refresh"));
+    emitEvent(EVENTS.LINES_COVERAGE_REFRESH, null);
   }
 
   function handleSort(detail) {
@@ -348,7 +349,7 @@ export function initLinesTable(scheduler) {
     if (btn && btn.dataset.tab === "lines") refresh();
   });
 
-  ["lines:request-render", "lines:filter-change", "lines:sort-change", "lines:coverage-refresh"].forEach((event) => {
+  [EVENTS.LINES_REQUEST_RENDER, EVENTS.LINES_FILTER_CHANGE, EVENTS.LINES_SORT_CHANGE, EVENTS.LINES_COVERAGE_REFRESH].forEach((event) => {
     window.addEventListener(event, refresh);
   });
 

@@ -1,3 +1,4 @@
+import { EVENTS, emitEvent } from '../modules/shared/lib/events.js';
 /** Import / export — file envelope only. Setup owns the snapshot. Excel lives in modules/shared/lines/excel.js */
 window.Scheduler = window.Scheduler || {};
 (function (S) {
@@ -240,7 +241,7 @@ window.Scheduler = window.Scheduler || {};
       S.updateStatus("Imported " + (S.state.lines.length ? "config and results" : "config only") +
         " · " + S.state.lines.length + " line(s).");
     }
-    window.dispatchEvent(new CustomEvent("lines:request-render"));
+    emitEvent(EVENTS.LINES_REQUEST_RENDER, null);
   };
 
   S.importJsonFile = function (file) {
@@ -269,7 +270,7 @@ window.Scheduler = window.Scheduler || {};
     if (S.teams) S.teams.teams = [];
     S.state.volumeImport = null;
     if (S.renderAll) S.renderAll();
-    window.dispatchEvent(new CustomEvent("lines:request-render", { detail: { source: "clear" } }));
+    emitEvent(EVENTS.LINES_REQUEST_RENDER, { source: "clear" });
     if (S.renderDemandCapacity) S.renderDemandCapacity();
     if (S.updateStatus) S.updateStatus("Cleared results. Configuration remains.");
   };

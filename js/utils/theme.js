@@ -14,7 +14,7 @@ window.Scheduler = window.Scheduler || {};
   function readStored() {
     try {
       return localStorage.getItem(STORAGE_KEY);
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
@@ -22,7 +22,7 @@ window.Scheduler = window.Scheduler || {};
   function writeStored(name) {
     try {
       localStorage.setItem(STORAGE_KEY, name);
-    } catch (e) {}
+    } catch (_) {}
   }
 
   function menuEl() {

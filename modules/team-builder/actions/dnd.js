@@ -6,7 +6,7 @@ export function destroySortables() {
     (sortables || []).forEach(s => {
         try {
             s.destroy();
-        } catch (e) {}
+        } catch (_) {}
     });
     sortables = [];
 }

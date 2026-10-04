@@ -2,6 +2,7 @@
  *  Identifies sex imbalances across RDO patterns on shifts/bands and proposes
  *  swapping RDO patterns between lines of different sexes without changing shift or sex.
  */
+import { EVENTS, emitEvent } from '../../shared/lib/events.js';
 import { getBandKey } from "./buildLines.js";
 import { getBandLabel } from "../actions/generateModal.js";
 import { formatRdos } from "./rebalanceDfo.js";
@@ -381,7 +382,7 @@ export function approveParitySwaps(S, swapPairs) {
     if (S.updateStatus) S.updateStatus("Approved " + count + " RDO parity pattern swap(s).");
     if (S.renderAll) S.renderAll();
     if (S.__USE_SVELTE_LINES && typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("lines:request-render"));
+      emitEvent(EVENTS.LINES_REQUEST_RENDER, null);
     } else if (S.renderLines) S.renderLines();
     return true;
   }

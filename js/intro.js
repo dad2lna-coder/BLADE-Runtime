@@ -68,7 +68,7 @@
     var c = String(code || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
     if (c.length !== 3) return "";
     if (window.Scheduler && Scheduler.setAirportCode) Scheduler.setAirportCode(c);
-    else { try { localStorage.setItem("blade.airportCode", c); } catch (e) {} }
+    else { try { localStorage.setItem("blade.airportCode", c); } catch (_) {} }
     if (window.Scheduler && Scheduler.refreshConsoleChrome) Scheduler.refreshConsoleChrome();
     return c;
   }
@@ -151,7 +151,7 @@
     try { operatorName = await invoke("get_operator"); }
     catch (e) { operatorName = isTauri() ? "OPERATOR" : "WEB"; }
     if (window.Scheduler && Scheduler.setOperator) Scheduler.setOperator(operatorName);
-    else { try { localStorage.setItem("blade.operator", operatorName); } catch (e) {} }
+    else { try { localStorage.setItem("blade.operator", operatorName); } catch (_) {} }
 
     await typeInto(term, "READY.\nLOAD \"BID-LINE-GEN\",8,1\n", 24);
     await sleep(180);

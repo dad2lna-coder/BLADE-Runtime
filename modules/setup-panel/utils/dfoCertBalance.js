@@ -2,6 +2,7 @@
  *  Handles same-sex DFO cert moves when shift cert counts differ (lines never move),
  *  or baggage day reshuffles when shift cert counts match.
  */
+import { EVENTS, emitEvent } from '../../shared/lib/events.js';
 
 export function getDfoCertLinesForClass(S, classKey) {
   var lines = (S && S.state && S.state.lines) || [];
@@ -203,7 +204,7 @@ export function approveDfoCertBalance(S, propResult, selectedProposals) {
       if (S.updateStatus) S.updateStatus("Approved " + count + " same-sex DFO cert move(s). Lines remained in place.");
       if (S.renderAll) S.renderAll();
       if (S.__USE_SVELTE_LINES && typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("lines:request-render"));
+        emitEvent(EVENTS.LINES_REQUEST_RENDER, null);
       } else if (S.renderLines) S.renderLines();
       return true;
     }

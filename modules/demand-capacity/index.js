@@ -85,7 +85,7 @@ async function ensurePanel() {
   try {
     var r = await fetch("modules/demand-capacity/panel.html");
     if (r.ok) root.innerHTML = await r.text();
-  } catch (e) {}
+  } catch (_) {}
   return root;
 }
 

@@ -66,18 +66,18 @@ export function applyFte(S, fte) {
 
 function readSetupCompanions(S) {
   if (S.readShiftsFromDom) {
-    try { S.readShiftsFromDom(); } catch (e) {}
+    try { S.readShiftsFromDom(); } catch (_) {}
   }
   if (S.readExtraPositionsFromDom) {
-    try { S.readExtraPositionsFromDom(); } catch (e) {}
+    try { S.readExtraPositionsFromDom(); } catch (_) {}
   }
   if (S.readFunctionCoverageFromDom) {
-    try { S.readFunctionCoverageFromDom(); } catch (e) {}
+    try { S.readFunctionCoverageFromDom(); } catch (_) {}
   } else if (S.readFunctionBandsFromDom) {
-    try { S.readFunctionBandsFromDom(); } catch (e) {}
+    try { S.readFunctionBandsFromDom(); } catch (_) {}
   }
   if (S.readCertPoolFromDom) {
-    try { S.readCertPoolFromDom(); } catch (e) {}
+    try { S.readCertPoolFromDom(); } catch (_) {}
   }
   setupStore.extraPositions = (S.state && S.state.extraPositions) || [];
   setupStore.functionCoverage = (S.state && S.state.functionCoverage) || null;
@@ -135,7 +135,7 @@ export function exportStaffingConfig(S) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
-  try { localStorage.setItem("blade.staffingJson", JSON.stringify(payload)); } catch (e) {}
+  try { localStorage.setItem("blade.staffingJson", JSON.stringify(payload)); } catch (_) {}
   if (S.updateStatus) S.updateStatus("Saved staffing (FTE + function coverage + cert pools + extra positions).");
   return payload;
 }

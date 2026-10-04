@@ -1,3 +1,4 @@
+import { EVENTS, emitEvent } from '../../shared/lib/events.js';
 /** Coverage cuts UI + applyCoverageCutsToLines. */
 
 function $(id) { return document.getElementById(id); }
@@ -189,13 +190,13 @@ export function initCuts(S) {
       } finally {
         var n = S.applyCoverageCutsToLines ? S.applyCoverageCutsToLines(S) : applyCoverageCutsToLines(S);
         if (n && S.renderAll) {
-          try { S.renderAll(); } catch (e) { console.warn("coverage cuts renderAll", e); }
+          try { S.renderAll(); } catch (_) { console.warn("coverage cuts renderAll", e); }
         }
         if (n && S.updateStatus) {
           S.updateStatus("Coverage cuts: " + n + " line(s) extra RDO on selected days. Shift times unchanged.");
         }
         if (n && typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("lines:request-render", { detail: { source: "coverage-cuts" } }));
+          emitEvent(EVENTS.LINES_REQUEST_RENDER, { source: "coverage-cuts" });
         }
       }
       return r;

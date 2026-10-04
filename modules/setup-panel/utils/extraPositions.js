@@ -67,7 +67,7 @@ function queryEl(S, sel) {
     try {
       var via = S.$(sel);
       if (via) return via;
-    } catch (e) {}
+    } catch (_) {}
   }
   if (typeof document !== "undefined") return document.querySelector(sel);
   return null;

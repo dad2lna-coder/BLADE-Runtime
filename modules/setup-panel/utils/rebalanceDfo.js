@@ -1,6 +1,7 @@
 /**
  * Interactive band-delta DFO people rebalance planner and engine.
  */
+import { EVENTS, emitEvent } from '../../shared/lib/events.js';
 
 export function isDfoEligibleLine(l) {
   if (!l) return false;
@@ -256,7 +257,7 @@ export function approveDfoRebalance(S, moves) {
 
   // Re-assign cert pools if present
   if (S.assignCertPools) {
-    try { S.assignCertPools(); } catch (e) { console.error("rebalanceDfo assignCertPools", e); }
+    try { S.assignCertPools(); } catch (_) { console.error("rebalanceDfo assignCertPools", e); }
   }
 
   // Refresh matrix & lines views
@@ -264,7 +265,7 @@ export function approveDfoRebalance(S, moves) {
   if (S.renderAll) S.renderAll();
   if (S.renderLines) S.renderLines();
   if (S.__USE_SVELTE_LINES && typeof window !== "undefined") {
-    try { window.dispatchEvent(new CustomEvent("lines:request-render")); } catch (e) {}
+    try { emitEvent(EVENTS.LINES_REQUEST_RENDER, null); } catch (_) {}
   }
 
   return true;

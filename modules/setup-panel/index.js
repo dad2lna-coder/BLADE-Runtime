@@ -32,7 +32,7 @@ export function initSetupPanel(scheduler) {
   S.renderAll = function () {
     renderAll(S);
     if (typeof origRenderAll === "function" && origRenderAll !== S.renderAll) {
-      try { origRenderAll.apply(this, arguments); } catch (e) {}
+      try { origRenderAll.apply(this, arguments); } catch (_) {}
     }
   };
 
@@ -63,7 +63,7 @@ export function initSetupPanel(scheduler) {
       S._funcCoverageBound = false;
       S.initFunctionCoverage(S);
     } else if (S.fillFunctionCoverageForm) {
-      try { S.fillFunctionCoverageForm(); } catch (e) {}
+      try { S.fillFunctionCoverageForm(); } catch (_) {}
     }
   }
   // Setup owns extra-type cards + line build; reclaim if FC rebound the helpers.
