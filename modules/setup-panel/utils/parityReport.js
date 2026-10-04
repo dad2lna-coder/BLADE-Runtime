@@ -23,13 +23,10 @@ function isWeekendPattern(rdoDays) {
   return rdoDays.indexOf(0) >= 0 || rdoDays.indexOf(6) >= 0;
 }
 
-function getShiftHalf(S, shiftId) {
+function getShiftLabel(S, shiftId) {
   var shifts = (S && S.state && S.state.shifts) || [];
   var sh = shifts.find(function (s) { return s.id === shiftId; });
-  if (!sh || !sh.start) return "AM";
-  var startMin = S.timeToMin ? S.timeToMin(sh.start) : 210;
-  // Strictly by start time: before 11:00 (660 min) is AM half, 11:00 and later is PM half
-  return startMin < 660 ? "AM" : "PM";
+  return sh ? (sh.name || sh.id) : shiftId;
 }
 
 export function checkParity(S, classKey, selectedBandKeys) {
@@ -61,33 +58,30 @@ export function checkParity(S, classKey, selectedBandKeys) {
     return { disparities: [], proposals: [], summary: "No active lines match the selected bands." };
   }
 
-  // Find all unique RDO patterns across this class
+  // Find all unique weekend RDO patterns across this class (Midweek patterns are ignored in this pass)
   var patternMap = {};
   targetLines.forEach(function (l) {
-    var pk = rdoPatternKey(l.rdoDays);
-    if (!patternMap[pk]) {
-      patternMap[pk] = {
-        patternKey: pk,
-        rdoDays: (l.rdoDays || []).slice(),
-        isWeekend: isWeekendPattern(l.rdoDays),
-        countM: 0,
-        countF: 0
-      };
+    if (isWeekendPattern(l.rdoDays)) {
+      var pk = rdoPatternKey(l.rdoDays);
+      if (!patternMap[pk]) {
+        patternMap[pk] = {
+          patternKey: pk,
+          rdoDays: (l.rdoDays || []).slice()
+        };
+      }
     }
-    if (l.sex === "M") patternMap[pk].countM++;
-    else if (l.sex === "F") patternMap[pk].countF++;
   });
 
-  var allPatterns = Object.keys(patternMap).map(function (k) { return patternMap[k]; });
+  var weekendPatterns = Object.keys(patternMap).map(function (k) { return patternMap[k]; });
 
-  // Separate patterns: weekend patterns first, then midweek-only; higher total imbalance first
-  allPatterns.sort(function (a, b) {
-    if (a.isWeekend && !b.isWeekend) return -1;
-    if (!a.isWeekend && b.isWeekend) return 1;
-    var devA = Math.abs(a.countM - a.countF);
-    var devB = Math.abs(b.countM - b.countF);
-    if (devA !== devB) return devB - devA;
-    return a.patternKey.localeCompare(b.patternKey);
+  // Get active shifts in targetLines
+  var shiftIds = [];
+  var seenShifts = {};
+  targetLines.forEach(function (l) {
+    if (l.shiftId && !seenShifts[l.shiftId]) {
+      seenShifts[l.shiftId] = true;
+      shiftIds.push(l.shiftId);
+    }
   });
 
   var proposals = [];
@@ -95,118 +89,228 @@ export function checkParity(S, classKey, selectedBandKeys) {
   var shortfalls = [];
   var pairedLineIds = new Set();
 
-  // Evaluate each pattern across AM and PM halves
-  var halves = ["AM", "PM"];
+  shiftIds.forEach(function (shId) {
+    var shLines = targetLines.filter(function (l) {
+      return l.shiftId === shId && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
+    });
 
-  allPatterns.forEach(function (pat) {
-    halves.forEach(function (half) {
-      var halfLines = targetLines.filter(function (l) {
-        return getShiftHalf(S, l.shiftId) === half && !(S.isLineScheduleLocked && S.isLineScheduleLocked(l));
+    var shLabel = getShiftLabel(S, shId);
+
+    var linePattern = {};
+    shLines.forEach(function (l) {
+      linePattern[l.id] = rdoPatternKey(l.rdoDays);
+    });
+
+    var maxPasses = 10;
+    var pass = 0;
+    while (pass < maxPasses) {
+      pass++;
+      var madeProgress = false;
+
+      var counts = {};
+      shLines.forEach(function (l) {
+        var pk = linePattern[l.id];
+        if (!counts[pk]) counts[pk] = { M: 0, F: 0 };
+        if (l.sex === "M") counts[pk].M++;
+        else if (l.sex === "F") counts[pk].F++;
       });
 
-      var patLines = halfLines.filter(function (l) { return rdoPatternKey(l.rdoDays) === pat.patternKey; });
-      var mPat = patLines.filter(function (l) { return l.sex === "M"; });
-      var fPat = patLines.filter(function (l) { return l.sex === "F"; });
+      // 1. Try 1-for-1 swap between two weekend patterns on this shift where P1 has male surplus (cM >= 2) and P2 has female surplus (cF >= 2)
+      var wPatterns = weekendPatterns.slice();
+      for (var i = 0; i < wPatterns.length; i++) {
+        var p1 = wPatterns[i];
+        var pk1 = p1.patternKey;
+        var c1 = counts[pk1] || { M: 0, F: 0 };
 
-      var countM = mPat.length;
-      var countF = fPat.length;
+        if (c1.M > c1.F && c1.M >= 2) {
+          for (var j = 0; j < wPatterns.length; j++) {
+            if (i === j) continue;
+            var p2 = wPatterns[j];
+            var pk2 = p2.patternKey;
+            var c2 = counts[pk2] || { M: 0, F: 0 };
 
-      var halfLabel = half === "AM" ? "Morning half (<11:00)" : "Afternoon half (>=11:00)";
-      var patLabel = formatRdos(pat.rdoDays);
+            if (c2.F > c2.M && c2.F >= 2) {
+              var donorM = shLines.find(function (l) {
+                return l.sex === "M" && linePattern[l.id] === pk1 && !pairedLineIds.has(l.id);
+              });
+              var donorF = shLines.find(function (l) {
+                return l.sex === "F" && linePattern[l.id] === pk2 && !pairedLineIds.has(l.id);
+              });
 
-      // 1:1 parity means M and F counts match (e.g. 2M & 2F is fine, 1M & 1F is fine).
-      if (countM === countF && countM > 0) {
-        return;
+              if (donorM && donorF) {
+                pairedLineIds.add(donorM.id);
+                pairedLineIds.add(donorF.id);
+
+                linePattern[donorM.id] = pk2;
+                linePattern[donorF.id] = pk1;
+
+                var p1Label = formatRdos(p1.rdoDays);
+                var p2Label = formatRdos(p2.rdoDays);
+
+                proposals.push({
+                  lineA: donorF,
+                  lineB: donorM,
+                  shiftId: shId,
+                  rdoA_before: donorF.rdoDays,
+                  rdoB_before: donorM.rdoDays,
+                  rdoA_after: p1.rdoDays,
+                  rdoB_after: p2.rdoDays,
+                  note: shLabel + " shift: Swap RDOs so " + (donorF.lineCode || donorF.id) + " (F) gains pattern " + p1Label + " & " + (donorM.lineCode || donorM.id) + " (M) gains pattern " + p2Label
+                });
+
+                madeProgress = true;
+                break;
+              }
+            }
+          }
+          if (madeProgress) break;
+        }
       }
 
-      disparities.push({
-        half: half,
-        patternKey: pat.patternKey,
-        rdoDays: pat.rdoDays,
-        countM: countM,
-        countF: countF
-      });
+      if (madeProgress) continue;
 
-      if (countM === 0 && countF === 0) {
-        // Empty half for this pattern: need a 1:1 pair (1 Male and 1 Female assigned to pat.rdoDays)
-        var donorF0 = halfLines.find(function (l) {
-          return l.sex === "F" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
-        });
-        var donorM0 = halfLines.find(function (l) {
-          return l.sex === "M" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
-        });
+      // 2. Try 1-for-1 swap between a weekend pattern with male/female surplus and a non-weekend pattern
+      for (var i = 0; i < wPatterns.length; i++) {
+        var p1 = wPatterns[i];
+        var pk1 = p1.patternKey;
+        var c1 = counts[pk1] || { M: 0, F: 0 };
 
-        if (donorF0 && donorM0) {
-          pairedLineIds.add(donorF0.id);
-          pairedLineIds.add(donorM0.id);
-          proposals.push({
-            lineA: donorF0,
-            lineB: donorM0,
-            half: half,
-            rdoA_before: donorF0.rdoDays,
-            rdoB_before: donorM0.rdoDays,
-            rdoA_after: pat.rdoDays,
-            rdoB_after: pat.rdoDays,
-            note: half + " half: Assign pattern " + patLabel + " to " + (donorF0.lineCode || donorF0.id) + " (F) & " + (donorM0.lineCode || donorM0.id) + " (M)"
+        if (c1.M > c1.F && c1.M >= 2) {
+          var donorM = shLines.find(function (l) {
+            return l.sex === "M" && linePattern[l.id] === pk1 && !pairedLineIds.has(l.id);
           });
-        } else {
-          if (!donorM0) shortfalls.push(halfLabel + " short of 1 Male on pattern " + patLabel);
-          if (!donorF0) shortfalls.push(halfLabel + " short of 1 Female on pattern " + patLabel);
-        }
-      } else if (countM > countF) {
-        // Surplus males on pat: swap 1 Male on pat with 1 Female on another pattern in this half
-        var diff = countM - countF;
-        for (var i = 0; i < Math.ceil(diff / 2); i++) {
-          var donorM_pat = mPat.find(function (l) { return !pairedLineIds.has(l.id); });
-          var donorF_other = halfLines.find(function (l) {
-            return l.sex === "F" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
+          var donorF = shLines.find(function (l) {
+            return l.sex === "F" && linePattern[l.id] !== pk1 && !isWeekendPattern(l.rdoDays) && !pairedLineIds.has(l.id);
           });
 
-          if (donorM_pat && donorF_other) {
-            pairedLineIds.add(donorM_pat.id);
-            pairedLineIds.add(donorF_other.id);
+          if (donorM && donorF) {
+            var pkOther = linePattern[donorF.id];
+            pairedLineIds.add(donorM.id);
+            pairedLineIds.add(donorF.id);
+
+            linePattern[donorM.id] = pkOther;
+            linePattern[donorF.id] = pk1;
+
+            var p1Label = formatRdos(p1.rdoDays);
+            var pOtherLabel = formatRdos(donorF.rdoDays);
+
             proposals.push({
-              lineA: donorF_other,
-              lineB: donorM_pat,
-              half: half,
-              rdoA_before: donorF_other.rdoDays,
-              rdoB_before: donorM_pat.rdoDays,
-              rdoA_after: pat.rdoDays,
-              rdoB_after: donorF_other.rdoDays,
-              note: half + " half: Swap RDOs so " + (donorF_other.lineCode || donorF_other.id) + " (F) gains pattern " + patLabel + " from " + (donorM_pat.lineCode || donorM_pat.id) + " (M)"
+              lineA: donorF,
+              lineB: donorM,
+              shiftId: shId,
+              rdoA_before: donorF.rdoDays,
+              rdoB_before: donorM.rdoDays,
+              rdoA_after: p1.rdoDays,
+              rdoB_after: donorF.rdoDays,
+              note: shLabel + " shift: Swap RDOs so " + (donorF.lineCode || donorF.id) + " (F) gains pattern " + p1Label + " & " + (donorM.lineCode || donorM.id) + " (M) gains pattern " + pOtherLabel
             });
-          } else {
-            shortfalls.push(halfLabel + " short of Female line to balance Male surplus on pattern " + patLabel);
+
+            madeProgress = true;
+            break;
+          }
+        } else if (c1.F > c1.M && c1.F >= 2) {
+          var donorF = shLines.find(function (l) {
+            return l.sex === "F" && linePattern[l.id] === pk1 && !pairedLineIds.has(l.id);
+          });
+          var donorM = shLines.find(function (l) {
+            return l.sex === "M" && linePattern[l.id] !== pk1 && !isWeekendPattern(l.rdoDays) && !pairedLineIds.has(l.id);
+          });
+
+          if (donorM && donorF) {
+            var pkOther = linePattern[donorM.id];
+            pairedLineIds.add(donorM.id);
+            pairedLineIds.add(donorF.id);
+
+            linePattern[donorM.id] = pk1;
+            linePattern[donorF.id] = pkOther;
+
+            var p1Label = formatRdos(p1.rdoDays);
+            var pOtherLabel = formatRdos(donorM.rdoDays);
+
+            proposals.push({
+              lineA: donorF,
+              lineB: donorM,
+              shiftId: shId,
+              rdoA_before: donorF.rdoDays,
+              rdoB_before: donorM.rdoDays,
+              rdoA_after: donorM.rdoDays,
+              rdoB_after: p1.rdoDays,
+              note: shLabel + " shift: Swap RDOs so " + (donorM.lineCode || donorM.id) + " (M) gains pattern " + p1Label + " & " + (donorF.lineCode || donorF.id) + " (F) gains pattern " + pOtherLabel
+            });
+
+            madeProgress = true;
             break;
           }
         }
-      } else if (countF > countM) {
-        // Surplus females on pat: swap 1 Female on pat with 1 Male on another pattern in this half
-        var diffF = countF - countM;
-        for (var j = 0; j < Math.ceil(diffF / 2); j++) {
-          var donorF_pat = fPat.find(function (l) { return !pairedLineIds.has(l.id); });
-          var donorM_other = halfLines.find(function (l) {
-            return l.sex === "M" && rdoPatternKey(l.rdoDays) !== pat.patternKey && !pairedLineIds.has(l.id);
+      }
+
+      if (madeProgress) continue;
+
+      // 3. For an empty weekend pattern (cM == 0 and cF == 0), assign 1 M and 1 F from available lines on non-weekend patterns
+      for (var i = 0; i < wPatterns.length; i++) {
+        var p1 = wPatterns[i];
+        var pk1 = p1.patternKey;
+        var c1 = counts[pk1] || { M: 0, F: 0 };
+
+        if (c1.M === 0 && c1.F === 0) {
+          var donorM = shLines.find(function (l) {
+            return l.sex === "M" && !isWeekendPattern(l.rdoDays) && !pairedLineIds.has(l.id);
+          });
+          var donorF = shLines.find(function (l) {
+            return l.sex === "F" && !isWeekendPattern(l.rdoDays) && !pairedLineIds.has(l.id);
           });
 
-          if (donorF_pat && donorM_other) {
-            pairedLineIds.add(donorF_pat.id);
-            pairedLineIds.add(donorM_other.id);
+          if (donorM && donorF) {
+            pairedLineIds.add(donorM.id);
+            pairedLineIds.add(donorF.id);
+
+            linePattern[donorM.id] = pk1;
+            linePattern[donorF.id] = pk1;
+
+            var p1Label = formatRdos(p1.rdoDays);
+
             proposals.push({
-              lineA: donorF_pat,
-              lineB: donorM_other,
-              half: half,
-              rdoA_before: donorF_pat.rdoDays,
-              rdoB_before: donorM_other.rdoDays,
-              rdoA_after: donorM_other.rdoDays,
-              rdoB_after: pat.rdoDays,
-              note: half + " half: Swap RDOs so " + (donorM_other.lineCode || donorM_other.id) + " (M) gains pattern " + patLabel + " from " + (donorF_pat.lineCode || donorF_pat.id) + " (F)"
+              lineA: donorF,
+              lineB: donorM,
+              shiftId: shId,
+              rdoA_before: donorF.rdoDays,
+              rdoB_before: donorM.rdoDays,
+              rdoA_after: p1.rdoDays,
+              rdoB_after: p1.rdoDays,
+              note: shLabel + " shift: Assign pattern " + p1Label + " to " + (donorF.lineCode || donorF.id) + " (F) & " + (donorM.lineCode || donorM.id) + " (M)"
             });
-          } else {
-            shortfalls.push(halfLabel + " short of Male line to balance Female surplus on pattern " + patLabel);
+
+            madeProgress = true;
             break;
           }
         }
+      }
+
+      if (!madeProgress) break;
+    }
+
+    var finalCounts = {};
+    shLines.forEach(function (l) {
+      var pk = linePattern[l.id];
+      if (!finalCounts[pk]) finalCounts[pk] = { M: 0, F: 0 };
+      if (l.sex === "M") finalCounts[pk].M++;
+      else if (l.sex === "F") finalCounts[pk].F++;
+    });
+
+    weekendPatterns.forEach(function (p) {
+      var fc = finalCounts[p.patternKey] || { M: 0, F: 0 };
+      var pLabel = formatRdos(p.rdoDays);
+      if (fc.M !== fc.F || fc.M === 0 || fc.F === 0) {
+        disparities.push({
+          shiftId: shId,
+          patternKey: p.patternKey,
+          rdoDays: p.rdoDays,
+          countM: fc.M,
+          countF: fc.F
+        });
+
+        if (fc.M === 0) shortfalls.push(shLabel + " shift short of Male line on pattern " + pLabel);
+        if (fc.F === 0) shortfalls.push(shLabel + " shift short of Female line on pattern " + pLabel);
       }
     });
   });
@@ -215,9 +319,9 @@ export function checkParity(S, classKey, selectedBandKeys) {
   if (shortfalls.length > 0) {
     summaryMsg = "Class " + classKey + " parity shortfalls: " + shortfalls.join("; ");
   } else if (disparities.length > 0) {
-    summaryMsg = "Class " + classKey + ": " + disparities.length + " pattern disparity/disparities found across halves. Proposed swaps to achieve 1M & 1F per pattern in each half.";
+    summaryMsg = "Class " + classKey + ": " + disparities.length + " pattern disparity/disparities found across shifts. Proposed swaps to achieve equal weekend RDO parity per shift.";
   } else {
-    summaryMsg = "Class " + classKey + ": Patterns are balanced (1M & 1F per pattern in each half).";
+    summaryMsg = "Class " + classKey + ": Patterns are balanced.";
   }
 
   return {
