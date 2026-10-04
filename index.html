@@ -234,12 +234,12 @@
         document.head.appendChild(link);
       }
 
-      if (cfg.panel && cfg.mount) {
-        const mount = document.querySelector(cfg.mount);
-        if (mount && !(cfg.mount === "#tab-reports" && document.getElementById("report-subtabs"))) {
-          const r = await fetch(cfg.panel);
-          if (r.ok) mount.innerHTML = await r.text();
-        }
+      const mount = cfg.panel && cfg.mount
+        ? document.querySelector(cfg.mount)
+        : null;
+      if (mount && !(cfg.mount === "#tab-reports" && document.getElementById("report-subtabs"))) {
+        const r = await fetch(cfg.panel);
+        if (r.ok) mount.innerHTML = await r.text();
       }
       // Svelte setup mount point (hidden until ?setup=svelte activates it)
       if (cfg.mount === "#tab-setup" && name === "setup-panel") {
