@@ -58,13 +58,31 @@ export function initSetupSvelte(S) {
     if (S && S.clearAll) S.clearAll();
   }
   function onImport() {
-    if (S && S.importJsonFile) {
-      var fileInput = document.getElementById("file-import");
-      if (fileInput) {
-        fileInput.value = "";
-        fileInput.click();
-      }
-    }
+    if (!S || !S.importJsonFile) return;
+    var input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.onchange = function (event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file) return;
+      // Read the file and process it through the same path as the classic
+      // import handler (js/io.js: S.applyPayload), which populates
+      // S.state.lines and triggers a lines-table refresh.
+      var reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          S.applyPayload(JSON.parse(event.target.result));
+        } catch (err) {
+          if (S.updateStatus) S.updateStatus("Import failed.");
+          S.state.issues = ["Import failed: " + (err && err.message ? err.message : "Invalid JSON")];
+          if (S.renderIssues) S.renderIssues();
+        }
+      };
+      reader.readAsText(file);
+      input.remove();
+    };
+    document.body.appendChild(input);
+    input.click();
   }
 
   window.addEventListener('setup:fte-change', onFte);
