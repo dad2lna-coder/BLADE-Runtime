@@ -46,8 +46,8 @@
         <label>Female <input type="number" id="svelte-cfg-pt-f" min="0" value={fte.ptF || 4} style="width:4.5rem" on:blur={(e) => commitFte('ptF', e.target.value)} /></label>
       </div>
       <div class="fte-sex-row" style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap">
-        <label>Hours/day <input type="number" id="svelte-cfg-pt-hours" min="1" max="12" value={fte.ptHours || 4} style="width:4.5rem" on:blur={(e) => commitFte('ptHours', e.target.value)} /></label>
-        <label>Days/week <input type="number" id="svelte-cfg-pt-days" min="1" max="6" value={fte.ptDays || 3} style="width:4.5rem" on:blur={(e) => commitFte('ptDays', e.target.value)} /></label>
+        <label>Hours/day <input type="number" id="svelte-cfg-pt-hours" min="1" max="12" value={fte.ptHoursPerDay || 4} style="width:4.5rem" on:blur={(e) => commitFte('ptHoursPerDay', e.target.value)} /></label>
+        <label>Days/week <input type="number" id="svelte-cfg-pt-days" min="1" max="6" value={fte.ptDaysPerWeek || 3} style="width:4.5rem" on:blur={(e) => commitFte('ptDaysPerWeek', e.target.value)} /></label>
       </div>
       <div class="fte-role" style="text-align:center;font-weight:700;margin:0.85rem 0 0.35rem">LTSO</div>
       <div class="fte-sex-row" style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap">

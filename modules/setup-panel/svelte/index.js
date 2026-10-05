@@ -1,5 +1,6 @@
 /** Svelte mount for setup panel top-level form (gated by ?setup=svelte). */
 import SetupForm from './SetupForm.svelte';
+import { snapshotFte } from '../utils/fte.js';
 
 let _instance = null;
 
@@ -19,11 +20,11 @@ export function initSetupSvelte(S) {
 
   if (_instance) _instance.$destroy();
 
-  // Pull current state from Scheduler
-  const fte = (S && S.state && S.state.fte) ? S.state.fte : {};
+  // Pull current state from Scheduler using correct accessors
+  const fte = (S && S.state) ? snapshotFte(S) : {};
   const period = (S && S.state) ? {
     startDate: S.state.startDate || '',
-    weeks: S.state.weeks || 1,
+    weeks: S.state.weekCount || 1,
     generateSeed: S.state.generateSeed || 'random',
   } : {};
 
@@ -83,6 +84,18 @@ export function initSetupSvelte(S) {
     };
     document.body.appendChild(input);
     input.click();
+  }
+
+  // Emit lines:request-render after applyPayload to refresh the lines table
+  if (typeof S.applyPayload === "function") {
+    var origApplyPayload = S.applyPayload;
+    S.applyPayload = function (payload) {
+      origApplyPayload(payload);
+      if (typeof window !== "undefined") {
+        const event = new CustomEvent("lines:request-render");
+        window.dispatchEvent(event);
+      }
+    };
   }
 
   window.addEventListener('setup:fte-change', onFte);
