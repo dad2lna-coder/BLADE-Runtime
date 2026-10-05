@@ -38,19 +38,33 @@ export function initSetupSvelte(S) {
 
   // Bridge events back to Scheduler
   function onFte(e) {
-    if (S && S.state) S.state.fte = { ...(S.state.fte || {}), ...e.detail };
+    if (S && S.applyFte) S.applyFte(e.detail);
   }
   function onPeriod(e) {
-    if (S && S.state) Object.assign(S.state, e.detail);
+    if (S && S.state) {
+      // Handle period fields: startDate, weeks, generateSeed
+      if (e.detail.startDate !== undefined) S.state.startDate = e.detail.startDate;
+      if (e.detail.weeks !== undefined) S.state.weekCount = e.detail.weeks;
+      if (e.detail.generateSeed !== undefined) S.state.generateSeed = e.detail.generateSeed;
+    }
   }
   function onGenerate() {
     if (S && S.generate) S.generate();
   }
   function onExport() {
-    if (S && S.exportBoard) S.exportBoard();
+    if (S && S.exportBoardExcel) S.exportBoardExcel();
   }
   function onClear() {
-    if (S && S.clear) S.clear();
+    if (S && S.clearAll) S.clearAll();
+  }
+  function onImport() {
+    if (S && S.importJsonFile) {
+      var fileInput = document.getElementById("file-import");
+      if (fileInput) {
+        fileInput.value = "";
+        fileInput.click();
+      }
+    }
   }
 
   window.addEventListener('setup:fte-change', onFte);
@@ -58,7 +72,7 @@ export function initSetupSvelte(S) {
   window.addEventListener('setup:generate', onGenerate);
   window.addEventListener('setup:export', onExport);
   window.addEventListener('setup:clear', onClear);
-  window.addEventListener('setup:import', onClear); // placeholder for now
+  window.addEventListener('setup:import', onImport);
 
   // Cleanup on unmount
   _instance.$on('destroy', () => {
@@ -67,6 +81,7 @@ export function initSetupSvelte(S) {
     window.removeEventListener('setup:generate', onGenerate);
     window.removeEventListener('setup:export', onExport);
     window.removeEventListener('setup:clear', onClear);
+    window.removeEventListener('setup:import', onImport);
     _instance = null;
   });
 }
